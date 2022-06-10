@@ -1,16 +1,15 @@
 # command_line_tool_ctl
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg?style=for-the-badge)](https://www.gnu.org/licenses/agpl-3.0)
+[![Python 3.7](https://img.shields.io/badge/python-3.7-green?style=for-the-badge)](https://www.python.org/)
+[![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/PilotDataPlatform/cli/CI/develop?style=for-the-badge)](https://github.com/PilotDataPlatform/cli/actions/workflows/main.yml)
 
+[![codecov](https://img.shields.io/codecov/c/github/PilotDataPlatform/cli?style=for-the-badge)](https://codecov.io/gh/PilotDataPlatform/cli)
 ## About
 Command line tool that allows the user to execute data operations on the platform.
 ### Built With
 - Python
 - [Click](https://click.palletsprojects.com/en/8.0.x/)
-## Getting Started
 
-### Prerequisites
-N/A
-
-### Installation
 
 #### Run from bundled application
 1. Navigate to the appropriate directory for your system.
@@ -19,22 +18,17 @@ N/A
         ./app/bundled_app/mac/
         ./app/bundled_app/mac_arm/
 
-2. Run application.
-
-        ./cli
-
 #### Run with Python
 1. Install dependencies (optional: run in edit mode).
 
-       pip install -r requirements.txt
-       pip install --editable .
+       poetry install
+       poetry run pilotcli
 
 2. Add environment variables if needed.
-3. Run application.
-
-       python run.py [COMMANDS]
 
 ## Usage
+
+    ./app/bundled_app/linux/pilotcli --help
 
 ### Build Instructions
 1. Each system has its own credential, so building should be done after the updated the env file.
@@ -46,6 +40,3 @@ N/A
 
     Note: Building for ARM Mac may require a newer version of `pyinstaller`.
 
-3. Upload files.
-
-        ./app/bundled_app/linux/pilotcli file put ./test_seeds

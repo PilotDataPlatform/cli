@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "app"
+version = "0.1.0"
+description = "This service is designed to support pilot platform"
+authors = ["Indoc Research"]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+click = "7.1.2"
+PyJWT = "1.7.1"
+questionary = "^1.10.0"
+tqdm = "4.56.0"
+cryptography = "3.1.1"
+urllib3 = "1.25.10"
+requests = "2.24.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "6.2.5"
+requests-mock = "^1.9.3"
+pytest-mock = "^3.7.0"
+pytest-cov = "^3.0.0"
+
+[tool.poetry.scripts]
+pilotcli = "app.pilotcli:cli"
+
+[build-system]
+requires = ["poetry_core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
