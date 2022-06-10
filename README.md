@@ -1,9 +1,9 @@
 # command_line_tool_ctl
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg?style=for-the-badge)](https://www.gnu.org/licenses/agpl-3.0)
 [![Python 3.7](https://img.shields.io/badge/python-3.7-green?style=for-the-badge)](https://www.python.org/)
-[![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/PilotDataPlatform/cli/CI/feat/pilot-1114?style=for-the-badge)](https://github.com/PilotDataPlatform/cli/actions/workflows/main.yml)
+[![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/PilotDataPlatform/cli/CI/develop?style=for-the-badge)](https://github.com/PilotDataPlatform/cli/actions/workflows/main.yml)
 
-[![codecov](https://img.shields.io/codecov/c/github/PilotDataPlatform/cli/feat/pilot-1114?style=for-the-badge)](https://codecov.io/gh/PilotDataPlatform/cli)
+[![codecov](https://img.shields.io/codecov/c/github/PilotDataPlatform/cli/develop?style=for-the-badge)](https://codecov.io/gh/PilotDataPlatform/cli)
 ## About
 Command line tool that allows the user to execute data operations on the platform.
 ### Built With
