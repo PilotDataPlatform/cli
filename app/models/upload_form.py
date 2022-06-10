@@ -1,6 +1,21 @@
-from app.configs.app_config import AppConfig
-import app.services.logger_services.log_functions as logger
+# Copyright (C) 2022 Indoc Research
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import os
+
+from app.configs.app_config import AppConfig
 
 
 class FileUploadForm:
@@ -13,7 +28,6 @@ class FileUploadForm:
             "resumable_total_size": -1,
             "resumable_relative_path": "",
             "tags": [],
-            "dcm_id": None,
             "uploader": "",
             "metadatas": None,
             "container_id": "",
@@ -61,7 +75,7 @@ class FileUploadForm:
 
     @resumable_relative_path.setter
     def resumable_relative_path(self, resumable_relative_path):
-        self._attribute_map['resumable_relative_path'] = resumable_relative_path
+        self._attribute_map['resumable_relative_path'] = resumable_relative_path.rstrip('/')
 
     @property
     def resumable_total_size(self):
@@ -80,14 +94,6 @@ class FileUploadForm:
         self._attribute_map['tags'] = tags
 
     @property
-    def dcm_id(self):
-        return self._attribute_map['dcm_id']
-
-    @dcm_id.setter
-    def dcm_id(self, dcm_id):
-        self._attribute_map['dcm_id'] = dcm_id
-
-    @property
     def uploader(self):
         return self._attribute_map['uploader']
 
@@ -103,53 +109,37 @@ class FileUploadForm:
     def metadatas(self, metadatas):
         self._attribute_map['metadatas'] = metadatas
 
-    @property
-    def container_id(self):
-        return self._attribute_map['container_id']
 
-    @container_id.setter
-    def container_id(self, container_id):
-        self._attribute_map['container_id'] = container_id
-
-
-def generate_pre_upload_form(project_code,
-                             operator,
-                             file_upload_form: FileUploadForm,
-                             zone,
-                             job_type,
-                             upload_message="cli uploaded",
-                             file_type='raw',
-                             current_folder_node = ''):
-    upload_message = upload_message if upload_message else ""
+def generate_pre_upload_form(
+    project_code,
+    operator,
+    file_upload_form: FileUploadForm,
+    zone,
+    job_type,
+    upload_message,
+    current_folder_node=''
+):
     data = []
     for file in file_upload_form.resumable_filename:
         file_name = os.path.basename(file)
         relative_file_path = get_relative_path(file, current_folder_node,
                                                file_upload_form.resumable_relative_path, job_type)
-        if job_type == 'AS_FILE':
-            data.append(
-                {'resumable_filename': file_name,
-                 'dcm_id': file_upload_form.dcm_id,
-                 'resumable_relative_path': relative_file_path
-                 })
-        else:
-            data.append(
-                {'resumable_filename': file_name,
-                 'resumable_relative_path': relative_file_path
-                 })
-
+        data.append(
+            {
+                'resumable_filename': file_name,
+                'resumable_relative_path': relative_file_path
+            })
     return {
         'project_code': project_code,
         'operator': operator,
         'upload_message': upload_message,
         'job_type': job_type,
-        'dcm_id': file_upload_form.dcm_id,
-        'type': file_type,
         'zone': zone,
         'current_folder_node': current_folder_node,
         'data': data,
         'filename': file_name
     }
+
 
 def get_relative_path(file, current_folder_node, resumable_relative_path, job_type):
     relative_file_path = '/'.join(os.path.relpath(file).split('/')[0:-1])
@@ -175,7 +165,6 @@ def generate_chunk_form(project_code, operator, file_upload_form: FileUploadForm
         "resumable_chunk_size": AppConfig.Env.chunk_size,
         "resumable_total_chunks": int(file_upload_form.resumable_total_chunks),
         "resumable_total_size": int(file_upload_form.resumable_total_size),
-        "dcm_id": file_upload_form.dcm_id,
         "tags": file_upload_form.tags
     }
     return my_form
@@ -192,7 +181,6 @@ def generate_on_success_form(project_code, operator, file_upload_form: FileUploa
         "resumable_total_chunks": file_upload_form.resumable_total_chunks,
         "resumable_total_size": file_upload_form.resumable_total_size,
         "resumable_relative_path": file_upload_form.resumable_relative_path,
-        "dcm_id": file_upload_form.dcm_id,
         "tags": file_upload_form.tags
     }
     if from_parents:

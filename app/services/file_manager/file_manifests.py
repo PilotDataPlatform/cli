@@ -1,21 +1,49 @@
-from app.models.service_meta_class import MetaService
+# Copyright (C) 2022 Indoc Research
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import json
+
+import app.services.output_manager.message_handler as message_handler
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
-import json
-import requests
-from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler
-import app.services.logger_services.log_functions as logger
+from app.models.service_meta_class import MetaService
+from app.services.output_manager.error_handler import ECustomizedError
+from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
-import app.services.output_manager.message_handler as message_handler
+from app.utils.aggregated import resilient_session
+
+
+def dupe_checking_hook(pairs):
+    result = {}
+    for key, val in pairs:
+        if key in result:
+            raise KeyError("Duplicate attribute specified: %s" % key)
+        result[key] = val
+    return result
+
+
+decoder = json.JSONDecoder(object_pairs_hook=dupe_checking_hook)
 
 
 class SrvFileManifests(metaclass=MetaService):
-    app_config =  AppConfig()
+    app_config = AppConfig()
     user = UserConfig()
 
     def __init__(self, interactive=True):
         self.interactive = interactive
-    
+
     @staticmethod
     def read_manifest_template(path):
         with open(path, 'r') as file:
@@ -30,7 +58,7 @@ class SrvFileManifests(metaclass=MetaService):
         headers = {
             'Authorization': "Bearer " + self.user.access_token,
         }
-        res = requests.post(url, headers=headers, json=manifest_json)
+        res = resilient_session().post(url, headers=headers, json=manifest_json)
         if res.status_code == 200:
             result = res.json()['result']
             message_handler.SrvOutPutHandler.file_manifest_validation(result)
@@ -47,7 +75,7 @@ class SrvFileManifests(metaclass=MetaService):
         headers = {
             'Authorization': "Bearer " + self.user.access_token,
         }
-        res = requests.post(url, headers=headers, json=manifest_json)
+        res = resilient_session().post(url, headers=headers, json=manifest_json)
         if res.status_code == 200:
             result = res.json()
             result['code'] = res.status_code
@@ -62,7 +90,7 @@ class SrvFileManifests(metaclass=MetaService):
             'Authorization': "Bearer " + self.user.access_token,
         }
         params = {'project_code': project_code}
-        res = requests.get(get_url, params=params, headers=headers)
+        res = resilient_session().get(get_url, params=params, headers=headers)
         return res
 
     def export_template(self, manifest_name, project_code, manifest_def):
@@ -82,7 +110,7 @@ class SrvFileManifests(metaclass=MetaService):
     def convert_import(user_defined: dict, project_code):
         # convert the user defined json file to attach post json
         converted_attrs = {}
-        keys = [key for key in user_defined]
+        keys = list(user_defined.keys())
         mani_name = keys[0]
         attrs = user_defined[mani_name]
         for key in attrs:
@@ -92,7 +120,7 @@ class SrvFileManifests(metaclass=MetaService):
             "project_code": project_code,
             "attributes": converted_attrs
         }
-    
+
     @staticmethod
     def convert_export(attach_post: dict):
         # convert the attach post json to user defined json
@@ -133,15 +161,3 @@ class SrvFileManifests(metaclass=MetaService):
             file_attached = True
             attach_error = ''
         return file_attached, attach_error
-
-
-def dupe_checking_hook(pairs):
-    result = dict()
-    for key, val in pairs:
-        if key in result:
-            raise KeyError("Duplicate attribute specified: %s" % key)
-        result[key] = val
-    return result
-
-
-decoder = json.JSONDecoder(object_pairs_hook=dupe_checking_hook)

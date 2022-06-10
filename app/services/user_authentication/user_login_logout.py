@@ -1,9 +1,26 @@
+# Copyright (C) 2022 Indoc Research
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import time
+
 import requests
+
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
-import app.services.logger_services.log_functions as logger
-import app.services.output_manager.error_handler as ehandler
-import time
+from app.services.output_manager.error_handler import ECustomizedError
+from app.services.output_manager.error_handler import SrvErrorHandler
 
 
 def user_login(username, password):
@@ -26,30 +43,25 @@ def user_login(username, password):
         user_config.save()
     elif response.status_code == 401:
         res_to_dict = []
-        ehandler.SrvErrorHandler.customized_handle(
-            ehandler.ECustomizedError.INVALID_CREDENTIALS,
-            True)
+        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_CREDENTIALS, True)
     else:
         if response.text:
-            ehandler.SrvErrorHandler.default_handle(
-                response.text,
-                True
-            )
+            SrvErrorHandler.default_handle(response.text, True)
         res_to_dict = response.json()
-        ehandler.SrvErrorHandler.default_handle(
-            response.content,
-            True)
+        SrvErrorHandler.default_handle(response.content, True)
     return res_to_dict
+
 
 def check_is_login(if_print=True):
     user_config = UserConfig()
-    if user_config.config.has_option("USER", "username") and \
-        user_config.config.has_option("USER", "password") and user_config.config['USER']["username"] != "":
+    has_username = user_config.config.has_option("USER", "username")
+    has_password = user_config.config.has_option("USER", "password")
+    if has_username and has_password and user_config.username != "":
         return True
     else:
-        ehandler.SrvErrorHandler.customized_handle(
-            ehandler.ECustomizedError.LOGIN_SESSION_INVALID, if_print) if if_print else None
+        SrvErrorHandler.customized_handle(ECustomizedError.LOGIN_SESSION_INVALID, if_print) if if_print else None
         return False
+
 
 def check_is_active(if_print=True):
     user_config = UserConfig()
@@ -61,13 +73,14 @@ def check_is_active(if_print=True):
         return True
     else:
         user_config.clear()
-        ehandler.SrvErrorHandler.customized_handle(
-            ehandler.ECustomizedError.LOGIN_SESSION_INVALID, if_print) if if_print else None
+        SrvErrorHandler.customized_handle(ECustomizedError.LOGIN_SESSION_INVALID, if_print) if if_print else None
         return False
+
 
 def user_logout():
     user_config = UserConfig()
     user_config.clear()
+
 
 def request_default_tokens(username, password):
     url = AppConfig.Connections.url_authn
@@ -82,11 +95,12 @@ def request_default_tokens(username, password):
     if response.status_code == 200:
         return [response.json()['result']['access_token'], response.json()['result']['refresh_token']]
     elif response.status_code == 401:
-        ehandler.SrvErrorHandler.customized_handle(ehandler.ECustomizedError.INVALID_CREDENTIALS, True)
+        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_CREDENTIALS, True)
     else:
         if response.text:
-            ehandler.SrvErrorHandler.default_handle(response.text, True)
-        ehandler.SrvErrorHandler.default_handle(response.content, True)
+            SrvErrorHandler.default_handle(response.text, True)
+        SrvErrorHandler.default_handle(response.content, True)
+
 
 def request_harbor_tokens(username, password):
     url = AppConfig.Connections.url_keycloak
@@ -104,11 +118,12 @@ def request_harbor_tokens(username, password):
     if response.status_code == 200:
         return [response.json()['access_token'], response.json()['refresh_token']]
     elif response.status_code == 401:
-        ehandler.SrvErrorHandler.customized_handle(ehandler.ECustomizedError.INVALID_CREDENTIALS, True)
+        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_CREDENTIALS, True)
     else:
         if response.text:
-            ehandler.SrvErrorHandler.default_handle(response.text, True)
-        ehandler.SrvErrorHandler.default_handle(response.content, True)
+            SrvErrorHandler.default_handle(response.text, True)
+        SrvErrorHandler.default_handle(response.content, True)
+
 
 def get_tokens(username, password, azp=None):
     if not azp or azp == 'kong':
