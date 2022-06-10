@@ -26,4 +26,4 @@ class ENVAR():
     service_url = ''
     keycloak_url = ''
     url_harbor = ''
-    harbor_client_secret = ''
+    harbor_client_secret = ""
