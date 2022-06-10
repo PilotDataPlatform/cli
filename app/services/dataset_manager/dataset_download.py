@@ -1,17 +1,34 @@
-from sys import version
-from app.models.service_meta_class import MetaService
+# Copyright (C) 2022 Indoc Research
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import datetime
+import os
+import time
+
+from tqdm import tqdm
+
+import app.services.logger_services.log_functions as logger
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
-from ..user_authentication.decorator import require_valid_token
-import requests
-from tqdm import tqdm
-import click
-import os
-import datetime
-import time
-import app.services.logger_services.log_functions as logger
-from app.services.output_manager.error_handler import SrvErrorHandler, ECustomizedError
+from app.models.service_meta_class import MetaService
+from app.services.output_manager.error_handler import ECustomizedError
+from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.output_manager.message_handler import SrvOutPutHandler
+from app.utils.aggregated import resilient_session
+
+from ..user_authentication.decorator import require_valid_token
 
 
 class SrvDatasetDownloadManager(metaclass=MetaService):
@@ -24,7 +41,7 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
         self.hash_code = ''
         self.version = ''
         self.download_url = ''
-      
+
     @require_valid_token()
     def pre_dataset_version_download(self):
         url = AppConfig.Connections.url_dataset + f'/{self.dataset_geid}/download/pre'
@@ -34,49 +51,54 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
             'Session-ID': self.session_id
         }
         payload = {'version': self.version}
-        response = requests.get(url, headers=headers, params=payload)
         try:
+            response = resilient_session().get(url, headers=headers, params=payload)
             res = response.json()
-            return res
-        except Exception as e:
+            code = res.get('code')
+            if code == 404:
+                SrvErrorHandler.customized_handle(ECustomizedError.VERSION_NOT_EXIST, True, self.version)
+            else:
+                return res
+        except Exception:
             SrvErrorHandler.default_handle(response.content, True)
-    
+
     @require_valid_token()
     def pre_dataset_download(self):
-        url = AppConfig.Connections.url_dataset_v2download + f'/download/pre'
+        url = AppConfig.Connections.url_dataset_v2download + '/download/pre'
         headers = {
             'Authorization': "Bearer " + self.user.access_token,
             'Refresh-token': self.user.refresh_token,
             'Session-ID': self.session_id
         }
         payload = {
-            "dataset_geid": self.dataset_geid,
+            "dataset_code": self.dataset_code,
             "session_id": self.session_id,
-            "operator": self.user.username}
-        response = requests.post(url, headers=headers, json=payload)
+            "operator": self.user.username
+        }
         try:
+            response = resilient_session().post(url, headers=headers, json=payload)
             res = response.json()
             return res
-        except Exception as e:
+        except Exception:
             SrvErrorHandler.default_handle(response.content, True)
 
     def generate_download_url(self):
         if self.version:
             self.download_url = AppConfig.Connections.url_dataset_v2download + f"/download/{self.hash_code}"
         else:
-            self.download_url = AppConfig.Connections.url_download_core + f"/download/{self.hash_code}"
+            self.download_url = AppConfig.Connections.url_download_core + f"v1/download/{self.hash_code}"
 
     @require_valid_token()
     def download_status(self):
-        url = AppConfig.Connections.url_download_core + f"/download/status/{self.hash_code}"
-        res = requests.get(url)
+        url = AppConfig.Connections.url_download_core + f"v1/download/status/{self.hash_code}"
+        res = resilient_session().get(url)
         res_json = res.json()
         if res_json.get('code') == 200:
             status = res_json.get('result').get('status')
             return status
         else:
             SrvErrorHandler.default_handle(res_json.get('error_msg'), True)
-    
+
     def check_download_preparing_status(self):
         while True:
             time.sleep(1)
@@ -84,26 +106,30 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
             if status == 'READY_FOR_DOWNLOADING':
                 break
         return status
-    
+
     @require_valid_token()
     def send_download_request(self):
         logger.info("start downloading...")
         headers = {
             'Authorization': "Bearer " + self.user.access_token,
         }
-        with requests.get(self.download_url, headers=headers, stream=True) as r:
+        with resilient_session().get(self.download_url, headers=headers, stream=True) as r:
             r.raise_for_status()
-            default_filename = str(r.headers.get('content-disposition', '')).lstrip('attachment; filename')[1:].strip('"')
-            filename = f"{self.dataset_code}_{self.version}_{str(datetime.datetime.now())}" if not default_filename else default_filename
+            response_file_info = str(r.headers.get('content-disposition', '')).replace('attachment; filename', '')
+            default_filename = response_file_info[1:].strip('"')
+            if not default_filename:
+                filename = f"{self.dataset_code}_{self.version}_{str(datetime.datetime.now())}"
+            else:
+                filename = default_filename
             output_path = self.avoid_duplicate_file_name(self.output.rstrip('/') + '/' + filename)
             self.total_size = int(r.headers.get('Content-length'))
             with open(output_path, 'wb') as file, tqdm(
-                    desc='Downloading {}'.format(filename),
-                    unit='iB',
-                    unit_scale=True,
-                            total=self.total_size,
+                desc='Downloading {}'.format(filename),
+                unit='iB',
+                unit_scale=True,
+                total=self.total_size,
                 unit_divisor=1024,
-                    bar_format="{desc} |{bar:30} {percentage:3.0f}% {remaining}"
+                bar_format="{desc} |{bar:30} {percentage:3.0f}% {remaining}"
             ) as bar:
                 for data in r.iter_content(chunk_size=1024):
                     size = file.write(data)
@@ -117,7 +143,7 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
         while True:
             if os.path.isfile(filename):
                 filename = file + f' ({suffix})' + ext
-                suffix  += 1
+                suffix += 1
             else:
                 if filename == original_filename:
                     break
@@ -128,7 +154,6 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
 
     @require_valid_token()
     def download_dataset(self):
-        logger.info('Pre downloading dataset')
         pre_result = self.pre_dataset_download()
         self.hash_code = pre_result.get('result').get('payload').get('hash_code')
         self.generate_download_url()
@@ -142,7 +167,6 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
 
     @require_valid_token()
     def download_dataset_version(self, version):
-        logger.info('Pre downloading dataset')
         self.version = version
         pre_result = self.pre_dataset_version_download()
         self.hash_code = pre_result.get('result').get('download_hash')

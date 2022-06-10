@@ -1,13 +1,32 @@
+# Copyright (C) 2022 Indoc Research
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import click
-from app.services.hpc_manager.hpc_auth import HPCTokenManager
-from app.services.hpc_manager.hpc_jobs import HPCJobManager
-from app.services.hpc_manager.hpc_cluster import HPCNodeManager, HPCPartitionManager
-import app.services.output_manager.message_handler as mhandler
-import app.services.output_manager.help_page as hpc_help
-from app.utils.aggregated import doc
-from app.configs.user_config import UserConfig
+
 import app.services.logger_services.log_functions as logger
-from app.services.user_authentication.user_login_logout import get_tokens, check_is_login, check_is_active
+import app.services.output_manager.help_page as hpc_help
+from app.configs.user_config import UserConfig
+from app.services.hpc_manager.hpc_auth import HPCTokenManager
+from app.services.hpc_manager.hpc_cluster import HPCNodeManager
+from app.services.hpc_manager.hpc_cluster import HPCPartitionManager
+from app.services.hpc_manager.hpc_jobs import HPCJobManager
+from app.services.user_authentication.user_login_logout import check_is_active
+from app.services.user_authentication.user_login_logout import check_is_login
+from app.services.user_authentication.user_login_logout import get_tokens
+from app.utils.aggregated import doc
+
 
 @click.command()
 def cli():
@@ -49,7 +68,6 @@ def hpc_auth(host, username, password):
     logger.succeed("Authenticated successfully, token saved")
     user.hpc_token = hpc_token
     user.save()
-    
 
 
 @click.command(name="submit")
@@ -97,6 +115,7 @@ def hpc_list_nodes(host):
             logger.info(row_value.rstrip(', '))
     logger.succeed('\nAll nodes are listed')
 
+
 @click.command(name="get-node")
 @click.option('-h', '--host', prompt='Host',
               help=(hpc_help.hpc_help_page(hpc_help.HpcHELP.HPC_LOGIN_HOST)))
@@ -136,6 +155,7 @@ def hpc_list_partitions(host):
                 row_value = row_value + k + ': ' + value + ' \n'
             logger.info(row_value.rstrip(', '))
     logger.succeed('\nAll partitions are listed')
+
 
 @click.command(name="get-partition")
 @click.option('-h', '--host', prompt='Host',

@@ -145,3 +145,4 @@ build
 .DS_Store
 ./app/unit_tests
 
+integration_tests

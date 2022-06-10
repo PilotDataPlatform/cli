@@ -37,15 +37,12 @@ N/A
 ## Usage
 
 ### Build Instructions
-1. Each system has its own build files, so building should be done on the corresponding system.
+1. Each system has its own credential, so building should be done after the updated the env file.
 2. Run build commands for your system.
 
     Linux example for each environment:
 
-        pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --paths=./.venv/lib/python3.8/site-packages ./app/pilotcli.py
-        pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --paths=./.venv/lib/python3.8/site-packages ./app/pilotcli_dev.py
-        pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --paths=./.venv/lib/python3.8/site-packages ./app/pilotcli_staging.py
-        pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --paths=./.venv/lib/python3.8/site-packages ./app/pilotcli_staging_workbench.py
+        pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --paths=./.venv/lib/python3.8/site-packages ./app/pilotcli.py -n <app-name>
 
     Note: Building for ARM Mac may require a newer version of `pyinstaller`.
 
