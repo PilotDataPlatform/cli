@@ -13,16 +13,17 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from app.models.service_meta_class import MetaService
+
+import requests
+
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
-from ..user_authentication.decorator import require_valid_token
-import requests
-import json
-import click
-import app.services.logger_services.log_functions as logger
-from app.services.output_manager.error_handler import SrvErrorHandler, ECustomizedError, customized_error_msg
+from app.models.service_meta_class import MetaService
+from app.services.output_manager.error_handler import ECustomizedError
+from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.output_manager.message_handler import SrvOutPutHandler
+
+from ..user_authentication.decorator import require_valid_token
 
 
 class SrvProjectManager(metaclass=MetaService):
@@ -50,7 +51,10 @@ class SrvProjectManager(metaclass=MetaService):
                     SrvOutPutHandler.print_list_header("Project Name", "Project Code")
                     for project in res_to_dict:
                         project_code = str(project['code'])
-                        project_name = str(project['name'])[0:37]+'...' if len(str(project['name']))>37 else str(project['name'])
+                        if len(str(project['name'])) > 37:
+                            project_name = str(project['name'])[0:37] + '...'
+                        else:
+                            project_name = str(project['name'])
                         SrvOutPutHandler.print_list_parallel(project_name, project_code)
                     SrvOutPutHandler.count_item(page, 'projects', res_to_dict)
                 return res_to_dict
@@ -58,5 +62,5 @@ class SrvProjectManager(metaclass=MetaService):
                 SrvErrorHandler.customized_handle(ECustomizedError.USER_DISABLED, True)
             else:
                 SrvErrorHandler.default_handle(response.content, True)
-        except Exception as e:
+        except Exception:
             SrvErrorHandler.default_handle(response.content, True)

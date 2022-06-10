@@ -22,8 +22,8 @@ class ENVAR():
     app_name = 'pilotcli'
     config_path = '{}/.{}cli/'.format(os.environ.get('HOME') or os.environ.get('HOMEPATH'), project)
     custom_path = 'app/resources'
-    base_url = ''
-    service_url = ''
-    keycloak_url = ''
-    url_harbor = ''
-    harbor_client_secret = ''
+    base_url = 'http://10.3.7.116:3000/vre/api/vre/'
+    service_url = 'http://10.3.7.116:3000/vre/'
+    keycloak_url = 'https://10.3.7.220/vre/'
+    url_harbor = 'https://10.3.7.111'
+    harbor_client_secret = "99066450-087f-4340-9d0b-f2f2bcc71fc9"

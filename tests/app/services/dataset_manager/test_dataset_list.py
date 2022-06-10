@@ -19,13 +19,14 @@ from app.services.dataset_manager.dataset_list import SrvDatasetListManager
 def test_list_datasets(requests_mock, mocker, capsys):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.check_valid',
-        return_value = 0
+        return_value=0
     )
-    requests_mock.get('http://bff_cli' + '/v1/datasets', 
+    requests_mock.get(
+        'http://bff_cli' + '/v1/datasets',
         json={
-            "code":200,
-            "error_msg":"",
-            "result":[
+            "code": 200,
+            "error_msg": "",
+            "result": [
                 {
                     'id': 'fake-id1',
                     'code': 'testdataset1',
