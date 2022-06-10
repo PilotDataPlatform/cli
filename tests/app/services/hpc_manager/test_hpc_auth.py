@@ -14,35 +14,40 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+
 from app.services.hpc_manager.hpc_auth import HPCTokenManager
+
 
 def test_hpc_auth(requests_mock, mocker):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.check_valid',
-        return_value = 0
+        return_value=0
     )
-    requests_mock.post('http://bff_cli' + '/v1/hpc/auth', 
+    requests_mock.post(
+        'http://bff_cli' + '/v1/hpc/auth',
         json={
-            "code":200,
-            "error_msg":"",
+            "code": 200,
+            "error_msg": "",
             "result": "fake-token"
-            }
+        }
     )
     hpc_mgr = HPCTokenManager('fake_token')
     token = hpc_mgr.auth_user('test_host', 'test_user', 'test_password')
     assert token == 'fake-token'
 
+
 def test_hpc_auth_failed(requests_mock, mocker, capsys):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.check_valid',
-        return_value = 0
+        return_value=0
     )
-    requests_mock.post('http://bff_cli' + '/v1/hpc/auth', 
+    requests_mock.post(
+        'http://bff_cli' + '/v1/hpc/auth',
         json={
-            "code":500,
-            "error_msg":"User authorization failed: Authentication failed.",
-            "result":[]
-            }
+            "code": 500,
+            "error_msg": "User authorization failed: Authentication failed.",
+            "result": []
+        }
     )
     hpc_mgr = HPCTokenManager('fake_token')
     with pytest.raises(SystemExit):

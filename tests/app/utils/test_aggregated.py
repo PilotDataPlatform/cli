@@ -15,31 +15,32 @@
 
 from app.utils.aggregated import search_item
 
-
 test_project_code = 'testproject'
+
+
 def test_search_file_should_return_200(requests_mock, mocker):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.check_valid',
-        return_value = 0
+        return_value=0
     )
     requests_mock.get(
         f"http://bff_cli/v1/project/{test_project_code}/search",
         json={
             "code": 200,
             "error_msg": "",
-            "result":{
-                "id":"file-id",
+            "result": {
+                "id": "file-id",
                 "parent": 'parent-id',
                 "parent_path": 'folder1',
-                "restore_path":None,
-                "archived":False,
-                "type":"file",
-                "zone":0,
-                "name":"test-file",
-                "size":1048576,
-                "owner":"admin",
+                "restore_path": None,
+                "archived": False,
+                "type": "file",
+                "zone": 0,
+                "name": "test-file",
+                "size": 1048576,
+                "owner": "admin",
                 "container_code": test_project_code,
-                "container_type":"project",
+                "container_type": "project",
                 "created_time": "2021-07-02 16:34:09.164000",
                 "last_updated_time": "2021-07-02 16:34:09.164000",
                 "storage": {
@@ -48,8 +49,8 @@ def test_search_file_should_return_200(requests_mock, mocker):
                     'version': 'version-id'
                 },
                 "extended": {
-                    "id":"extended-id",
-                    "extra":{"tags":[],"system_tags":[],"attributes":{}}
+                    "id": "extended-id",
+                    "extra": {"tags": [], "system_tags": [], "attributes": {}}
                 }
             }
         },
@@ -71,10 +72,10 @@ def test_search_file_should_return_200(requests_mock, mocker):
         'created_time': '2021-07-02 16:34:09.164000',
         'last_updated_time': '2021-07-02 16:34:09.164000',
         'storage': {
-                    'id': 'storage-id',
-                    'location_uri': 'minio-path',
-                    'version': 'version-id'
-                },
+            'id': 'storage-id',
+            'location_uri': 'minio-path',
+            'version': 'version-id'
+        },
         'extended': {
             'id': 'extended-id',
             'extra': {'tags': [], 'system_tags': [], 'attributes': {}}
