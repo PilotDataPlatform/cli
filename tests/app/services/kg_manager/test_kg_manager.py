@@ -38,24 +38,24 @@ def test_import_kg(requests_mock, mocker, capsys):
                 "processing": {
                     "sample_file.json": {
                         "@context": "https://bluebrain.github.io/nexus/contexts/metadata.json",
-                        "@id": "http://10.3.7.220/kg/v1/resources/dataset/_/d09d9594-e495-425b-a6a6-68e230ee139e",
-                        "@type": "http://10.3.7.220/kg/v1/vocabs/dataset/Not_Specified",
+                        "@id": "http://test_domain/kg/v1/resources/dataset/_/d09d9594-e495-425b-a6a6-68e230ee139e",
+                        "@type": "http://test_domain/kg/v1/vocabs/dataset/Not_Specified",
                         "_constrainedBy": "https://bluebrain.github.io/nexus/schemas/unconstrained.json",
                         "_createdAt": "2022-03-23T13:55:51.897Z",
-                        "_createdBy": "http://10.3.7.220/kg/v1/realms/users/test_user",
+                        "_createdBy": "http://test_domain/kg/v1/realms/users/test_user",
                         "_deprecated": False,
                         "_incoming": (
-                            "http://10.3.7.220/kg/v1/resources/dataset/_/"
+                            "http://test_domain/kg/v1/resources/dataset/_/"
                             "d09d9594-e495-425b-a6a6-68e230ee139e/incoming"),
                         "_outgoing": (
-                            "http://10.3.7.220/kg/v1/resources/dataset/_/"
+                            "http://test_domain/kg/v1/resources/dataset/_/"
                             "d09d9594-e495-425b-a6a6-68e230ee139e/outgoing"),
-                        "_project": "http://10.3.7.220/kg/v1/projects/dataset",
+                        "_project": "http://test_domain/kg/v1/projects/dataset",
                         "_rev": 1,
-                        "_schemaProject": "http://10.3.7.220/kg/v1/projects/dataset",
-                        "_self": "http://10.3.7.220/kg/v1/resources/dataset/_/d09d9594-e495-425b-a6a6-68e230ee139e",
+                        "_schemaProject": "http://test_domain/kg/v1/projects/dataset",
+                        "_self": "http://test_domain/kg/v1/resources/dataset/_/d09d9594-e495-425b-a6a6-68e230ee139e",
                         "_updatedAt": "2022-03-23T13:55:51.897Z",
-                        "_updatedBy": "http://10.3.7.220/kg/v1/realms/users/test_user"
+                        "_updatedBy": "http://test_domain/kg/v1/realms/users/test_user"
                     }
                 },
                 "ignored": {}
@@ -105,66 +105,66 @@ def test_import_kg_folder(requests_mock, mocker, capsys):
                 "processing": {
                     "json_test/fake_file1.json": {
                         "@context": "https://bluebrain.github.io/nexus/contexts/metadata.json",
-                        "@id": "http://10.3.7.220/kg/v1/resources/dataset/_/6b3d6b08-921a-4e73-9f53-93bdb77d76e1",
-                        "@type": "http://10.3.7.220/kg/v1/vocabs/dataset/Not_Specified",
+                        "@id": "http://test_domain/kg/v1/resources/dataset/_/6b3d6b08-921a-4e73-9f53-93bdb77d76e1",
+                        "@type": "http://test_domain/kg/v1/vocabs/dataset/Not_Specified",
                         "_constrainedBy": "https://bluebrain.github.io/nexus/schemas/unconstrained.json",
                         "_createdAt": "2022-03-23T18:40:23.698Z",
-                        "_createdBy": "http://10.3.7.220/kg/v1/realms/users/test_user",
+                        "_createdBy": "http://test_domain/kg/v1/realms/users/test_user",
                         "_deprecated": False,
                         "_incoming": (
-                            "http://10.3.7.220/kg/v1/resources/dataset/_/"
+                            "http://test_domain/kg/v1/resources/dataset/_/"
                             "6b3d6b08-921a-4e73-9f53-93bdb77d76e1/incoming"),
                         "_outgoing": (
-                            "http://10.3.7.220/kg/v1/resources/dataset/_/"
+                            "http://test_domain/kg/v1/resources/dataset/_/"
                             "6b3d6b08-921a-4e73-9f53-93bdb77d76e1/outgoing"),
-                        "_project": "http://10.3.7.220/kg/v1/projects/dataset",
+                        "_project": "http://test_domain/kg/v1/projects/dataset",
                         "_rev": 1,
-                        "_schemaProject": "http://10.3.7.220/kg/v1/projects/dataset",
-                        "_self": "http://10.3.7.220/kg/v1/resources/dataset/_/6b3d6b08-921a-4e73-9f53-93bdb77d76e1",
+                        "_schemaProject": "http://test_domain/kg/v1/projects/dataset",
+                        "_self": "http://test_domain/kg/v1/resources/dataset/_/6b3d6b08-921a-4e73-9f53-93bdb77d76e1",
                         "_updatedAt": "2022-03-23T18:40:23.698Z",
-                        "_updatedBy": "http://10.3.7.220/kg/v1/realms/users/test_user"
+                        "_updatedBy": "http://test_domain/kg/v1/realms/users/test_user"
                     },
                     "json_test/fake_file2.json": {
                         "@context": "https://bluebrain.github.io/nexus/contexts/metadata.json",
-                        "@id": "http://10.3.7.220/kg/v1/resources/dataset/_/b3088a27-4a44-4bf0-a952-942f9bf8a4f4",
-                        "@type": "http://10.3.7.220/kg/v1/vocabs/dataset/Not_Specified",
+                        "@id": "http://test_domain/kg/v1/resources/dataset/_/b3088a27-4a44-4bf0-a952-942f9bf8a4f4",
+                        "@type": "http://test_domain/kg/v1/vocabs/dataset/Not_Specified",
                         "_constrainedBy": "https://bluebrain.github.io/nexus/schemas/unconstrained.json",
                         "_createdAt": "2022-03-23T18:40:23.882Z",
-                        "_createdBy": "http://10.3.7.220/kg/v1/realms/users/test_user",
+                        "_createdBy": "http://test_domain/kg/v1/realms/users/test_user",
                         "_deprecated": False,
                         "_incoming": (
-                            "http://10.3.7.220/kg/v1/resources/dataset/_/"
+                            "http://test_domain/kg/v1/resources/dataset/_/"
                             "b3088a27-4a44-4bf0-a952-942f9bf8a4f4/incoming"),
                         "_outgoing": (
-                            "http://10.3.7.220/kg/v1/resources/dataset/_/"
+                            "http://test_domain/kg/v1/resources/dataset/_/"
                             "b3088a27-4a44-4bf0-a952-942f9bf8a4f4/outgoing"),
-                        "_project": "http://10.3.7.220/kg/v1/projects/dataset",
+                        "_project": "http://test_domain/kg/v1/projects/dataset",
                         "_rev": 1,
-                        "_schemaProject": "http://10.3.7.220/kg/v1/projects/dataset",
-                        "_self": "http://10.3.7.220/kg/v1/resources/dataset/_/b3088a27-4a44-4bf0-a952-942f9bf8a4f4",
+                        "_schemaProject": "http://test_domain/kg/v1/projects/dataset",
+                        "_self": "http://test_domain/kg/v1/resources/dataset/_/b3088a27-4a44-4bf0-a952-942f9bf8a4f4",
                         "_updatedAt": "2022-03-23T18:40:23.882Z",
-                        "_updatedBy": "http://10.3.7.220/kg/v1/realms/users/test_user"
+                        "_updatedBy": "http://test_domain/kg/v1/realms/users/test_user"
                     },
                     "json_test/fake_file3.json": {
                         "@context": "https://bluebrain.github.io/nexus/contexts/metadata.json",
-                        "@id": "http://10.3.7.220/kg/v1/resources/dataset/_/c45b0998-65e0-4436-a6fe-0a5b4fb1c854",
-                        "@type": "http://10.3.7.220/kg/v1/vocabs/dataset/Not_Specified",
+                        "@id": "http://test_domain/kg/v1/resources/dataset/_/c45b0998-65e0-4436-a6fe-0a5b4fb1c854",
+                        "@type": "http://test_domain/kg/v1/vocabs/dataset/Not_Specified",
                         "_constrainedBy": "https://bluebrain.github.io/nexus/schemas/unconstrained.json",
                         "_createdAt": "2022-03-23T18:40:24.071Z",
-                        "_createdBy": "http://10.3.7.220/kg/v1/realms/users/test_user",
+                        "_createdBy": "http://test_domain/kg/v1/realms/users/test_user",
                         "_deprecated": False,
                         "_incoming": (
-                            "http://10.3.7.220/kg/v1/resources/dataset/_/"
+                            "http://test_domain/kg/v1/resources/dataset/_/"
                             "c45b0998-65e0-4436-a6fe-0a5b4fb1c854/incoming"),
                         "_outgoing": (
-                            "http://10.3.7.220/kg/v1/resources/dataset/_/"
+                            "http://test_domain/kg/v1/resources/dataset/_/"
                             "c45b0998-65e0-4436-a6fe-0a5b4fb1c854/outgoing"),
-                        "_project": "http://10.3.7.220/kg/v1/projects/dataset",
+                        "_project": "http://test_domain/kg/v1/projects/dataset",
                         "_rev": 1,
-                        "_schemaProject": "http://10.3.7.220/kg/v1/projects/dataset",
-                        "_self": "http://10.3.7.220/kg/v1/resources/dataset/_/c45b0998-65e0-4436-a6fe-0a5b4fb1c854",
+                        "_schemaProject": "http://test_domain/kg/v1/projects/dataset",
+                        "_self": "http://test_domain/kg/v1/resources/dataset/_/c45b0998-65e0-4436-a6fe-0a5b4fb1c854",
                         "_updatedAt": "2022-03-23T18:40:24.071Z",
-                        "_updatedBy": "http://10.3.7.220/kg/v1/realms/users/test_user"
+                        "_updatedBy": "http://test_domain/kg/v1/realms/users/test_user"
                     }
                 },
                 "ignored": {}
