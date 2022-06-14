@@ -38,21 +38,17 @@ class AppConfig(object):
 
     class Connections(object):
         section = "connections"
-        base_url = ENVAR.base_url
-        service_url = ENVAR.service_url
-        keycloak_url = ENVAR.keycloak_url
         url_harbor = ENVAR.url_harbor
-        url_authn = base_url + "portal/users/auth"
-        url_refresh_token = base_url + "portal/users/refresh"
-        url_file_tag = base_url + "portal/dataops/v2/containers/"
-        url_upload_greenroom = base_url + "upload/gr"
-        url_upload_core = base_url + "upload/***REMOVED***"
-        url_download_greenroom = base_url + "portal/download/gr/"
-        url_download_core = base_url + "portal/download/core/"
-        url_v2_download_pre = base_url + "portal/v2/download/pre"
-        url_dataset_v2download = base_url + "portal/download/core/v2/dataset"
-        url_dataset = base_url + "portal/v1/dataset"
-        url_validation = base_url + "portal/v1/files/validation"
-        # url_bff = service_url + "api/***REMOVED***cli"
-        url_bff = 'http://0.0.0.0:5080'
-        url_keycloak = keycloak_url + "auth/realms/***REMOVED***/protocol/openid-connect/token"
+        url_authn = ENVAR.url_authn
+        url_refresh_token = ENVAR.url_refresh_token
+        url_file_tag = ENVAR.url_file_tag
+        url_upload_greenroom = ENVAR.url_upload_greenroom
+        url_upload_core = ENVAR.url_upload_core
+        url_download_greenroom = ENVAR.url_download_greenroom
+        url_download_core = ENVAR.url_download_core
+        url_v2_download_pre = ENVAR.url_dataset_v2download
+        url_dataset_v2download = ENVAR.url_dataset
+        url_dataset = ENVAR.url_dataset
+        url_validation = ENVAR.url_validation
+        url_keycloak = ENVAR.url_keycloak
+        url_bff = ENVAR.url_bff
