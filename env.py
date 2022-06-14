@@ -22,8 +22,20 @@ class ENVAR():
     app_name = 'pilotcli'
     config_path = '{}/.{}cli/'.format(os.environ.get('HOME') or os.environ.get('HOMEPATH'), project)
     custom_path = 'app/resources'
+    harbor_client_secret = ''
+    
     base_url = ''
-    service_url = ''
-    keycloak_url = ''
+    url_bff = ''
     url_harbor = ''
-    harbor_client_secret = ""
+    url_authn = base_url + ''
+    url_refresh_token = base_url + ''
+    url_file_tag = base_url + ''
+    url_upload_greenroom = base_url + ''
+    url_upload_core = base_url + ''
+    url_download_greenroom = base_url + ''
+    url_download_core = base_url + ''
+    url_v2_download_pre = base_url + ''
+    url_dataset_v2download = base_url + ''
+    url_dataset = base_url + ''
+    url_validation = base_url + ''
+    url_keycloak = ''
