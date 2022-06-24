@@ -1,5 +1,20 @@
-from app.models.service_meta_class import MetaService
+# Copyright (C) 2022 Indoc Research
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import app.services.logger_services.log_functions as logger
+from app.models.service_meta_class import MetaService
 
 
 class SrvOutPutHandler(metaclass=MetaService):
@@ -69,9 +84,6 @@ class SrvOutPutHandler(metaclass=MetaService):
     @staticmethod
     def uploading_files(uploader, project_code, resumable_total_size,
                         resumable_total_chunks, resumable_relative_path):
-        """
-        uploader: admin container_id: 224   total_size: 1048576   total_chunks: 1   uniq_identifier: cmd-admin-upload-1613159921-df8dda2a-1972-4717-b330-21c73a825aa8
-        """
         return logger.info(
             "uploader:", uploader,
             "project_code:", project_code,
@@ -110,23 +122,19 @@ class SrvOutPutHandler(metaclass=MetaService):
         logger.info('Starting request...')
 
     @staticmethod
-    def project_list_header():
+    def print_list_header(col1, col2):
         """e.g. NAME                              CODE    """
-        logger.info("Project Name".ljust(40, ' ') + "Project Code".center(32, ' '))
-    
-    @staticmethod
-    def dataset_list_header():
-        """e.g. NAME                              CODE    """
-        logger.info("Dataset Title".ljust(40, ' ') + "Dataset Code".center(32, ' '))
+        logger.info(col1.center(40, ' ') + col2.center(40, ' '))
+        logger.info("-" * 75)
 
     @staticmethod
     def print_list_parallel(item_name, item_code):
-        logger.info(str(item_name).ljust(40, ' ') + str(item_code).center(32, ' '))
+        logger.info(str(item_name).center(40, ' ') + ' |' + str(item_code).center(37, ' '))
 
     @staticmethod
-    def count_item(category, project_api_response_dict):
+    def count_item(current_page, category, project_api_response_dict):
         """e.g. NUMBER OF PROJECTS 21 """
-        logger.info(f"Number of {category}: {len(project_api_response_dict)}")
+        logger.info(f"\nPage: {current_page}, Number of {category}: {len(project_api_response_dict)}")
 
     @staticmethod
     def download_success(file_name):
@@ -169,10 +177,10 @@ class SrvOutPutHandler(metaclass=MetaService):
                         + "Optional".center(optional_width, ' ') + '|')
             attributes = m.get('attributes')
             if not attributes:
-                attributes = [{'name': '', 'optional': '', 'type':'', 'value': ''}]
+                attributes = [{'name': '', 'optional': '', 'type': '', 'value': ''}]
             for attr in attributes:
                 if not attr:
-                    attr={'name': '', 'optional': '', 'type':'', 'value': ''}
+                    attr = {'name': '', 'optional': '', 'type': '', 'value': ''}
                 attr_name = str(attr['name'])[0:17] + '...' if len(str(attr['name'])) > 17 else str(attr['name'])
                 attr_option = str(attr['optional'])
                 attr_type = str(attr['type'])

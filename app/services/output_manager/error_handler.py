@@ -1,13 +1,29 @@
-from app.models.service_meta_class import MetaService
-import app.services.logger_services.log_functions as logger
-from app.resources.custom_error import Error
-import sys
+# Copyright (C) 2022 Indoc Research
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import enum
+import sys
+
+import app.services.logger_services.log_functions as logger
+from app.models.service_meta_class import MetaService
+from app.resources.custom_error import Error
+
 
 class ECustomizedError(enum.Enum):
     LOGIN_SESSION_INVALID = "LOGIN_SESSION_INVALID",
     PROJECT_DENIED = "PROJECT_DENIED",
-    DICOM_ID_NOT_FOUND = "DICOM_ID_NOT_FOUND",
     INVALID_CREDENTIALS = "INVALID_CREDENTIALS"
     ERROR_CONNECTION = "ERROR_CONNECTION"
     CODE_NOT_FOUND = "CODE_NOT_FOUND"
@@ -17,11 +33,10 @@ class ECustomizedError(enum.Enum):
     TEXT_TOO_LONG = "TEXT_TOO_LONG"
     FIELD_REQUIRED = "FIELD_REQUIRED"
     INVALID_TEMPLATE = "INVALID_TEMPLATE"
-    LIMIT_OF_10_TAGS = "LIMIT_OF_10_TAGS"
-    INVALID_TAG_MUST_BE_1to32_CHARACTERS_LOWER_CASE_NUMBER_OR_HYPHEN = "INVALID_TAG_MUST_BE_1to32_CHARACTERS_LOWER_CASE_NUMBER_OR_HYPHEN"
-    INVALID_TAG_TAG_IS_RESERVED = "INVALID_TAG_TAG_IS_RESERVED"
+    LIMIT_TAG_ERROR = "LIMIT_TAG_ERROR"
+    INVALID_TAG_ERROR = "INVALID_TAG_ERROR"
+    RESERVED_TAG = "RESERVED_TAG"
     INVALID_ATTRIBUTE = "INVALID_ATTRIBUTE"
-    INVALID_DICOM_ID = "INVALID_DICOM_ID"
     MISSING_REQUIRED_ATTRIBUTE = "MISSING_REQUIRED_ATTRIBUTE"
     INVALID_UPLOAD_REQUEST = "INVALID_UPLOAD_REQUEST"
     INVALID_SOURCE_FILE = "INVALID_SOURCE_FILE"
@@ -48,7 +63,7 @@ class ECustomizedError(enum.Enum):
     INVALID_FOLDER = "INVALID_FOLDER"
     INVALID_NAMEFOLDER = "INVALID_NAMEFOLDER"
     INVALID_DOWNLOAD = "INVALID_DOWNLOAD"
-    DUPLICATE_TAGS_NOT_ALLOWED = "DUPLICATE_TAGS_NOT_ALLOWED"
+    DUPLICATE_TAG_ERROR = "DUPLICATE_TAG_ERROR"
     VERSION_NOT_EXIST = "VERSION_NOT_EXIST"
     DATASET_NOT_EXIST = "DATASET_NOT_EXIST"
     DATASET_PERMISSION = "DATASET_PERMISSION"
@@ -64,17 +79,19 @@ class ECustomizedError(enum.Enum):
     CONTAINER_REGISTRY_ROLE_INVALID = "CONTAINER_REGISTRY_ROLE_INVALID"
     USER_NOT_FOUND = "USER_NOT_FOUND"
     CONTAINER_REGISTRY_OTHER = "CONTAINER_REGISTRY_OTHER"
+    CONTAINER_REGISTRY_NO_URL = "CONTAINER_REGISTRY_NO_URL"
 
 
 def customized_error_msg(customized_error: ECustomizedError):
-    
     if customized_error.name == "TOU_CONTENT":
         tou_msg = Error.error_msg.get(customized_error.name, "Unknown error.")
         error_msg = f"\033[92m{tou_msg}\033[0m \n "
-        msg =  error_msg + 'To cancel this transfer, enter [n/No] \n To confirm and proceed with the data transfer, enter [y/Yes] \n '
+        msg = error_msg + \
+            'To cancel this transfer, enter [n/No] \n To confirm and proceed with the data transfer, enter [y/Yes] \n'
     else:
         msg = Error.error_msg.get(customized_error.name, "Unknown error.")
     return msg
+
 
 class SrvErrorHandler(metaclass=MetaService):
     @staticmethod
@@ -92,7 +109,7 @@ class SrvErrorHandler(metaclass=MetaService):
         if if_exit:
             sys.exit(0)
 
+
 class OverSizeError(Exception):
     def __init__(self, message="File size is too large"):
         super().__init__(message)
-        

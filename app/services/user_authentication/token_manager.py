@@ -1,9 +1,26 @@
-from app.models.service_meta_class import MetaService
-from app.configs.user_config import UserConfig
-from app.configs.app_config import AppConfig
-import jwt
+# Copyright (C) 2022 Indoc Research
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import datetime
+
+import jwt
 import requests
+
+from app.configs.app_config import AppConfig
+from app.configs.user_config import UserConfig
+from app.models.service_meta_class import MetaService
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.user_login_logout import get_tokens
 
@@ -11,9 +28,10 @@ from app.services.user_authentication.user_login_logout import get_tokens
 class SrvTokenManager(metaclass=MetaService):
     def __init__(self):
         user_config = UserConfig()
-        if user_config.config.has_section("USER") \
-            and user_config.config.has_option("USER", "access_token") \
-            and user_config.config.has_option("USER", "refresh_token"):
+        has_user = user_config.config.has_section("USER")
+        has_access_token = user_config.config.has_option("USER", "access_token")
+        has_refresh_token = user_config.config.has_option("USER", "refresh_token")
+        if has_user and has_access_token and has_refresh_token:
             self.config = user_config
         else:
             raise(Exception('Login session not found, please login first.'))
@@ -45,14 +63,16 @@ class SrvTokenManager(metaclass=MetaService):
         expiry_at = datetime.datetime.utcfromtimestamp(decoded_access_token['exp'])
         now = datetime.datetime.utcnow()
         diff = int((expiry_at - now).seconds)
-        if (decoded_access_token['azp'] != required_azp) or (not required_azp and decoded_access_token['azp'] != 'kong'):
+        azp_token_condition = decoded_access_token['azp'] != required_azp
+        kong_token_condition = not required_azp and decoded_access_token['azp'] != 'kong'
+        if azp_token_condition or kong_token_condition:
             return 3
         if expiry_at <= now:
             return 2
         if diff <= AppConfig.Env.token_warn_need_refresh:
             return 1
         return 0
-    
+
     def request_default_tokens(self):
         url = AppConfig.Connections.url_refresh_token
         payload = {
@@ -92,7 +112,7 @@ class SrvTokenManager(metaclass=MetaService):
             self.request_default_tokens()
         if azp == 'harbor':
             self.request_harbor_tokens()
-    
+
     def change_token(self, required_azp):
         tokens = get_tokens(self.config.username, self.config.password, required_azp)
         self.update_token(tokens[0], tokens[1])

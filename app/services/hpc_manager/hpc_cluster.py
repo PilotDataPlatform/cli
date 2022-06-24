@@ -1,20 +1,37 @@
-from app.services.user_authentication.decorator import require_valid_token
-from app.models.service_meta_class import HPCMetaService
+# Copyright (C) 2022 Indoc Research
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
-import requests
-import json
-import app.services.logger_services.log_functions as logger
-from app.services.output_manager.error_handler import SrvErrorHandler, ECustomizedError
+from app.models.service_meta_class import HPCMetaService
+from app.services.output_manager.error_handler import ECustomizedError
+from app.services.output_manager.error_handler import SrvErrorHandler
+from app.services.user_authentication.decorator import require_valid_token
+from app.utils.aggregated import resilient_session
+
 
 class HPCPartitionManager(metaclass=HPCMetaService):
     def __init__(self):
         self.user = UserConfig()
-        self.token = self.user.hpc_token if self.user.hpc_token \
-            else SrvErrorHandler.customized_handle(ECustomizedError.CANNOT_PROCESS_HPC_JOB, True, value='Invalid HPC token')
+        if self.user.hpc_token:
+            self.token = self.user.hpc_token
+        else:
+            SrvErrorHandler.customized_handle(ECustomizedError.CANNOT_PROCESS_HPC_JOB, True, value='Invalid HPC token')
         self.username = self.user.username
-    
-    @require_valid_token()
+
+    @require_valid_token('kong')
     def list_partitions(self, host):
         url = AppConfig.Connections.url_bff + '/v1/hpc/partitions'
         paramas = {
@@ -23,7 +40,7 @@ class HPCPartitionManager(metaclass=HPCMetaService):
             "token": self.token
         }
         headers = {'Authorization': 'Bearer ' + self.user.access_token}
-        res = requests.get(url, headers=headers, params=paramas)
+        res = resilient_session().get(url, headers=headers, params=paramas)
         _res = res.json()
         code = _res.get('code')
         if code == 200:
@@ -37,10 +54,8 @@ class HPCPartitionManager(metaclass=HPCMetaService):
                 error_detail = "Cannot list partitions, please verify your host and try again later"
             SrvErrorHandler.customized_handle(ECustomizedError.CANNOT_PROCESS_HPC_JOB, True, value=error_detail)
         else:
-            SrvErrorHandler.customized_handle(ECustomizedError.CANNOT_PROCESS_HPC_JOB, 
-            True,
-            value = "List partitions")
-    
+            SrvErrorHandler.customized_handle(ECustomizedError.CANNOT_PROCESS_HPC_JOB, True, alue="List partitions")
+
     @require_valid_token()
     def get_partition(self, host, partition_name):
         url = AppConfig.Connections.url_bff + f'/v1/hpc/partitions/{partition_name}'
@@ -51,7 +66,7 @@ class HPCPartitionManager(metaclass=HPCMetaService):
             "partition_name": partition_name
         }
         headers = {'Authorization': 'Bearer ' + self.user.access_token}
-        res = requests.get(url, headers=headers, params=params)
+        res = resilient_session().get(url, headers=headers, params=params)
         _res = res.json()
         code = _res.get('code')
         if code == 200:
@@ -75,8 +90,10 @@ class HPCPartitionManager(metaclass=HPCMetaService):
 class HPCNodeManager(metaclass=HPCMetaService):
     def __init__(self):
         self.user = UserConfig()
-        self.token = self.user.hpc_token if self.user.hpc_token \
-            else SrvErrorHandler.customized_handle(ECustomizedError.CANNOT_PROCESS_HPC_JOB, True, value='Invalid HPC token')
+        if self.user.hpc_token:
+            self.token = self.user.hpc_token
+        else:
+            SrvErrorHandler.customized_handle(ECustomizedError.CANNOT_PROCESS_HPC_JOB, True, value='Invalid HPC token')
         self.username = self.user.username
 
     @require_valid_token()
@@ -89,7 +106,7 @@ class HPCNodeManager(metaclass=HPCMetaService):
             "node_name": node_name
         }
         headers = {'Authorization': 'Bearer ' + self.user.access_token}
-        res = requests.get(url, headers=headers, params=params)
+        res = resilient_session().get(url, headers=headers, params=params)
         _res = res.json()
         code = _res.get('code')
         if code == 200:
@@ -118,7 +135,7 @@ class HPCNodeManager(metaclass=HPCMetaService):
             "token": self.token
         }
         headers = {'Authorization': 'Bearer ' + self.user.access_token}
-        res = requests.get(url, headers=headers, params=paramas)
+        res = resilient_session().get(url, headers=headers, params=paramas)
         _res = res.json()
         code = _res.get('code')
         if code == 200:
@@ -132,7 +149,4 @@ class HPCNodeManager(metaclass=HPCMetaService):
                 error_detail = "Cannot list nodes, please verify your host and try again later"
             SrvErrorHandler.customized_handle(ECustomizedError.CANNOT_PROCESS_HPC_JOB, True, value=error_detail)
         else:
-            SrvErrorHandler.customized_handle(ECustomizedError.CANNOT_PROCESS_HPC_JOB, 
-            True,
-            value = "List nodes")
-
+            SrvErrorHandler.customized_handle(ECustomizedError.CANNOT_PROCESS_HPC_JOB, True, value="List nodes")
