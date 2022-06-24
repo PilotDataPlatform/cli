@@ -23,6 +23,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from app.configs.app_config import AppConfig
+from app.configs.user_config import UserConfig
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
@@ -45,6 +46,7 @@ def resilient_session():
 
 @require_valid_token()
 def search_item(project_code, zone, folder_relative_path, item_type, token, container_type='project'):
+    import app.services.logger_services.log_functions as logger
     url = AppConfig.Connections.url_bff + "/v1/project/{}/search".format(project_code)
     params = {
         'zone': zone,
@@ -57,10 +59,19 @@ def search_item(project_code, zone, folder_relative_path, item_type, token, cont
         'Authorization': "Bearer " + token,
     }
     __res = requests.get(url, params=params, headers=headers)
-    return __res.json()['result']
+    return __res.json()
 
+@require_valid_token()
+def get_file_info_by_geid(geid: list, token):
+    payload = {'geid': geid}
+    headers = {
+        'Authorization': "Bearer " + token
+    }
+    url = AppConfig.Connections.url_bff + '/v1/query/geid'
+    res = resilient_session().post(url, headers=headers, json=payload)
+    return res.json()['result']
 
-def format_to_fit_terminal(string_to_format):
+def fit_terminal_width(string_to_format):
     string_to_format = string_to_format.split('...')
     current_len = 0
     sentence = ""
@@ -107,7 +118,7 @@ def doc(arg):
 
 
 @require_valid_token()
-def void_validate_zone(action, zone, token):
+def void_validate_zone(action, zone):
     config_path = '/etc/environment'
     current_env_var = ''
     if os.path.isfile(config_path):
@@ -116,9 +127,10 @@ def void_validate_zone(action, zone, token):
         for var in variables:
             if var.startswith('ZONE'):
                 current_env_var = var[5:].replace("\n", "").replace('"', "")
+    user = UserConfig()
     url = AppConfig.Connections.url_bff + "/v1/validate/env"
     headers = {
-        'Authorization': "Bearer " + token
+        'Authorization': "Bearer " + user.access_token
     }
     payload = {"action": action, "environ": current_env_var, 'zone': zone}
     res = requests.post(url, headers=headers, json=payload)

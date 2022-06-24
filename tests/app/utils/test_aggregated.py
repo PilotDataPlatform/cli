@@ -82,4 +82,4 @@ def test_search_file_should_return_200(requests_mock, mocker):
         }
     }
     res = search_item(test_project_code, 'zone', 'folder_relative_path', 'file', 'token', 'project')
-    assert res == expected_result
+    assert res['result'] == expected_result

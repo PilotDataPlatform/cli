@@ -16,7 +16,7 @@ import os.path
 import re
 
 import click
-
+import questionary
 import app.services.logger_services.log_functions as logger
 import app.services.output_manager.help_page as file_help
 import app.services.output_manager.message_handler as message_handler
@@ -33,12 +33,12 @@ from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.output_manager.error_handler import customized_error_msg
 from app.services.user_authentication.decorator import require_valid_token
 from app.utils.aggregated import doc
-from app.utils.aggregated import format_to_fit_terminal
+from app.utils.aggregated import fit_terminal_width
 from app.utils.aggregated import get_zone
 from app.utils.aggregated import identify_target_folder
-from app.utils.aggregated import resilient_session
 from app.utils.aggregated import search_item
 from app.utils.aggregated import void_validate_zone
+from app.utils.aggregated import get_file_info_by_geid
 
 
 @click.command()
@@ -106,9 +106,9 @@ def file_put(**kwargs):
     user = UserConfig()
     # Check zone and upload-message
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
-    void_validate_zone('upload', zone, user.access_token)
+    void_validate_zone('upload', zone)
     toc = customized_error_msg(ECustomizedError.TOU_CONTENT).replace(' ', '...')
-    if zone.lower() == AppConfig.Env.core_zone.lower() and click.confirm(format_to_fit_terminal(toc), abort=True):
+    if zone.lower() == AppConfig.Env.core_zone.lower() and click.confirm(fit_terminal_width(toc), abort=True):
         pass
     project_path = click.prompt('ProjectCode') if not project_path else project_path
     project_code, target_folder = identify_target_folder(project_path)
@@ -119,7 +119,9 @@ def file_put(**kwargs):
         "project_code": project_code, "token": user.access_token,
         "attribute": attribute, "tag": tag
     }
-    src_file_info = validate_upload_event(upload_val_event)
+    validated_fieds = validate_upload_event(upload_val_event)
+    src_file_info = validated_fieds['source_file']
+    attribute = validated_fieds['attribute']
     if zone == AppConfig.Env.core_zone.lower():
         if not pipeline:
             # after validation, if not pipeline, provide default value
@@ -129,12 +131,11 @@ def file_put(**kwargs):
                 SrvErrorHandler.customized_handle(ECustomizedError.INVALID_PIPELINENAME, True)
         if not upload_message:
             upload_message = AppConfig.Env.default_upload_message
-
     # Unique Paths
     paths = set(paths)
     # upload files
     for f in paths:
-        current_folder_node, result_file = assemble_path(f, target_folder, project_code, zone, user.access_token, zip)
+        current_folder_node, result_file = assemble_path(f, target_folder, project_code, zone, user.access_token, zipping)
         upload_event = {
             'project_code': project_code,
             'file': f,
@@ -174,7 +175,7 @@ def validate_upload_event(event):
         try:
             attribute = srv_manifest.read_manifest_template(attribute)
             attribute = srv_manifest.convert_import(attribute, project_code)
-            srv_manifest.void_validate_manifest(attribute)
+            srv_manifest.validate_manifest(attribute)
         except Exception:
             SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TEMPLATE, True)
     if tag:
@@ -193,7 +194,11 @@ def validate_upload_event(event):
                 )
             else:
                 source_file_info = search_item(project_code, zone, source, 'file', token)
-    return source_file_info
+                source_file_info = source_file_info['result']
+                if not source_file_info:
+                    SrvErrorHandler.customized_handle(ECustomizedError.INVALID_SOURCE_FILE, True, value=source)
+    converted_content = {'source_file': source_file_info, 'attribute': attribute}
+    return converted_content
 
 
 @click.command(name="attribute-list")
@@ -206,16 +211,16 @@ def validate_upload_event(event):
 def file_check_manifest(project_code):
     srv_manifest = SrvFileManifests(True)
     res = srv_manifest.list_manifest(project_code)
-    if res.status_code == 200:
-        manifest_list = res.json()['result']
+    res_json = res.json()
+    if res_json.get('code') == 200:
+        manifest_list = res_json['result']
         if manifest_list:
             message_handler.SrvOutPutHandler.print_manifest_table(manifest_list)
             message_handler.SrvOutPutHandler.all_manifest_fetched()
         else:
             message_handler.SrvOutPutHandler.project_has_no_manifest(project_code)
     else:
-        error_message = res.text
-        SrvErrorHandler.default_handle(error_message, True)
+        message_handler.SrvOutPutHandler.project_has_no_manifest(project_code)
 
 
 # to ignore unsupported option: context_settings=dict(ignore_unknown_options=True,  allow_extra_args=True,)
@@ -231,31 +236,15 @@ def file_check_manifest(project_code):
 @require_valid_token()
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_ATTRIBUTE_EXPORT))
 def file_export_manifest(project_code, attribute_name):
-    user = UserConfig()
-    get_url = AppConfig.Connections.url_bff + "/v1/manifest/export"
-    headers = {
-        'Authorization': "Bearer " + user.access_token,
-    }
-    params = {'project_code': project_code,
-              'manifest_name': attribute_name}
-    res = resilient_session().get(get_url, params=params, headers=headers)
-    valid_res = res.json()
-    srv_manifest = SrvFileManifests()
-    if valid_res.get('code') == 200:
-        manifests = valid_res['result']
-        manifest_event = {'attributes': manifests.get('attributes'),
-                          'manifest_name': attribute_name,
-                          'project_code': project_code}
-        res = srv_manifest.export_template(
-            attribute_name, project_code, manifest_event)
-        message_handler.SrvOutPutHandler.print_manifest_table(manifests)
+    srv_manifest = SrvFileManifests(True)
+    manifest_info = srv_manifest.export_manifest(project_code, attribute_name)
+    if manifest_info:
+        res = srv_manifest.export_template(project_code, manifest_info[0])
+        message_handler.SrvOutPutHandler.print_manifest_table(manifest_info)
         message_handler.SrvOutPutHandler.export_manifest_template(res[0])
         message_handler.SrvOutPutHandler.export_manifest_definition(res[1])
     else:
-        result = valid_res.get('error_msg').split(' ')
-        error_attr = '_'.join(result[:-1]).upper()
-        validation_error = getattr(ECustomizedError, error_attr)
-        SrvErrorHandler.customized_handle(validation_error, True, result[-1])
+        message_handler.SrvOutPutHandler.project_has_no_manifest(project_code)
 
 
 @click.command(name="list")
@@ -267,20 +256,61 @@ def file_export_manifest(project_code, attribute_name):
               required=False,
               help=file_help.file_help_page(file_help.FileHELP.FILE_Z),
               show_default=True)
+@click.option('--page',
+              default=0,
+              required=False,
+              help=' The page to be listed',
+              show_default=True)
+@click.option('--page-size',
+              default=10,
+              required=False,
+              help='number of objects per page',
+              show_default=True)
+@click.option('-d', '--detached',
+              default=None,
+              required=False,
+              is_flag=True,
+              help='whether run in detached mode',
+              show_default=True)
 @require_valid_token()
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_LIST))
-def file_list(paths, zone):
+def file_list(paths, zone, page, page_size, detached):
     zone = get_zone(zone) if zone else 'greenroom'
     if not zone:
         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_ZONE, True)
     if len(paths) == 0:
-        SrvErrorHandler.customized_handle(
-            ECustomizedError.MISSING_PROJECT_CODE, True)
-    else:
-        srv_list = SrvFileList()
-        files = srv_list.list_files(paths, zone)
-        query_result = format_to_fit_terminal(files)
+        SrvErrorHandler.customized_handle(ECustomizedError.MISSING_PROJECT_CODE, True)
+    srv_list = SrvFileList()
+    if detached:
+        files = srv_list.list_files(paths, zone, page, page_size)
+        query_result = fit_terminal_width(files)
         logger.info(query_result)
+    else:
+        while True:
+            files = srv_list.list_files(paths, zone, page, page_size)
+            if len(files) < page_size and page == 0:
+                break
+            elif len(files) < page_size and page != 0:
+                choice = ['previous page', 'exit']
+            elif page == 0:
+                choice = ['next page', 'exit']
+            else:
+                choice = ['previous page', 'next page', 'exit']
+            query_result = fit_terminal_width(files)
+            logger.info(query_result)
+            val = questionary.select(
+                "\nWhat do you want?",
+                qmark="",
+                choices=choice).ask()
+            if val == 'exit':
+                # mhandler.SrvOutPutHandler.list_success('Project')
+                break
+            elif val == 'next page':
+                click.clear()
+                page += 1
+            elif val == 'previous page':
+                click.clear()
+                page -= 1
 
 
 @click.command(name="sync")
@@ -319,24 +349,30 @@ def file_download(**kwargs):
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone
     download_list = []
     interactive = False if len(paths) > 1 else True
+    void_validate_zone('download', zone)
     if len(paths) == 0:
         SrvErrorHandler.customized_handle(ECustomizedError.MISSING_PROJECT_CODE, interactive)
     for path in paths:
-        if geid:
+        if geid and not zipping:
             project_code = ''
+            item_res = get_file_info_by_geid([path], user.access_token)[0]
         else:
-            if len(path.split('/')) > 2:
-                target_folder = '/'.join(path.split('/')[1:-1])
-            else:
-                target_folder = ''
             project_code = path.strip('/').split('/')[0]
-            if target_folder:
-                search_item(project_code, zone, target_folder, 'folder', user.access_token)
+            target_path = '/'.join(path.split('/')[1::])
+            item_res = search_item(project_code, zone, target_path, '', user.access_token)
+        if not item_res.get('result') and not zipping:
+            error = item_res.get('error_msg')
+            if error == 'Permission Denied':
+                SrvErrorHandler.customized_handle(ECustomizedError.PERMISSION_DENIED, False)
+            else:
+                SrvErrorHandler.customized_handle(ECustomizedError.INVALID_DOWNLOAD, False, value=path)
+            continue
         if zipping:
             download_list.append(path)
         else:
             srv_download = SrvFileDownload(path, zone, project_code, geid, interactive)
-            srv_download.simple_download_file(output_path)
+            srv_download.simple_download_file(output_path, item_res)
     if download_list:
+        item_res = get_file_info_by_geid(paths, user.access_token)
         srv_download = SrvFileDownload(download_list, zone, project_code, geid, interactive)
-        srv_download.batch_download_file(output_path)
+        srv_download.batch_download_file(output_path, item_res)
