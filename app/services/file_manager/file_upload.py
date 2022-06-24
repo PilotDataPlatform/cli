@@ -190,10 +190,11 @@ class SrvSingleFileUploader(metaclass=MetaService):
             'Session-ID': self.session_id
         }
         response = resilient_session().post(url, json=payload, headers=headers)
-        if response.status_code == 200:
-            res_to_dict = response.json()
+        res_json = response.json()
+        if res_json.get('code') == 200:
             mhandler.SrvOutPutHandler.start_finalizing()
-            return res_to_dict['result']['job_id']
+            result = res_json['result']
+            return result
         else:
             SrvErrorHandler.default_handle(response.content, True)
 
@@ -201,7 +202,8 @@ class SrvSingleFileUploader(metaclass=MetaService):
     def create_file_lineage(self, source_file):
         if source_file and self.zone == AppConfig.Env.core_zone:
             child_rel_path = self.upload_form.resumable_relative_path + '/' + self.upload_form.resumable_filename
-            child_file = search_item(self.project_code, self.zone, child_rel_path, 'file', self.user.access_token)
+            child_item = search_item(self.project_code, self.zone, child_rel_path, 'file', self.user.access_token)
+            child_file = child_item['result']
             parent_file_geid = source_file['id']
             child_file_geid = child_file['id']
             lineage_event = {
@@ -218,7 +220,7 @@ class SrvSingleFileUploader(metaclass=MetaService):
 
     @require_valid_token()
     def check_status(self, converted_filename):
-        url = AppConfig.Connections.base_url + 'portal/v1/files/actions/tasks'
+        url = AppConfig.Connections.url_status
         headers = {
             'Authorization': "Bearer " + self.user.access_token,
             'Session-ID': self.session_id
@@ -238,7 +240,9 @@ class SrvSingleFileUploader(metaclass=MetaService):
                     mhandler.SrvOutPutHandler.upload_job_done()
                     return True
                 elif i.get('source') == converted_filename and i.get('status') == 'TERMINATED':
-                    SrvErrorHandler.default_handle('Upload Terminated: {}'.format(response.text), True)
+                    # SrvErrorHandler.default_handle('Upload Terminated: {}'.format(response.text), True)
+                    logger.warn('Uploading job terminated')
+                    SrvErrorHandler.customized_handle(ECustomizedError.FILE_EXIST, self.regular_file)
                 elif i.get('source') == converted_filename and i.get('status') == 'CHUNK_UPLOADED':
                     return False
                 else:
@@ -283,12 +287,13 @@ def assemble_path(f, target_folder, project_code, zone, access_token, zipping=Fa
     result_file = current_folder_node
     name_folder = current_folder_node.split('/')[0].lower()
     name_folder_res = search_item(project_code, zone, name_folder, 'name_folder', access_token)
+    name_folder_res = name_folder_res['result']
     if not name_folder_res:
         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_NAMEFOLDER, True)
     if len(current_folder_node.split('/')) > 2:
         parent_path = name_folder + '/' + '/'.join(current_folder_node.split('/')[1:-1])
         res = search_item(project_code, zone, parent_path, 'folder', access_token)
-        if not res:
+        if not res['result']:
             click.confirm(customized_error_msg(ECustomizedError.CREATE_FOLDER_IF_NOT_EXIST), abort=True)
     if zipping:
         result_file = result_file + '.zip'

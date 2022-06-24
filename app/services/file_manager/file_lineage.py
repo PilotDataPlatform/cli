@@ -18,10 +18,10 @@ import requests
 from app.configs.app_config import AppConfig
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
-
+import app.services.logger_services.log_functions as logger
 
 def create_lineage(lineage_event):
-    url = AppConfig.Connections.url_bff + "/v1/lineage"
+    url = AppConfig.Connections.url_lineage
     payload = {
         'input_id': lineage_event['input_id'],
         'output_id': lineage_event['output_id'],

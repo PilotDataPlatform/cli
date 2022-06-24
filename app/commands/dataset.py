@@ -103,7 +103,6 @@ def dataset_list(page, page_size, detached):
 @doc(dataset_help.dataset_help_page(dataset_help.DatasetHELP.DATASET_SHOW_DETAIL))
 def dataset_show_detail(code, page, page_size, detached):
     if detached:
-        logger.warn(code)
         detail_mgr = SrvDatasetDetailManager()
         detail_mgr.dataset_detail(code, page, page_size)
     else:
