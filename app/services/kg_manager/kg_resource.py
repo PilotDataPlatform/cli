@@ -1,17 +1,33 @@
-from app.services.file_manager.file_upload import get_file_in_folder
-from app.services.user_authentication.decorator import require_valid_token
-from app.models.service_meta_class import MetaService
-from app.configs.app_config import AppConfig
-from app.configs.user_config import UserConfig
+# Copyright (C) 2022 Indoc Research
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import collections
-import requests
 import json
 import os
-import app.services.logger_services.log_functions as logger
-from app.services.output_manager.error_handler import SrvErrorHandler, ECustomizedError, OverSizeError, customized_error_msg
-from app.services.output_manager.message_handler import SrvOutPutHandler
-from ...utils.aggregated import get_file_in_folder
 
+import app.services.logger_services.log_functions as logger
+from app.configs.app_config import AppConfig
+from app.configs.user_config import UserConfig
+from app.models.service_meta_class import MetaService
+from app.services.output_manager.error_handler import ECustomizedError
+from app.services.output_manager.error_handler import OverSizeError
+from app.services.output_manager.error_handler import SrvErrorHandler
+from app.services.output_manager.error_handler import customized_error_msg
+from app.services.user_authentication.decorator import require_valid_token
+from app.utils.aggregated import get_file_in_folder
+from app.utils.aggregated import resilient_session
 
 
 class SrvKGResourceMgr(metaclass=MetaService):
@@ -22,21 +38,22 @@ class SrvKGResourceMgr(metaclass=MetaService):
     def pre_load_data(self, paths):
         json_data = {}
         for path in paths:
+            invalid_json_msg = f"{path} is an invalid json file"
             try:
                 self.validate_file_size(path)
                 with open(path) as f:
                     json_data[path] = json.load(f)
             except json.decoder.JSONDecodeError:
-                SrvErrorHandler.customized_handle(ECustomizedError.INVALID_ACTION, False, f"{path} is an invalid json file")
+                SrvErrorHandler.customized_handle(ECustomizedError.INVALID_ACTION, False, invalid_json_msg)
                 continue
             except OverSizeError as e:
                 SrvErrorHandler.default_handle(str(e), False)
                 continue
-            except Exception as e:
-                SrvErrorHandler.customized_handle(ECustomizedError.INVALID_ACTION, False, f"{path} is an invalid json file")
+            except Exception:
+                SrvErrorHandler.customized_handle(ECustomizedError.INVALID_ACTION, False, invalid_json_msg)
                 continue
         return json_data
-    
+
     def validate_file_size(self, path):
         size = os.path.getsize(path)
         if size > 1000000:
@@ -61,7 +78,7 @@ class SrvKGResourceMgr(metaclass=MetaService):
             json_data = self.pre_load_data(file_to_process)
             if not json_data:
                 return
-           
+
             payload = {
                 "dataset_code": [],
                 "data": json_data
@@ -69,9 +86,9 @@ class SrvKGResourceMgr(metaclass=MetaService):
             headers = {
                 'Authorization': "Bearer " + self.user.access_token
             }
-            res = requests.post(url, headers=headers, json=payload)
+            res = resilient_session().post(url, headers=headers, json=payload)
             response = res.json()
-            code =response.get("code")
+            code = response.get("code")
             result = response.get("result")
             if code == 200:
                 ignored = result.get("ignored")

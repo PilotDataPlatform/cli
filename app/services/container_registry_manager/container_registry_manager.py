@@ -1,26 +1,48 @@
-import requests
+# Copyright (C) 2022 Indoc Research
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 from json import loads
-from app.services.user_authentication.decorator import require_valid_token
-from app.models.service_meta_class import MetaService
+
+import requests
+
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
-from app.services.output_manager.error_handler import SrvErrorHandler, ECustomizedError
-
+from app.models.service_meta_class import MetaService
+from app.services.output_manager.error_handler import ECustomizedError
+from app.services.output_manager.error_handler import SrvErrorHandler
+from app.services.user_authentication.decorator import require_valid_token
 
 
 class SrvContainerRegistryMgr(metaclass=MetaService):
+    def check_harbor_url_set(self):
+        if not AppConfig.Connections.url_harbor or AppConfig.Connections.url_harbor == '':
+            SrvErrorHandler.customized_handle(ECustomizedError.CONTAINER_REGISTRY_NO_URL, self.interactive)
+
     def __init__(self, interactive=True):
         self.user = UserConfig()
         self.interactive = interactive
         requests.packages.urllib3.disable_warnings()
-    
+        self.check_harbor_url_set()
+
     def get_public(self, visibility: str) -> bool:
         if visibility == 'public':
             return True
         elif visibility == 'private':
             return False
         SrvErrorHandler.customized_handle(ECustomizedError.CONTAINER_REGISTRY_VISIBILITY_INVALID, self.interactive)
-    
+
     def get_role_number(self, role: str) -> int:
         if role == 'admin':
             return 1
@@ -77,7 +99,7 @@ class SrvContainerRegistryMgr(metaclass=MetaService):
                 SrvErrorHandler.customized_handle(ECustomizedError.CONTAINER_REGISTRY_OTHER, self.interactive)
         except Exception:
             SrvErrorHandler.default_handle(response.content, self.interactive)
-    
+
     @require_valid_token(azp='harbor')
     def get_current_user_secret(self) -> str:
         api_url = f'{AppConfig.Connections.url_harbor}/api/v2.0/users/current'
@@ -105,19 +127,19 @@ class SrvContainerRegistryMgr(metaclass=MetaService):
             'Authorization': 'Bearer ' + self.user.access_token
         }
         payload = {
-            'project_name' : name,
-            'public' : public,
-            'metadata' : {
-                'public' : str(public).lower(),
-                'enable_content_trust' : 'false',
-                'prevent_vul' : 'false',
-                'severity' : 'none',
-                'auto_scan' : 'false',
-                'reuse_sys_cve_allowlist' : 'true',
-                'retention_id' : 'cli'
+            'project_name': name,
+            'public': public,
+            'metadata': {
+                'public': str(public).lower(),
+                'enable_content_trust': 'false',
+                'prevent_vul': 'false',
+                'severity': 'none',
+                'auto_scan': 'false',
+                'reuse_sys_cve_allowlist': 'true',
+                'retention_id': 'cli'
             },
-            'registry_id' : None,
-            'storage_limit' : 0,
+            'registry_id': None,
+            'storage_limit': 0,
         }
         try:
             response = requests.post(api_url, headers=headers, json=payload, verify=False)
@@ -130,7 +152,8 @@ class SrvContainerRegistryMgr(metaclass=MetaService):
             elif response.status_code == 404:
                 SrvErrorHandler.customized_handle(ECustomizedError.ERROR_CONNECTION, self.interactive)
             elif response.status_code == 409:
-                SrvErrorHandler.customized_handle(ECustomizedError.CONTAINER_REGISTRY_DUPLICATE_PROJECT, self.interactive)
+                SrvErrorHandler.customized_handle(
+                    ECustomizedError.CONTAINER_REGISTRY_DUPLICATE_PROJECT, self.interactive)
             else:
                 SrvErrorHandler.customized_handle(ECustomizedError.CONTAINER_REGISTRY_OTHER, self.interactive)
         except Exception:

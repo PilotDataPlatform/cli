@@ -1,6 +1,21 @@
-from app.configs.app_config import AppConfig
-from app.resources.custom_help import HelpPage
+# Copyright (C) 2022 Indoc Research
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import enum
+
+from app.resources.custom_help import HelpPage
 
 help_msg = HelpPage.page
 update = help_msg.get('update', 'default update message')
@@ -20,16 +35,18 @@ class DatasetHELP(enum.Enum):
 
 
 def dataset_help_page(DatasetHELP: DatasetHELP):
-    help = help_msg.get('dataset', 'default dataset help')
-    return help.get(DatasetHELP.name)
+    helps = help_msg.get('dataset', 'default dataset help')
+    return helps.get(DatasetHELP.name)
+
 
 class ProjectHELP(enum.Enum):
     PROJECT_LIST = "PROJECT_LIST"
 
 
 def project_help_page(ProjectHELP: ProjectHELP):
-    help = help_msg.get('project', 'default project help')
-    return help.get(ProjectHELP.name)
+    helps = help_msg.get('project', 'default project help')
+    return helps.get(ProjectHELP.name)
+
 
 class UserHELP(enum.Enum):
     USER_LOGIN = "USER_LOGIN"
@@ -40,8 +57,8 @@ class UserHELP(enum.Enum):
 
 
 def user_help_page(UserHELP: UserHELP):
-    help = help_msg.get('user', 'default user help')
-    return help.get(UserHELP.name)
+    helps = help_msg.get('user', 'default user help')
+    return helps.get(UserHELP.name)
 
 
 class FileHELP(enum.Enum):
@@ -65,9 +82,10 @@ class FileHELP(enum.Enum):
     FILE_UPLOAD_PIPELINE = "FILE_UPLOAD_PIPELINE"
     FILE_UPLOAD_ZIP = "FILE_UPLOAD_ZIP"
 
+
 def file_help_page(FileHELP: FileHELP):
-    help = help_msg.get('file', 'default file help')
-    return help.get(FileHELP.name)
+    helps = help_msg.get('file', 'default file help')
+    return helps.get(FileHELP.name)
 
 
 class HpcHELP(enum.Enum):
@@ -85,8 +103,9 @@ class HpcHELP(enum.Enum):
 
 
 def hpc_help_page(HpcHELP: HpcHELP):
-    help = help_msg.get('hpc', 'default hpc help')
-    return help.get(HpcHELP.name)
+    helps = help_msg.get('hpc', 'default hpc help')
+    return helps.get(HpcHELP.name)
+
 
 class KgResourceHELP(enum.Enum):
     KG_IMPORT = "KG_IMPORT"
@@ -94,8 +113,9 @@ class KgResourceHELP(enum.Enum):
 
 
 def kg_resource_help_page(KgResourceHELP: KgResourceHELP):
-    help = help_msg.get('knowledge_graph', 'default kg help')
-    return help.get(KgResourceHELP.name)
+    helps = help_msg.get('knowledge_graph', 'default kg help')
+    return helps.get(KgResourceHELP.name)
+
 
 class ContainerRegistryHELP(enum.Enum):
     LIST_PROJECTS = "LIST_PROJECTS"
@@ -104,6 +124,7 @@ class ContainerRegistryHELP(enum.Enum):
     GET_SECRET = "GET_SECRET"
     SHARE_PROJECT = "SHARE_PROJECT"
 
+
 def cr_help_page(ContainerRegistryHELP: ContainerRegistryHELP):
-    help = help_msg.get('container_registry', 'default kg help')
-    return help.get(ContainerRegistryHELP.name)
+    helps = help_msg.get('container_registry', 'default kg help')
+    return helps.get(ContainerRegistryHELP.name)

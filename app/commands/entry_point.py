@@ -1,52 +1,95 @@
+# Copyright (C) 2022 Indoc Research
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import click
-from .user import login, logout
-from .project import project_list_all
-from .file import file_put, file_check_manifest, file_export_manifest, file_list, file_download
-from .dataset import dataset_list, dataset_show_detail, dataset_download
-from .hpc import hpc_auth, hpc_job_info, hpc_job_submit
-from .hpc import hpc_list_nodes, hpc_get_node, hpc_list_partitions, hpc_get_partition
-from .kg_resource import kg_resource
-from .container_registry import create_project, list_projects, list_repositories, get_secret, invite_member
+
 from app.services.user_authentication.decorator import require_login_session
+
+from .container_registry import create_project
+from .container_registry import get_secret
+from .container_registry import invite_member
+from .container_registry import list_projects
+from .container_registry import list_repositories
+from .dataset import dataset_download
+from .dataset import dataset_list
+from .dataset import dataset_show_detail
+from .file import file_check_manifest
+from .file import file_download
+from .file import file_export_manifest
+from .file import file_list
+from .file import file_put
+from .hpc import hpc_auth
+from .hpc import hpc_get_node
+from .hpc import hpc_get_partition
+from .hpc import hpc_job_info
+from .hpc import hpc_job_submit
+from .hpc import hpc_list_nodes
+from .hpc import hpc_list_partitions
+from .kg_resource import kg_resource
+from .project import project_list_all
+from .user import login
+from .user import logout
+
 
 def command_groups():
     commands = ['file', 'user', 'project', 'dataset', 'hpc', 'kg_resource', 'container_registry']
     return commands
 
+
 @click.group()
 def entry_point():
     pass
+
 
 @entry_point.group(name="project")
 @require_login_session
 def project_group():
     pass
 
+
 @entry_point.group(name="dataset")
 @require_login_session
 def dataset_group():
     pass
+
 
 @entry_point.group(name="file")
 @require_login_session
 def file_group():
     pass
 
+
 @entry_point.group(name="user")
 def user_group():
     pass
+
 
 @entry_point.group(name="hpc")
 def hpc_group():
     pass
 
+
 @entry_point.group(name="kg_resource")
 def kg_resource_group():
     pass
 
+
 @entry_point.group(name="container_registry")
 def cr_group():
     pass
+
 
 file_group.add_command(file_put)
 file_group.add_command(file_check_manifest)
