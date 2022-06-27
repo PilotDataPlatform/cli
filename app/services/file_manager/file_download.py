@@ -31,8 +31,8 @@ from app.services.user_authentication.decorator import require_valid_token
 from app.utils.aggregated import get_zone
 from app.utils.aggregated import resilient_session
 from app.utils.aggregated import search_item
-from app.utils.aggregated import void_validate_zone
 from app.utils.aggregated import get_file_info_by_geid
+
 
 class SrvFileDownload(metaclass=MetaService):
     def __init__(self, path, zone, project_code, by_geid=False, interactive=True):
@@ -287,7 +287,7 @@ class SrvFileDownload(metaclass=MetaService):
             if len(total_files) > 1:
                 download_tasks[k]['total_size'] = 0
         return download_tasks
-    
+
     def handle_geid_downloading(self, item_res):
         download_tasks = self.group_file_geid_by_project(item_res)
         item_res = item_res[0].get('result')[0]
@@ -303,7 +303,7 @@ class SrvFileDownload(metaclass=MetaService):
             self.total_size = v.get('total_size')
             self.url = self.get_download_url(self.zone)
         return presigned_task, item_name
-    
+
     def handle_path_downloading(self, item):
         item_res = item.get('result')
         self.path = self.path[0]
@@ -318,7 +318,6 @@ class SrvFileDownload(metaclass=MetaService):
         else:
             self.total_size = ''
         return presigned_task, item_name
-
 
     @require_valid_token()
     def simple_download_file(self, output_path, item_res):

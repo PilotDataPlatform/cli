@@ -311,6 +311,7 @@ def simple_upload(upload_event):
     compress_zip = upload_event.get('compress_zip', False)
     regular_file = upload_event.get('regular_file', True)
     source_file = upload_event.get('valid_source')
+    attribute = upload_event.get('attribute')
     mhandler.SrvOutPutHandler.start_uploading(my_file)
     base_path = ''
     if os.path.isdir(my_file):
@@ -353,11 +354,12 @@ def simple_upload(upload_event):
         file_uploader.generate_meta()
         file_uploader.stream_upload()
         file_uploader.on_succeed()
-    if source_file:
+    if source_file or attribute:
         continue_loop = True
         while continue_loop:
             succeed = file_uploader.check_status(converted_filename)
             continue_loop = not succeed
             time.sleep(0.5)
-        file_uploader.create_file_lineage(source_file)
-        os.remove(upload_file_path[0]) if os.path.isdir(my_file) and job_type == 'AS_FILE' else None
+        if source_file:
+            file_uploader.create_file_lineage(source_file)
+            os.remove(upload_file_path[0]) if os.path.isdir(my_file) and job_type == 'AS_FILE' else None

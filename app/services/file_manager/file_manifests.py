@@ -15,7 +15,6 @@
 
 import requests
 import json
-import app.services.logger_services.log_functions as logger
 import app.services.output_manager.message_handler as message_handler
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
@@ -23,6 +22,7 @@ from app.models.service_meta_class import MetaService
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
+
 
 def dupe_checking_hook(pairs):
     result = {}
@@ -94,7 +94,7 @@ class SrvFileManifests(metaclass=MetaService):
         params = {'project_code': project_code}
         res = requests.get(get_url, params=params, headers=headers)
         return res
-    
+
     @require_valid_token()
     def export_manifest(self, project_code, attribute_name):
         get_url = AppConfig.Connections.url_bff + "/v1/manifest/export"
@@ -111,7 +111,7 @@ class SrvFileManifests(metaclass=MetaService):
         if code == 404:
             SrvErrorHandler.customized_handle(ECustomizedError.MANIFEST_NOT_EXIST, True, value=attribute_name)
         elif code == 403:
-             SrvErrorHandler.customized_handle(ECustomizedError.CODE_NOT_FOUND, True)
+            SrvErrorHandler.customized_handle(ECustomizedError.CODE_NOT_FOUND, True)
         else:
             return result
 
