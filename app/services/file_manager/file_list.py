@@ -20,7 +20,7 @@ from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
 from app.utils.aggregated import search_item
-import app.services.logger_services.log_functions as logger
+
 
 class SrvFileList(metaclass=MetaService):
     user = UserConfig()

@@ -46,7 +46,6 @@ def resilient_session():
 
 @require_valid_token()
 def search_item(project_code, zone, folder_relative_path, item_type, token, container_type='project'):
-    import app.services.logger_services.log_functions as logger
     url = AppConfig.Connections.url_bff + "/v1/project/{}/search".format(project_code)
     params = {
         'zone': zone,
@@ -61,6 +60,7 @@ def search_item(project_code, zone, folder_relative_path, item_type, token, cont
     __res = requests.get(url, params=params, headers=headers)
     return __res.json()
 
+
 @require_valid_token()
 def get_file_info_by_geid(geid: list, token):
     payload = {'geid': geid}
@@ -70,6 +70,7 @@ def get_file_info_by_geid(geid: list, token):
     url = AppConfig.Connections.url_bff + '/v1/query/geid'
     res = resilient_session().post(url, headers=headers, json=payload)
     return res.json()['result']
+
 
 def fit_terminal_width(string_to_format):
     string_to_format = string_to_format.split('...')

@@ -143,7 +143,8 @@ def file_put(**kwargs):
             'zone': zone,
             'upload_message': upload_message,
             'current_folder_node': current_folder_node,
-            'compress_zip': zipping
+            'compress_zip': zipping,
+            'attribute': attribute
         }
         if pipeline:
             upload_event['process_pipeline'] = pipeline
