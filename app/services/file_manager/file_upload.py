@@ -240,8 +240,6 @@ class SrvSingleFileUploader(metaclass=MetaService):
                     mhandler.SrvOutPutHandler.upload_job_done()
                     return True
                 elif i.get('source') == converted_filename and i.get('status') == 'TERMINATED':
-                    # SrvErrorHandler.default_handle('Upload Terminated: {}'.format(response.text), True)
-                    logger.warn('Uploading job terminated')
                     SrvErrorHandler.customized_handle(ECustomizedError.FILE_EXIST, self.regular_file)
                 elif i.get('source') == converted_filename and i.get('status') == 'CHUNK_UPLOADED':
                     return False
@@ -287,8 +285,11 @@ def assemble_path(f, target_folder, project_code, zone, access_token, zipping=Fa
     result_file = current_folder_node
     name_folder = current_folder_node.split('/')[0].lower()
     name_folder_res = search_item(project_code, zone, name_folder, 'name_folder', access_token)
-    name_folder_res = name_folder_res['result']
-    if not name_folder_res:
+    name_folder_code = name_folder_res['code']
+    name_folder_result = name_folder_res['result']
+    if name_folder_code == 403:
+        SrvErrorHandler.customized_handle(ECustomizedError.PERMISSION_DENIED, True)
+    elif not name_folder_result:
         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_NAMEFOLDER, True)
     if len(current_folder_node.split('/')) > 2:
         parent_path = name_folder + '/' + '/'.join(current_folder_node.split('/')[1:-1])

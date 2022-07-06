@@ -346,34 +346,40 @@ def file_download(**kwargs):
     zone = kwargs.get('zone')
     zipping = kwargs.get('zip')
     geid = kwargs.get('geid')
-    user = UserConfig()
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone
-    download_list = []
     interactive = False if len(paths) > 1 else True
     void_validate_zone('download', zone)
+    user = UserConfig()
     if len(paths) == 0:
         SrvErrorHandler.customized_handle(ECustomizedError.MISSING_PROJECT_CODE, interactive)
-    for path in paths:
-        if geid and not zipping:
-            project_code = ''
-            item_res = get_file_info_by_geid([path], user.access_token)[0]
-        else:
+    # Query file information and collecting errors
+    if geid:
+        item_res = get_file_info_by_geid(paths, user.access_token)
+    else:
+        item_res = []
+        for path in paths:
             project_code = path.strip('/').split('/')[0]
             target_path = '/'.join(path.split('/')[1::])
-            item_res = search_item(project_code, zone, target_path, '', user.access_token)
-        if not item_res.get('result') and not zipping:
-            error = item_res.get('error_msg')
-            if error == 'Permission Denied':
-                SrvErrorHandler.customized_handle(ECustomizedError.PERMISSION_DENIED, False)
+            item = search_item(project_code, zone, target_path, '', user.access_token)
+            if item.get('code') == 200 and item.get('result'):
+                item_status = 'success'
+                item_result = item.get('result')
+                item_geid = item.get('result').get('id')
+            elif item.get('code') == 403 and item.get('error_msg'):
+                item_status = item.get('error_msg')
+                item_result = {}
+                item_geid = path
             else:
-                SrvErrorHandler.customized_handle(ECustomizedError.INVALID_DOWNLOAD, False, value=path)
-            continue
-        if zipping:
-            download_list.append(path)
-        else:
-            srv_download = SrvFileDownload(path, zone, project_code, geid, interactive)
-            srv_download.simple_download_file(output_path, item_res)
-    if download_list:
-        item_res = get_file_info_by_geid(paths, user.access_token)
-        srv_download = SrvFileDownload(download_list, zone, project_code, geid, interactive)
+                item_status = 'File Not Exist'
+                item_result = {}
+                item_geid = path
+            # when file not exist there will be no response, the geid will be input geid for error handling
+            item_res.append({'status': item_status, 'result': item_result, 'geid': item_geid})
+    # Downloading by batch or single
+    if zipping and len(paths) > 1:
+        srv_download = SrvFileDownload(interactive)
         srv_download.batch_download_file(output_path, item_res)
+    else:
+        for item in item_res:
+            srv_download = SrvFileDownload(interactive)
+            srv_download.simple_download_file(output_path, [item])
