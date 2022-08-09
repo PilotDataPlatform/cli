@@ -28,10 +28,7 @@ from app.models.service_meta_class import MetaService
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
-from app.utils.aggregated import get_zone
 from app.utils.aggregated import resilient_session
-from app.utils.aggregated import search_item
-from app.utils.aggregated import get_file_info_by_geid
 
 
 class SrvFileDownload(metaclass=MetaService):
