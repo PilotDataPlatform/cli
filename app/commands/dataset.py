@@ -16,7 +16,6 @@
 import click
 import questionary
 
-import app.services.logger_services.log_functions as logger
 import app.services.output_manager.help_page as dataset_help
 import app.services.output_manager.message_handler as message_handler
 from app.services.dataset_manager.dataset_detail import SrvDatasetDetailManager
@@ -103,7 +102,6 @@ def dataset_list(page, page_size, detached):
 @doc(dataset_help.dataset_help_page(dataset_help.DatasetHELP.DATASET_SHOW_DETAIL))
 def dataset_show_detail(code, page, page_size, detached):
     if detached:
-        logger.warn(code)
         detail_mgr = SrvDatasetDetailManager()
         detail_mgr.dataset_detail(code, page, page_size)
     else:

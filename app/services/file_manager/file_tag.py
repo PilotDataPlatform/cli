@@ -15,6 +15,8 @@
 
 import re
 
+import requests
+
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.models.service_meta_class import MetaService
@@ -22,7 +24,6 @@ from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.output_manager.error_handler import customized_error_msg
 from app.services.user_authentication.decorator import require_valid_token
-from app.utils.aggregated import resilient_session
 
 
 class SrvFileTag(metaclass=MetaService):
@@ -65,13 +66,17 @@ class SrvFileTag(metaclass=MetaService):
             return False, error
 
     @require_valid_token()
-    def add_tag(self, tags: list, geid: str, container_id):
+    def add_tag(self, tags: list, geid: str):
         payload = {"taglist": tags, "geid": geid}
+        payload = {
+            "tags": tags,
+            "inherit": False
+        }
         headers = {
             'Authorization': "Bearer " + self.user.access_token,
         }
-        url = self.appconfig.Connections.url_file_tag + '/' + str(container_id) + '/tags'
-        res = resilient_session().post(url, headers=headers, json=payload)
+        url = self.appconfig.Connections.url_file_tag % geid
+        res = requests.post(url, headers=headers, json=payload)
         if res.status_code == 200:
             result = res.json()['result']
             return True, result
