@@ -23,6 +23,7 @@ class ENVAR():
     config_path = '{}/.{}cli/'.format(os.environ.get('HOME') or os.environ.get('HOMEPATH'), project)
     custom_path = 'app/resources'
     harbor_client_secret = ''
+
     base_url = ''
     url_harbor = ''
     url_authn = ''
