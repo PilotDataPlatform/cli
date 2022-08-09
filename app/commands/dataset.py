@@ -148,7 +148,7 @@ def dataset_show_detail(code, page, page_size, detached):
 def dataset_download(code, output_path, version):
     srv_detail = SrvDatasetDetailManager(interactive=False)
     for dataset_code in code:
-        dataset_info = srv_detail.dataset_detail(dataset_code, page=0, page_size=10)
+        dataset_info = srv_detail.dataset_detail(dataset_code, page=0, page_size=500)
         if not dataset_info:
             continue
         dataset_geid = dataset_info.get('general_info').get('id')

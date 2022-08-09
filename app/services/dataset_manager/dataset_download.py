@@ -16,7 +16,9 @@
 import datetime
 import os
 import time
+from urllib.parse import unquote
 
+import requests
 from tqdm import tqdm
 
 import app.services.logger_services.log_functions as logger
@@ -26,7 +28,6 @@ from app.models.service_meta_class import MetaService
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.output_manager.message_handler import SrvOutPutHandler
-from app.utils.aggregated import resilient_session
 
 from ..user_authentication.decorator import require_valid_token
 
@@ -41,6 +42,7 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
         self.hash_code = ''
         self.version = ''
         self.download_url = ''
+        self.default_filename = ''
 
     @require_valid_token()
     def pre_dataset_version_download(self):
@@ -52,7 +54,7 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
         }
         payload = {'version': self.version}
         try:
-            response = resilient_session().get(url, headers=headers, params=payload)
+            response = requests.get(url, headers=headers, params=payload)
             res = response.json()
             code = res.get('code')
             if code == 404:
@@ -76,7 +78,7 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
             "operator": self.user.username
         }
         try:
-            response = resilient_session().post(url, headers=headers, json=payload)
+            response = requests.post(url, headers=headers, json=payload)
             res = response.json()
             return res
         except Exception:
@@ -84,14 +86,26 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
 
     def generate_download_url(self):
         if self.version:
-            self.download_url = AppConfig.Connections.url_dataset_v2download + f"/download/{self.hash_code}"
+            download_url = AppConfig.Connections.url_dataset_v2download + f"/download/{self.hash_code}"
         else:
-            self.download_url = AppConfig.Connections.url_download_core + f"v1/download/{self.hash_code}"
+            download_url = AppConfig.Connections.url_download_core + f"v1/download/{self.hash_code}"
+        headers = {
+            'Authorization': "Bearer " + self.user.access_token,
+        }
+        res = requests.get(download_url, headers=headers)
+        res_json = res.json()
+        if self.version:
+            self.download_url = res.json().get('url')
+            default_filename = self.download_url.split('/')[-1].split('?')[0]
+            self.default_filename = unquote(default_filename)
+        else:
+            self.download_url = download_url
+            self.default_filename = res_json.get('error_msg').split('/')[-1].rstrip('.')
 
     @require_valid_token()
     def download_status(self):
         url = AppConfig.Connections.url_download_core + f"v1/download/status/{self.hash_code}"
-        res = resilient_session().get(url)
+        res = requests.get(url)
         res_json = res.json()
         if res_json.get('code') == 200:
             status = res_json.get('result').get('status')
@@ -110,17 +124,13 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
     @require_valid_token()
     def send_download_request(self):
         logger.info("start downloading...")
-        headers = {
-            'Authorization': "Bearer " + self.user.access_token,
-        }
-        with resilient_session().get(self.download_url, headers=headers, stream=True) as r:
+        with requests.get(self.download_url, stream=True, allow_redirects=True) as r:
             r.raise_for_status()
-            response_file_info = str(r.headers.get('content-disposition', '')).replace('attachment; filename', '')
-            default_filename = response_file_info[1:].strip('"')
-            if not default_filename:
+            # Since version zip file was created by our system, thus no need to consider filename contain '?'
+            if not self.default_filename:
                 filename = f"{self.dataset_code}_{self.version}_{str(datetime.datetime.now())}"
             else:
-                filename = default_filename
+                filename = self.default_filename
             output_path = self.avoid_duplicate_file_name(self.output.rstrip('/') + '/' + filename)
             self.total_size = int(r.headers.get('Content-length'))
             with open(output_path, 'wb') as file, tqdm(
