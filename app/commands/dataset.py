@@ -16,7 +16,6 @@
 import click
 import questionary
 
-import app.services.logger_services.log_functions as logger
 import app.services.output_manager.help_page as dataset_help
 import app.services.output_manager.message_handler as message_handler
 from app.services.dataset_manager.dataset_detail import SrvDatasetDetailManager

@@ -18,7 +18,7 @@ import requests
 from app.configs.app_config import AppConfig
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
-import app.services.logger_services.log_functions as logger
+
 
 def create_lineage(lineage_event):
     url = AppConfig.Connections.url_lineage

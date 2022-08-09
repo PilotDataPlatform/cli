@@ -25,7 +25,7 @@ class AppConfig(object):
         msg_path = ENVAR.custom_path
         user_config_file = f"{user_config_path}/config.ini"
         token_warn_need_refresh = 120  # seconds
-        chunk_size = 2  # chunk size mb
+        chunk_size = 5  # chunk size mb
         resilient_retry = 3
         resilient_backoff = 1
         resilient_retry_code = [502, 503, 504, 404, 401]
