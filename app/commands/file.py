@@ -135,7 +135,8 @@ def file_put(**kwargs):
     paths = set(paths)
     # upload files
     for f in paths:
-        current_folder_node, result_file = assemble_path(f, target_folder, project_code, zone, user.access_token, zipping)
+        current_folder_node, result_file = assemble_path(
+            f, target_folder, project_code, zone, user.access_token, zipping)
         upload_event = {
             'project_code': project_code,
             'file': f,
