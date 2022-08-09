@@ -27,6 +27,8 @@ import app.services.output_manager.message_handler as mhandler
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.models.service_meta_class import MetaService
+from app.services.file_manager.file_manifests import SrvFileManifests
+from app.services.file_manager.file_tag import SrvFileTag
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.output_manager.error_handler import customized_error_msg
@@ -36,6 +38,64 @@ from app.utils.aggregated import search_item
 
 from .file_lineage import create_lineage
 from ...utils.aggregated import get_file_in_folder
+
+
+class UploadEventValidator:
+
+    def __init__(self, project_code, zone, upload_message, source, process_pipeline, token, attribute, tag):
+        self.project_code = project_code
+        self.zone = zone
+        self.upload_message = upload_message
+        self.source = source
+        self.process_pipeline = process_pipeline
+        self.token = token
+        self.attribute = attribute
+        self.tag = tag
+
+    def validate_zone(self):
+        source_file_info = {}
+        if not self.upload_message:
+            SrvErrorHandler.customized_handle(
+                ECustomizedError.INVALID_UPLOAD_REQUEST, True, value="upload-message is required")
+        if self.source:
+            if not self.process_pipeline:
+                SrvErrorHandler.customized_handle(
+                    ECustomizedError.INVALID_UPLOAD_REQUEST,
+                    True,
+                    value="process pipeline name required"
+                )
+            else:
+                source_file_info = search_item(self.project_code, self.zone, self.source, 'file', self.token)
+                source_file_info = source_file_info['result']
+                if not source_file_info:
+                    SrvErrorHandler.customized_handle(ECustomizedError.INVALID_SOURCE_FILE, True, value=self.source)
+        return source_file_info
+
+    def validate_attribute(self):
+        srv_manifest = SrvFileManifests()
+        if not os.path.isfile(self.attribute):
+            raise Exception('Attribute not exist in the given path')
+        try:
+            attribute = srv_manifest.read_manifest_template(self.attribute)
+            attribute = srv_manifest.convert_import(attribute, self.project_code)
+            srv_manifest.validate_manifest(attribute)
+        except Exception:
+            SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TEMPLATE, True)
+
+    def validate_tag(self):
+        srv_tag = SrvFileTag()
+        srv_tag.validate_taglist(self.tag)
+
+    def validate_upload_event(self):
+        source_file_info = {}
+        if self.attribute:
+            self.validate_attribute()
+        if self.tag:
+            self.validate_tag()
+        if self.zone == AppConfig.Env.core_zone.lower():
+            source_file_info = self.validate_zone()
+        converted_content = {'source_file': source_file_info, 'attribute': self.attribute}
+        return converted_content
 
 
 class SrvSingleFileUploader(metaclass=MetaService):
@@ -167,8 +227,7 @@ class SrvSingleFileUploader(metaclass=MetaService):
         }
         # retry three times
         for i in range(AppConfig.Env.resilient_retry):
-            response = resilient_session().post(
-                url, data=payload, headers=headers, files=files)
+            response = resilient_session().post(url, data=payload, headers=headers, files=files)
             if response.status_code == 200:
                 res_to_dict = response.json()
                 return res_to_dict
@@ -190,10 +249,11 @@ class SrvSingleFileUploader(metaclass=MetaService):
             'Session-ID': self.session_id
         }
         response = resilient_session().post(url, json=payload, headers=headers)
-        if response.status_code == 200:
-            res_to_dict = response.json()
+        res_json = response.json()
+        if res_json.get('code') == 200:
             mhandler.SrvOutPutHandler.start_finalizing()
-            return res_to_dict['result']['job_id']
+            result = res_json['result']
+            return result
         else:
             SrvErrorHandler.default_handle(response.content, True)
 
@@ -201,7 +261,8 @@ class SrvSingleFileUploader(metaclass=MetaService):
     def create_file_lineage(self, source_file):
         if source_file and self.zone == AppConfig.Env.core_zone:
             child_rel_path = self.upload_form.resumable_relative_path + '/' + self.upload_form.resumable_filename
-            child_file = search_item(self.project_code, self.zone, child_rel_path, 'file', self.user.access_token)
+            child_item = search_item(self.project_code, self.zone, child_rel_path, 'file', self.user.access_token)
+            child_file = child_item['result']
             parent_file_geid = source_file['id']
             child_file_geid = child_file['id']
             lineage_event = {
@@ -218,7 +279,7 @@ class SrvSingleFileUploader(metaclass=MetaService):
 
     @require_valid_token()
     def check_status(self, converted_filename):
-        url = AppConfig.Connections.base_url + 'portal/v1/files/actions/tasks'
+        url = AppConfig.Connections.url_status
         headers = {
             'Authorization': "Bearer " + self.user.access_token,
             'Session-ID': self.session_id
@@ -238,7 +299,9 @@ class SrvSingleFileUploader(metaclass=MetaService):
                     mhandler.SrvOutPutHandler.upload_job_done()
                     return True
                 elif i.get('source') == converted_filename and i.get('status') == 'TERMINATED':
-                    SrvErrorHandler.default_handle('Upload Terminated: {}'.format(response.text), True)
+                    # SrvErrorHandler.default_handle('Upload Terminated: {}'.format(response.text), True)
+                    logger.warn('Uploading job terminated')
+                    SrvErrorHandler.customized_handle(ECustomizedError.FILE_EXIST, self.regular_file)
                 elif i.get('source') == converted_filename and i.get('status') == 'CHUNK_UPLOADED':
                     return False
                 else:
@@ -283,12 +346,13 @@ def assemble_path(f, target_folder, project_code, zone, access_token, zipping=Fa
     result_file = current_folder_node
     name_folder = current_folder_node.split('/')[0].lower()
     name_folder_res = search_item(project_code, zone, name_folder, 'name_folder', access_token)
+    name_folder_res = name_folder_res['result']
     if not name_folder_res:
         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_NAMEFOLDER, True)
     if len(current_folder_node.split('/')) > 2:
         parent_path = name_folder + '/' + '/'.join(current_folder_node.split('/')[1:-1])
         res = search_item(project_code, zone, parent_path, 'folder', access_token)
-        if not res:
+        if not res['result']:
             click.confirm(customized_error_msg(ECustomizedError.CREATE_FOLDER_IF_NOT_EXIST), abort=True)
     if zipping:
         result_file = result_file + '.zip'
@@ -306,6 +370,7 @@ def simple_upload(upload_event):
     compress_zip = upload_event.get('compress_zip', False)
     regular_file = upload_event.get('regular_file', True)
     source_file = upload_event.get('valid_source')
+    attribute = upload_event.get('attribute')
     mhandler.SrvOutPutHandler.start_uploading(my_file)
     base_path = ''
     if os.path.isdir(my_file):
@@ -348,11 +413,12 @@ def simple_upload(upload_event):
         file_uploader.generate_meta()
         file_uploader.stream_upload()
         file_uploader.on_succeed()
-    if source_file:
+    if source_file or attribute:
         continue_loop = True
         while continue_loop:
             succeed = file_uploader.check_status(converted_filename)
             continue_loop = not succeed
             time.sleep(0.5)
-        file_uploader.create_file_lineage(source_file)
-        os.remove(upload_file_path[0]) if os.path.isdir(my_file) and job_type == 'AS_FILE' else None
+        if source_file:
+            file_uploader.create_file_lineage(source_file)
+            os.remove(upload_file_path[0]) if os.path.isdir(my_file) and job_type == 'AS_FILE' else None

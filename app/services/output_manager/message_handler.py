@@ -64,7 +64,8 @@ class SrvOutPutHandler(metaclass=MetaService):
     @staticmethod
     def project_has_no_manifest(project_code):
         """e.g. Project 0212 does not have any attribute yet """
-        return logger.warn(f'No attributes exist in Project {project_code} yet.')
+        return logger.warn(
+            f'No attributes exist in Project {project_code} yet, or you may need to check your project list')
 
     @staticmethod
     def export_manifest_template(name):
@@ -168,7 +169,7 @@ class SrvOutPutHandler(metaclass=MetaService):
         if not isinstance(manifest_list, list):
             manifest_list = [manifest_list]
         for m in manifest_list:
-            manifest_name = str(m.get('manifest_name'))
+            manifest_name = str(m.get('name'))
             logger.info('\n' + manifest_name)
             logger.info('-'.ljust(col_width, '-'))
             logger.info('|' + "Attribute Name".center(attribute_name_width, ' ') + '|'
@@ -179,12 +180,14 @@ class SrvOutPutHandler(metaclass=MetaService):
             if not attributes:
                 attributes = [{'name': '', 'optional': '', 'type': '', 'value': ''}]
             for attr in attributes:
-                if not attr:
-                    attr = {'name': '', 'optional': '', 'type': '', 'value': ''}
+                if isinstance(attr.get('options', ''), list):
+                    options = ' '.join(attr.get('options', ''))
+                else:
+                    options = str(attr.get('options', ''))
                 attr_name = str(attr['name'])[0:17] + '...' if len(str(attr['name'])) > 17 else str(attr['name'])
                 attr_option = str(attr['optional'])
                 attr_type = str(attr['type'])
-                attr_value = str(attr['value'])[0:17] + '...' if len(str(attr['value'])) > 17 else str(attr['value'])
+                attr_value = options[0:17] + '...' if len(options) > 17 else options
                 logger.info('-'.ljust(col_width, '-'))
                 logger.info('|' + attr_name.center(attribute_name_width, ' ') + '|'
                             + attr_type.center(type_width, ' ') + '|'

@@ -25,7 +25,7 @@ class AppConfig(object):
         msg_path = ENVAR.custom_path
         user_config_file = f"{user_config_path}/config.ini"
         token_warn_need_refresh = 120  # seconds
-        chunk_size = 2  # chunk size mb
+        chunk_size = 5  # chunk size mb
         resilient_retry = 3
         resilient_backoff = 1
         resilient_retry_code = [502, 503, 504, 404, 401]
@@ -44,10 +44,12 @@ class AppConfig(object):
         url_file_tag = ENVAR.url_file_tag
         url_upload_greenroom = ENVAR.url_upload_greenroom
         url_upload_core = ENVAR.url_upload_core
+        url_status = ENVAR.url_status
+        url_lineage = ENVAR.url_lineage
         url_download_greenroom = ENVAR.url_download_greenroom
         url_download_core = ENVAR.url_download_core
-        url_v2_download_pre = ENVAR.url_dataset_v2download
-        url_dataset_v2download = ENVAR.url_dataset
+        url_v2_download_pre = ENVAR.url_v2_download_pre
+        url_dataset_v2download = ENVAR.url_dataset_v2download
         url_dataset = ENVAR.url_dataset
         url_validation = ENVAR.url_validation
         url_keycloak = ENVAR.url_keycloak

@@ -13,13 +13,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import requests
+
 import app.services.logger_services.log_functions as logger
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.models.service_meta_class import MetaService
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
-from app.utils.aggregated import resilient_session
 
 from ..user_authentication.decorator import require_valid_token
 
@@ -40,7 +41,7 @@ class SrvDatasetDetailManager(metaclass=MetaService):
             'page_size': page_size
         }
         try:
-            response = resilient_session().get(url, headers=headers, params=params)
+            response = requests.get(url, headers=headers, params=params)
             res = response.json()
             status_code = res.get('code')
             if status_code == 200:
