@@ -16,9 +16,10 @@
 import datetime
 import os
 import time
+from urllib.parse import unquote
+
 import requests
 from tqdm import tqdm
-from urllib.parse import unquote
 
 import app.services.logger_services.log_functions as logger
 from app.configs.app_config import AppConfig
