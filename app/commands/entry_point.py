@@ -30,21 +30,13 @@ from .file import file_download
 from .file import file_export_manifest
 from .file import file_list
 from .file import file_put
-from .hpc import hpc_auth
-from .hpc import hpc_get_node
-from .hpc import hpc_get_partition
-from .hpc import hpc_job_info
-from .hpc import hpc_job_submit
-from .hpc import hpc_list_nodes
-from .hpc import hpc_list_partitions
-from .kg_resource import kg_resource
 from .project import project_list_all
 from .user import login
 from .user import logout
 
 
 def command_groups():
-    commands = ['file', 'user', 'project', 'dataset', 'hpc', 'kg_resource', 'container_registry']
+    commands = ['file', 'user', 'project', 'dataset', 'container_registry']
     return commands
 
 
@@ -76,16 +68,6 @@ def user_group():
     pass
 
 
-@entry_point.group(name="hpc")
-def hpc_group():
-    pass
-
-
-@entry_point.group(name="kg_resource")
-def kg_resource_group():
-    pass
-
-
 @entry_point.group(name="container_registry")
 def cr_group():
     pass
@@ -102,14 +84,6 @@ user_group.add_command(logout)
 dataset_group.add_command(dataset_list)
 dataset_group.add_command(dataset_show_detail)
 dataset_group.add_command(dataset_download)
-hpc_group.add_command(hpc_auth)
-hpc_group.add_command(hpc_job_submit)
-hpc_group.add_command(hpc_job_info)
-hpc_group.add_command(hpc_list_nodes)
-hpc_group.add_command(hpc_get_node)
-hpc_group.add_command(hpc_list_partitions)
-hpc_group.add_command(hpc_get_partition)
-kg_resource_group.add_command(kg_resource)
 cr_group.add_command(list_projects)
 cr_group.add_command(list_repositories)
 cr_group.add_command(create_project)
