@@ -12,12 +12,9 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import os.path
-import re
 
+import re
 import click
-import questionary
-import app.services.logger_services.log_functions as logger
 import app.services.output_manager.help_page as file_help
 import app.services.output_manager.message_handler as message_handler
 from app.configs.app_config import AppConfig
@@ -25,7 +22,7 @@ from app.configs.user_config import UserConfig
 from app.services.file_manager.file_download import SrvFileDownload
 from app.services.file_manager.file_list import SrvFileList
 from app.services.file_manager.file_manifests import SrvFileManifests
-from app.services.file_manager.file_tag import SrvFileTag
+from app.services.file_manager.file_upload import UploadEventValidator
 from app.services.file_manager.file_upload import assemble_path
 from app.services.file_manager.file_upload import simple_upload
 from app.services.output_manager.error_handler import ECustomizedError
@@ -135,7 +132,8 @@ def file_put(**kwargs):
     paths = set(paths)
     # upload files
     for f in paths:
-        current_folder_node, result_file = assemble_path(f, target_folder, project_code, zone, user.access_token, zipping)
+        current_folder_node, result_file = assemble_path(
+            f, target_folder, project_code, zone, user.access_token, zipping)
         upload_event = {
             'project_code': project_code,
             'file': f,
@@ -159,7 +157,6 @@ def validate_upload_event(event):
     """
     validate upload request, raise error when filed
     """
-    app = AppConfig()
     zone = event.get('zone')
     upload_message = event.get('upload_message')
     source = event.get('source')
@@ -168,37 +165,11 @@ def validate_upload_event(event):
     token = event.get('token')
     attribute = event.get('attribute')
     tag = event.get('tag')
-    source_file_info = {}
-    if attribute:
-        srv_manifest = SrvFileManifests()
-        if not os.path.isfile(attribute):
-            raise Exception('Attribute not exist in the given path')
-        try:
-            attribute = srv_manifest.read_manifest_template(attribute)
-            attribute = srv_manifest.convert_import(attribute, project_code)
-            srv_manifest.validate_manifest(attribute)
-        except Exception:
-            SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TEMPLATE, True)
-    if tag:
-        srv_tag = SrvFileTag()
-        srv_tag.validate_taglist(tag)
-    if zone == app.Env.core_zone.lower():
-        if not upload_message:
-            SrvErrorHandler.customized_handle(
-                ECustomizedError.INVALID_UPLOAD_REQUEST, True, value="upload-message is required")
-        if source:
-            if not process_pipeline:
-                SrvErrorHandler.customized_handle(
-                    ECustomizedError.INVALID_UPLOAD_REQUEST,
-                    True,
-                    value="process pipeline name required"
-                )
-            else:
-                source_file_info = search_item(project_code, zone, source, 'file', token)
-                source_file_info = source_file_info['result']
-                if not source_file_info:
-                    SrvErrorHandler.customized_handle(ECustomizedError.INVALID_SOURCE_FILE, True, value=source)
-    converted_content = {'source_file': source_file_info, 'attribute': attribute}
+    validator = UploadEventValidator(
+        project_code, zone, upload_message, source,
+        process_pipeline, token, attribute, tag
+    )
+    converted_content = validator.validate_upload_event()
     return converted_content
 
 
@@ -268,10 +239,8 @@ def file_export_manifest(project_code, attribute_name):
               help='number of objects per page',
               show_default=True)
 @click.option('-d', '--detached',
-              default=None,
-              required=False,
-              is_flag=True,
-              help='whether run in detached mode',
+              default=None, required=False,
+              is_flag=True, help='whether run in detached mode',
               show_default=True)
 @require_valid_token()
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_LIST))
@@ -283,35 +252,9 @@ def file_list(paths, zone, page, page_size, detached):
         SrvErrorHandler.customized_handle(ECustomizedError.MISSING_PROJECT_CODE, True)
     srv_list = SrvFileList()
     if detached:
-        files = srv_list.list_files(paths, zone, page, page_size)
-        query_result = fit_terminal_width(files)
-        logger.info(query_result)
+        srv_list.list_files_without_pagination(paths, zone, page, page_size)
     else:
-        while True:
-            files = srv_list.list_files(paths, zone, page, page_size)
-            if len(files) < page_size and page == 0:
-                break
-            elif len(files) < page_size and page != 0:
-                choice = ['previous page', 'exit']
-            elif page == 0:
-                choice = ['next page', 'exit']
-            else:
-                choice = ['previous page', 'next page', 'exit']
-            query_result = fit_terminal_width(files)
-            logger.info(query_result)
-            val = questionary.select(
-                "\nWhat do you want?",
-                qmark="",
-                choices=choice).ask()
-            if val == 'exit':
-                # mhandler.SrvOutPutHandler.list_success('Project')
-                break
-            elif val == 'next page':
-                click.clear()
-                page += 1
-            elif val == 'previous page':
-                click.clear()
-                page -= 1
+        srv_list.list_files_with_pagination(paths, zone, page, page_size)
 
 
 @click.command(name="sync")

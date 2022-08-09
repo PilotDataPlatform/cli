@@ -33,9 +33,68 @@ from app.services.output_manager.error_handler import customized_error_msg
 from app.services.user_authentication.decorator import require_valid_token
 from app.utils.aggregated import resilient_session
 from app.utils.aggregated import search_item
-
+from app.services.file_manager.file_manifests import SrvFileManifests
+from app.services.file_manager.file_tag import SrvFileTag
 from .file_lineage import create_lineage
 from ...utils.aggregated import get_file_in_folder
+
+
+class UploadEventValidator:
+
+    def __init__(self, project_code, zone, upload_message, source, process_pipeline, token, attribute, tag):
+        self.project_code = project_code
+        self.zone = zone
+        self.upload_message = upload_message
+        self.source = source
+        self.process_pipeline = process_pipeline
+        self.token = token
+        self.attribute = attribute
+        self.tag = tag
+
+    def validate_zone(self):
+        source_file_info = {}
+        if not self.upload_message:
+            SrvErrorHandler.customized_handle(
+                ECustomizedError.INVALID_UPLOAD_REQUEST, True, value="upload-message is required")
+        if self.source:
+            if not self.process_pipeline:
+                SrvErrorHandler.customized_handle(
+                    ECustomizedError.INVALID_UPLOAD_REQUEST,
+                    True,
+                    value="process pipeline name required"
+                )
+            else:
+                source_file_info = search_item(self.project_code, self.zone, self.source, 'file', self.token)
+                source_file_info = source_file_info['result']
+                if not source_file_info:
+                    SrvErrorHandler.customized_handle(ECustomizedError.INVALID_SOURCE_FILE, True, value=self.source)
+        return source_file_info
+
+    def validate_attribute(self):
+        srv_manifest = SrvFileManifests()
+        if not os.path.isfile(self.attribute):
+            raise Exception('Attribute not exist in the given path')
+        try:
+            attribute = srv_manifest.read_manifest_template(self.attribute)
+            attribute = srv_manifest.convert_import(attribute, self.project_code)
+            srv_manifest.validate_manifest(attribute)
+        except Exception:
+            SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TEMPLATE, True)
+
+    def validate_tag(self):
+        srv_tag = SrvFileTag()
+        srv_tag.validate_taglist(self.tag)
+
+    def validate_upload_event(self):
+        source_file_info = {}
+        if self.attribute:
+            self.validate_attribute()
+        if self.tag:
+            self.validate_tag()
+        if self.zone == AppConfig.Env.core_zone.lower():
+            source_file_info = self.validate_zone()
+        converted_content = {'source_file': source_file_info, 'attribute': self.attribute}
+        return converted_content
 
 
 class SrvSingleFileUploader(metaclass=MetaService):
@@ -167,8 +226,7 @@ class SrvSingleFileUploader(metaclass=MetaService):
         }
         # retry three times
         for i in range(AppConfig.Env.resilient_retry):
-            response = resilient_session().post(
-                url, data=payload, headers=headers, files=files)
+            response = resilient_session().post(url, data=payload, headers=headers, files=files)
             if response.status_code == 200:
                 res_to_dict = response.json()
                 return res_to_dict
