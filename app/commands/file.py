@@ -14,7 +14,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import re
+
 import click
+
 import app.services.output_manager.help_page as file_help
 import app.services.output_manager.message_handler as message_handler
 from app.configs.app_config import AppConfig
@@ -31,11 +33,11 @@ from app.services.output_manager.error_handler import customized_error_msg
 from app.services.user_authentication.decorator import require_valid_token
 from app.utils.aggregated import doc
 from app.utils.aggregated import fit_terminal_width
+from app.utils.aggregated import get_file_info_by_geid
 from app.utils.aggregated import get_zone
 from app.utils.aggregated import identify_target_folder
 from app.utils.aggregated import search_item
 from app.utils.aggregated import void_validate_zone
-from app.utils.aggregated import get_file_info_by_geid
 
 
 @click.command()
