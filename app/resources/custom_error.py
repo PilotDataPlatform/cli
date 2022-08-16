@@ -73,6 +73,8 @@ class Error:
         "DATASET_PERMISSION": "You do not have permission to access this dataset",
         "USER_DISABLED": "User may not exist or has been disabled",
         "OVER_SIZE": "%s is too large",
+        "CANNOT_AUTH_HPC": "Cannot proceed with HPC authorization request",
+        "CANNOT_PROCESS_HPC_JOB": "Cannot process with HPC: %s",
         "CONTAINER_REGISTRY_HOST_INVALID": "Invalid host URL. Ensure host begins with 'http://' or 'https://'.",
         "CONTAINER_REGISTRY_401": "You lack valid authentication credentials for the requested resource.",
         "CONTAINER_REGISTRY_403": "You do not have permission to access this host or resource.",
