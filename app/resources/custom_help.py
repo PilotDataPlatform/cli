@@ -62,6 +62,23 @@ class HelpPage:
                 "The processed pipeline of your processed files. [only used with '--source' option]"),
             "FILE_UPLOAD_ZIP": "Upload folder as a compressed zip file."
         },
+        "hpc": {
+            "HPC_AUTH": "Authorize user to HPC with access token.",
+            "HPC_LOGIN_HOST": "The host address for login HPC.",
+            "HPC_LOGIN_USERNAME": "The username for login HPC.",
+            "HPC_LOGIN_PASSWORD": "The password for login HPC.",
+            "HPC_TOKEN": "The HPC token",
+            "HPC_SUBMIT": "Submit a job to HPC",
+            "HPC_JOB_INFO": "Get a job information",
+            "HPC_NODES": "Get a list of nodes",
+            "HPC_GET_NODE": "Get node information by node name",
+            "HPC_PARTITIONS": "Get a list of partitions",
+            "HPC_GET_PARTITION": "Get partition information by partition name"
+        },
+        "knowledge_graph": {
+            "KG_IMPORT": "Import dataset schema into BlueBrainNexus ",
+            "KG_DATASET_CODE": "The dataset code"
+        },
         "container_registry": {
             "LIST_PROJECTS": "List all projects",
             "LIST_REPOSITORIES": "List all repositories (optionally: in a given project)",
