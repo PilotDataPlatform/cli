@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+
 import click
 
 from app.services.user_authentication.decorator import require_login_session
@@ -30,6 +32,8 @@ from .file import file_download
 from .file import file_export_manifest
 from .file import file_list
 from .file import file_put
+
+# Import custom commands
 from .hpc import hpc_auth
 from .hpc import hpc_get_node
 from .hpc import hpc_get_partition
@@ -42,9 +46,16 @@ from .project import project_list_all
 from .user import login
 from .user import logout
 
+hpc_enabled = os.environ.get('PILOT_CLI_HPC_ENABLED', 'false') == 'true'
+kg_enabled = os.environ.get('PILOT_CLI_KG_ENABLED', 'false') == 'true'
+
 
 def command_groups():
-    commands = ['file', 'user', 'project', 'dataset', 'hpc', 'kg_resource', 'container_registry']
+    commands = ['file', 'user', 'project', 'dataset', 'container_registry']
+    if hpc_enabled:
+        commands.append('hpc')
+    if kg_enabled:
+        commands.append('kg_resource')
     return commands
 
 
@@ -76,16 +87,6 @@ def user_group():
     pass
 
 
-@entry_point.group(name="hpc")
-def hpc_group():
-    pass
-
-
-@entry_point.group(name="kg_resource")
-def kg_resource_group():
-    pass
-
-
 @entry_point.group(name="container_registry")
 def cr_group():
     pass
@@ -102,16 +103,29 @@ user_group.add_command(logout)
 dataset_group.add_command(dataset_list)
 dataset_group.add_command(dataset_show_detail)
 dataset_group.add_command(dataset_download)
-hpc_group.add_command(hpc_auth)
-hpc_group.add_command(hpc_job_submit)
-hpc_group.add_command(hpc_job_info)
-hpc_group.add_command(hpc_list_nodes)
-hpc_group.add_command(hpc_get_node)
-hpc_group.add_command(hpc_list_partitions)
-hpc_group.add_command(hpc_get_partition)
-kg_resource_group.add_command(kg_resource)
 cr_group.add_command(list_projects)
 cr_group.add_command(list_repositories)
 cr_group.add_command(create_project)
 cr_group.add_command(get_secret)
 cr_group.add_command(invite_member)
+
+# Custom commands
+if hpc_enabled:
+    @entry_point.group(name="hpc")
+    def hpc_group():
+        pass
+
+    hpc_group.add_command(hpc_auth)
+    hpc_group.add_command(hpc_job_submit)
+    hpc_group.add_command(hpc_job_info)
+    hpc_group.add_command(hpc_list_nodes)
+    hpc_group.add_command(hpc_get_node)
+    hpc_group.add_command(hpc_list_partitions)
+    hpc_group.add_command(hpc_get_partition)
+
+if kg_enabled:
+    @entry_point.group(name="kg_resource")
+    def kg_resource_group():
+        pass
+
+    kg_resource_group.add_command(kg_resource)
