@@ -79,6 +79,7 @@ class UploadEventValidator:
             attribute = srv_manifest.read_manifest_template(self.attribute)
             attribute = srv_manifest.convert_import(attribute, self.project_code)
             srv_manifest.validate_manifest(attribute)
+            return attribute
         except Exception:
             SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TEMPLATE, True)
 
@@ -89,12 +90,12 @@ class UploadEventValidator:
     def validate_upload_event(self):
         source_file_info = {}
         if self.attribute:
-            self.validate_attribute()
+            loaded_attribute = self.validate_attribute()
         if self.tag:
             self.validate_tag()
         if self.zone == AppConfig.Env.core_zone.lower():
             source_file_info = self.validate_zone()
-        converted_content = {'source_file': source_file_info, 'attribute': self.attribute}
+        converted_content = {'source_file': source_file_info, 'attribute': loaded_attribute}
         return converted_content
 
 
