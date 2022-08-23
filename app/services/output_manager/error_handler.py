@@ -82,6 +82,7 @@ class ECustomizedError(enum.Enum):
     CONTAINER_REGISTRY_OTHER = "CONTAINER_REGISTRY_OTHER"
     CONTAINER_REGISTRY_NO_URL = "CONTAINER_REGISTRY_NO_URL"
     NO_CONFIG_FILE = "NO_CONFIG_FILE"
+    CONFIG_EXIST = "CONFIG_EXIST"
 
 
 def customized_error_msg(customized_error: ECustomizedError):

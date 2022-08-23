@@ -1,3 +1,5 @@
+from genericpath import isfile
+import os
 import shutil
 from app.configs import app_config
 from app.services.logger_services import log_functions as logger
@@ -13,5 +15,9 @@ def check_config():
 
 
 def set_config(target_path, destination):
-    shutil.copy(target_path, destination)
-    logger.succeed(f'config file set')
+    config_path = os.path.join(destination, '.env')
+    if os.path.isfile(config_path):
+        SrvErrorHandler.customized_handle(ECustomizedError.CONFIG_EXIST, True)
+    else:
+        shutil.copy(target_path, destination)
+        logger.succeed(f'config file set')
