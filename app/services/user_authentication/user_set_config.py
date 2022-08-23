@@ -1,10 +1,10 @@
-from genericpath import isfile
 import os
 import shutil
+
 from app.configs import app_config
 from app.services.logger_services import log_functions as logger
-from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.output_manager.error_handler import ECustomizedError
+from app.services.output_manager.error_handler import SrvErrorHandler
 
 
 def check_config():
@@ -20,4 +20,4 @@ def set_config(target_path, destination):
         SrvErrorHandler.customized_handle(ECustomizedError.CONFIG_EXIST, True)
     else:
         shutil.copy(target_path, destination)
-        logger.succeed(f'config file set')
+        logger.succeed('config file set')

@@ -14,11 +14,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+
+from dotenv import load_dotenv
 from pydantic import BaseSettings
 from pydantic import Extra
-from dotenv import load_dotenv
 
-load_dotenv() 
+load_dotenv()
+
+
 class Settings(BaseSettings):
     env = 'dev'
     project = 'pilot'

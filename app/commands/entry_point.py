@@ -17,8 +17,8 @@ import os
 
 import click
 
-from app.services.user_authentication.decorator import require_login_session
 from app.services.user_authentication.decorator import require_config
+from app.services.user_authentication.decorator import require_login_session
 
 from .container_registry import create_project
 from .container_registry import get_secret
@@ -44,9 +44,9 @@ from .hpc import hpc_list_nodes
 from .hpc import hpc_list_partitions
 from .kg_resource import kg_resource
 from .project import project_list_all
+from .use_config import set_env
 from .user import login
 from .user import logout
-from .use_config import set_env
 
 hpc_enabled = os.environ.get('PILOT_CLI_HPC_ENABLED', 'false') == 'true'
 kg_enabled = os.environ.get('PILOT_CLI_KG_ENABLED', 'false') == 'true'
@@ -92,9 +92,11 @@ def file_group():
 def user_group():
     pass
 
+
 @entry_point.group(name="use_config")
 def config_group():
     pass
+
 
 @entry_point.group(name="container_registry")
 @require_config
