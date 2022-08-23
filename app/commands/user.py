@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import click
+
 import app.services.output_manager.help_page as user_help
 import app.services.output_manager.message_handler as mhandler
 from app.services.user_authentication.decorator import require_login_session

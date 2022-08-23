@@ -91,7 +91,7 @@ class Error:
             "data available for dissemination and use within the PILOT. If you need to process the data to remove "
             "sensitive identifiers, please cancel this transfer and upload the data to the Green Room to perform "
             "these actions."),
-        "NO_CONFIG_FILE" : "This cli is not setup properly, please download config file and config again.",
+        "NO_CONFIG_FILE": "This cli is not setup properly, please download config file and config again.",
         "CONFIG_EXIST": (
             "This cli has been configured already."
             "If you want to re-config this cli please remove previous file first"),

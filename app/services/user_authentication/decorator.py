@@ -23,6 +23,7 @@ from .user_login_logout import check_is_login
 from .user_login_logout import user_login
 from .user_set_config import check_config
 
+
 def require_valid_token(azp=None):
     def decorate(func):
         @wraps(func)
@@ -64,6 +65,7 @@ def require_login_session(func):
         check_is_login()
         return func(*args, **kwargs)
     return decorated
+
 
 def require_config(func):
     @wraps(func)

@@ -1,6 +1,7 @@
 import click
-from app.services.user_authentication.user_set_config import set_config
+
 import app.services.output_manager.help_page as config_help
+from app.services.user_authentication.user_set_config import set_config
 from app.utils.aggregated import doc
 
 
@@ -8,6 +9,7 @@ from app.utils.aggregated import doc
 def cli():
     """Config Actions"""
     pass
+
 
 @click.command()
 @click.argument("path",

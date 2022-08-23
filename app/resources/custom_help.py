@@ -65,7 +65,6 @@ class HelpPage:
         "config": {
             "SET_CONFIG": "Chose config file and set for cli.",
             "CONFIG_DESTINATION": "The destination the config file goes to, default will be current cli directory.",
-            
         },
         "hpc": {
             "HPC_AUTH": "Authorize user to HPC with access token.",
