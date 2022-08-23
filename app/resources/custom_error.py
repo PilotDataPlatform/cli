@@ -91,6 +91,7 @@ class Error:
             "data available for dissemination and use within the PILOT. If you need to process the data to remove "
             "sensitive identifiers, please cancel this transfer and upload the data to the Green Room to perform "
             "these actions."),
+        "NO_CONFIG_FILE" : "This cli is not setup properly, please download config file and config again.",
         "CONTAINER_REGISTRY_NO_URL": (
             "Container registry has not yet been configured. Related commands cannot be used at this time.")
     }
