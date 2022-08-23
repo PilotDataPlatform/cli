@@ -92,6 +92,9 @@ class Error:
             "sensitive identifiers, please cancel this transfer and upload the data to the Green Room to perform "
             "these actions."),
         "NO_CONFIG_FILE" : "This cli is not setup properly, please download config file and config again.",
+        "CONFIG_EXIST": (
+            "This cli has been configured already."
+            "If you want to re-config this cli please remove previous file first"),
         "CONTAINER_REGISTRY_NO_URL": (
             "Container registry has not yet been configured. Related commands cannot be used at this time.")
     }
