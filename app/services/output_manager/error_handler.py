@@ -81,6 +81,7 @@ class ECustomizedError(enum.Enum):
     USER_NOT_FOUND = "USER_NOT_FOUND"
     CONTAINER_REGISTRY_OTHER = "CONTAINER_REGISTRY_OTHER"
     CONTAINER_REGISTRY_NO_URL = "CONTAINER_REGISTRY_NO_URL"
+    NO_CONFIG_FILE = "NO_CONFIG_FILE"
 
 
 def customized_error_msg(customized_error: ECustomizedError):

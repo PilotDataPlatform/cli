@@ -48,6 +48,16 @@ def project_help_page(ProjectHELP: ProjectHELP):
     return helps.get(ProjectHELP.name)
 
 
+class ConfigHELP(enum.Enum):
+    SET_CONFIG = "SET_CONFIG"
+    CONFIG_DESTINATION = "CONFIG_DESTINATION"
+
+
+def config_help_page(ConfigHELP: ConfigHELP):
+    helps = help_msg.get('config', 'default config help')
+    return helps.get(ConfigHELP.name)
+
+
 class UserHELP(enum.Enum):
     USER_LOGIN = "USER_LOGIN"
     USER_LOGOUT = "USER_LOGOUT"

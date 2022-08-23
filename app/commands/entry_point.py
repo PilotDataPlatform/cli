@@ -18,6 +18,7 @@ import os
 import click
 
 from app.services.user_authentication.decorator import require_login_session
+from app.services.user_authentication.decorator import require_config
 
 from .container_registry import create_project
 from .container_registry import get_secret
@@ -45,13 +46,14 @@ from .kg_resource import kg_resource
 from .project import project_list_all
 from .user import login
 from .user import logout
+from .use_config import set_env
 
 hpc_enabled = os.environ.get('PILOT_CLI_HPC_ENABLED', 'false') == 'true'
 kg_enabled = os.environ.get('PILOT_CLI_KG_ENABLED', 'false') == 'true'
 
 
 def command_groups():
-    commands = ['file', 'user', 'project', 'dataset', 'container_registry']
+    commands = ['file', 'user', 'use_config', 'project', 'dataset', 'container_registry']
     if hpc_enabled:
         commands.append('hpc')
     if kg_enabled:
@@ -65,29 +67,37 @@ def entry_point():
 
 
 @entry_point.group(name="project")
+@require_config
 @require_login_session
 def project_group():
     pass
 
 
 @entry_point.group(name="dataset")
+@require_config
 @require_login_session
 def dataset_group():
     pass
 
 
 @entry_point.group(name="file")
+@require_config
 @require_login_session
 def file_group():
     pass
 
 
 @entry_point.group(name="user")
+@require_config
 def user_group():
     pass
 
+@entry_point.group(name="use_config")
+def config_group():
+    pass
 
 @entry_point.group(name="container_registry")
+@require_config
 def cr_group():
     pass
 
@@ -108,6 +118,7 @@ cr_group.add_command(list_repositories)
 cr_group.add_command(create_project)
 cr_group.add_command(get_secret)
 cr_group.add_command(invite_member)
+config_group.add_command(set_env)
 
 # Custom commands
 if hpc_enabled:
