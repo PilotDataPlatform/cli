@@ -54,3 +54,5 @@ class AppConfig(object):
         url_validation = ConfigClass.url_validation
         url_keycloak = ConfigClass.url_keycloak
         url_bff = ConfigClass.url_bff
+        # add url_base to check if value exist
+        url_base = ConfigClass.base_url
