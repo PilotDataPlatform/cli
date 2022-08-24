@@ -11,7 +11,7 @@ def check_config():
     connections = app_config.AppConfig.Connections.__dict__
     for k, v in connections.items():
         if k.startswith('url') and not v:
-            SrvErrorHandler.customized_handle(ECustomizedError.NO_CONFIG_FILE, True)
+            SrvErrorHandler.customized_handle(ECustomizedError.CONFIG_NOT_FOUND, True)
 
 
 def set_config(target_path, destination):
