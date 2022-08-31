@@ -88,7 +88,7 @@ class UploadEventValidator:
         srv_tag.validate_taglist(self.tag)
 
     def validate_upload_event(self):
-        source_file_info = {}
+        source_file_info, loaded_attribute = {}, {}
         if self.attribute:
             loaded_attribute = self.validate_attribute()
         if self.tag:
