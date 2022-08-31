@@ -62,6 +62,10 @@ class HelpPage:
                 "The processed pipeline of your processed files. [only used with '--source' option]"),
             "FILE_UPLOAD_ZIP": "Upload folder as a compressed zip file."
         },
+        "config": {
+            "SET_CONFIG": "Chose config file and set for cli.",
+            "CONFIG_DESTINATION": "The destination the config file goes to, default will be current cli directory.",
+        },
         "hpc": {
             "HPC_AUTH": "Authorize user to HPC with access token.",
             "HPC_LOGIN_HOST": "The host address for login HPC.",
