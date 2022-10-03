@@ -103,5 +103,9 @@ jobs:
       with:
         path: .venv
         key: venv-${{ hashFiles('**/poetry.lock') }}
+    - name: Install pyinstaller
+      run: |
+          source .venv/bin/activate
+          pip3 install pyinstaller
     - name: build binary
       run: pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --paths=./.venv/lib/python3.7/site-packages ./app/pilotcli.py -n pilotcli
