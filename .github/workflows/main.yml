@@ -90,3 +90,18 @@ jobs:
       with:
         file: ./coverage.xml
         fail_ci_if_error: false
+  push-binary:
+    needs: tests
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - uses: actions/cache@v2
+      id: cached-poetry-dependencies
+      with:
+        path: .venv
+        key: venv-${{ hashFiles('**/poetry.lock') }}
+    - name: build binary
+      run: pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --paths=./.venv/lib/python3.7/site-packages ./app/pilotcli.py -n pilotcli
