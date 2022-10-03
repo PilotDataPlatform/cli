@@ -14,14 +14,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from functools import wraps
-import time
 
 from app.configs.user_config import UserConfig
 
 from .token_manager import SrvTokenManager
-from .user_login_logout import check_is_active
-from .user_login_logout import check_is_login
-from .user_login_logout import user_login
+from .user_login_logout import check_is_active, check_is_login, user_login
 from .user_set_config import check_config
 
 
@@ -47,15 +44,17 @@ def require_valid_token(azp='kong'):
                 token_mgr.change_token(azp)
 
             switch_case = {
-                "0": is_valid_callback,
-                "1": need_refresh_callback,
-                "2": need_login_callback,
-                "3": need_change_callback,
+                '0': is_valid_callback,
+                '1': need_refresh_callback,
+                '2': need_login_callback,
+                '3': need_change_callback,
             }
             to_exe = switch_case.get(str(token_validation), is_valid_callback)
             to_exe()
             return func(*args, **kwargs)
+
         return decorated
+
     return decorate
 
 
@@ -65,6 +64,7 @@ def require_login_session(func):
         check_is_active()
         check_is_login()
         return func(*args, **kwargs)
+
     return decorated
 
 
@@ -73,4 +73,5 @@ def require_config(func):
     def decorated(*args, **kwargs):
         check_config()
         return func(*args, **kwargs)
+
     return decorated
