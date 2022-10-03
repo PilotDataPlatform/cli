@@ -21,8 +21,7 @@ import app.services.output_manager.message_handler as message_handler
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.models.service_meta_class import MetaService
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import SrvErrorHandler
+from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
 
 
@@ -30,7 +29,7 @@ def dupe_checking_hook(pairs):
     result = {}
     for key, val in pairs:
         if key in result:
-            raise KeyError("Duplicate attribute specified: %s" % key)
+            raise KeyError('Duplicate attribute specified: %s' % key)
         result[key] = val
     return result
 
@@ -55,9 +54,9 @@ class SrvFileManifests(metaclass=MetaService):
 
     @require_valid_token()
     def validate_template(self, manifest_json):
-        url = self.app_config.Connections.url_bff + "/v1/validate/manifest"
+        url = self.app_config.Connections.url_bff + '/v1/validate/manifest'
         headers = {
-            'Authorization': "Bearer " + self.user.access_token,
+            'Authorization': 'Bearer ' + self.user.access_token,
         }
         res = requests.post(url, headers=headers, json=manifest_json)
         res_json = res.json()
@@ -73,11 +72,11 @@ class SrvFileManifests(metaclass=MetaService):
 
     @require_valid_token()
     def attach(self, manifest_json, file_name, zone):
-        url = self.app_config.Connections.url_bff + "/v1/manifest/attach"
+        url = self.app_config.Connections.url_bff + '/v1/manifest/attach'
         manifest_json['file_name'] = file_name
         manifest_json['zone'] = zone
         headers = {
-            'Authorization': "Bearer " + self.user.access_token,
+            'Authorization': 'Bearer ' + self.user.access_token,
         }
         res = requests.post(url, headers=headers, json=manifest_json)
         if res.status_code == 200:
@@ -89,9 +88,9 @@ class SrvFileManifests(metaclass=MetaService):
 
     @require_valid_token()
     def list_manifest(self, project_code):
-        get_url = self.app_config.Connections.url_bff + "/v1/manifest"
+        get_url = self.app_config.Connections.url_bff + '/v1/manifest'
         headers = {
-            'Authorization': "Bearer " + self.user.access_token,
+            'Authorization': 'Bearer ' + self.user.access_token,
         }
         params = {'project_code': project_code}
         res = requests.get(get_url, params=params, headers=headers)
@@ -99,14 +98,11 @@ class SrvFileManifests(metaclass=MetaService):
 
     @require_valid_token()
     def export_manifest(self, project_code, attribute_name):
-        get_url = AppConfig.Connections.url_bff + "/v1/manifest/export"
+        get_url = AppConfig.Connections.url_bff + '/v1/manifest/export'
         headers = {
-            'Authorization': "Bearer " + self.user.access_token,
+            'Authorization': 'Bearer ' + self.user.access_token,
         }
-        params = {
-            'project_code': project_code,
-            'name': attribute_name
-        }
+        params = {'project_code': project_code, 'name': attribute_name}
         res = requests.get(get_url, params=params, headers=headers)
         result = res.json().get('result')
         code = res.json().get('code')
@@ -140,11 +136,7 @@ class SrvFileManifests(metaclass=MetaService):
         attrs = user_defined[mani_name]
         for key in attrs:
             converted_attrs[key] = attrs[key]
-        return {
-            "manifest_name": mani_name,
-            "project_code": project_code,
-            "attributes": converted_attrs
-        }
+        return {'manifest_name': mani_name, 'project_code': project_code, 'attributes': converted_attrs}
 
     @staticmethod
     def convert_export(attach_post: dict):
@@ -176,9 +168,9 @@ class SrvFileManifests(metaclass=MetaService):
             if self.interactive:
                 file_attached = False
                 attach_error = error
-                SrvErrorHandler.default_handle("Attribute Attach Failed: " + error, True)
+                SrvErrorHandler.default_handle('Attribute Attach Failed: ' + error, True)
             else:
-                SrvErrorHandler.default_handle("Attribute Attach Failed: " + error, False)
+                SrvErrorHandler.default_handle('Attribute Attach Failed: ' + error, False)
                 file_attached = False
                 attach_error = error
         else:

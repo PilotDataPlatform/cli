@@ -25,8 +25,7 @@ import app.services.output_manager.message_handler as mhandler
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.models.service_meta_class import MetaService
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import SrvErrorHandler
+from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
 from app.utils.aggregated import resilient_session
 
@@ -36,12 +35,12 @@ class SrvFileDownload(metaclass=MetaService):
         self.appconfig = AppConfig()
         self.user = UserConfig()
         self.operator = self.user.username
-        self.session_id = "cli-" + str(int(time.time()))
+        self.session_id = 'cli-' + str(int(time.time()))
         self.file_geid = ''
         self.hash_code = ''
         self.total_size = ''
         self.interactive = interactive
-        self.url = ""
+        self.url = ''
         self.check_point = False
         self.core = self.appconfig.Env.core_zone
         self.green = self.appconfig.Env.green_zone
@@ -83,12 +82,12 @@ class SrvFileDownload(metaclass=MetaService):
             'files': files,
             'operator': self.operator,
             'container_code': self.project_code,
-            'container_type': 'project'
+            'container_type': 'project',
         }
         headers = {
-            'Authorization': "Bearer " + self.user.access_token,
+            'Authorization': 'Bearer ' + self.user.access_token,
             'Refresh-token': self.user.refresh_token,
-            'Session-ID': self.session_id
+            'Session-ID': self.session_id,
         }
         url = self.appconfig.Connections.url_v2_download_pre
         res = resilient_session().post(url, headers=headers, json=payload)
@@ -110,7 +109,7 @@ class SrvFileDownload(metaclass=MetaService):
 
     @require_valid_token()
     def download_status(self):
-        url = self.url + f"v1/download/status/{self.hash_code}"
+        url = self.url + f'v1/download/status/{self.hash_code}'
         res = resilient_session().get(url)
         res_json = res.json()
         if res_json.get('code') == 200:
@@ -120,7 +119,7 @@ class SrvFileDownload(metaclass=MetaService):
             SrvErrorHandler.default_handle(res_json.get('error_msg'), self.interactive)
 
     def generate_download_url(self):
-        download_url = self.url + f"v1/download/{self.hash_code}"
+        download_url = self.url + f'v1/download/{self.hash_code}'
         return download_url
 
     def avoid_duplicate_file_name(self, filename):
@@ -135,7 +134,7 @@ class SrvFileDownload(metaclass=MetaService):
                 if filename == original_filename:
                     break
                 else:
-                    logger.warn(f"{original_filename} already exist, file will be saved as {filename}")
+                    logger.warn(f'{original_filename} already exist, file will be saved as {filename}')
                     break
         return filename
 
@@ -161,7 +160,7 @@ class SrvFileDownload(metaclass=MetaService):
 
     @require_valid_token()
     def download_file(self, url, local_filename, download_mode='single'):
-        logger.info("start downloading...")
+        logger.info('start downloading...')
         filename = local_filename.split('/')[-1]
         try:
             with resilient_session().get(url, stream=True) as r:
@@ -171,12 +170,12 @@ class SrvFileDownload(metaclass=MetaService):
                     self.total_size = int(size) if size else self.total_size
                 if self.total_size:
                     with open(local_filename, 'wb') as file, tqdm(
-                            desc='Downloading {}'.format(filename),
-                            total=self.total_size,
-                            unit='iB',
-                            unit_scale=True,
-                            unit_divisor=1024,
-                            bar_format="{desc} |{bar:30} {percentage:3.0f}% {remaining}"
+                        desc='Downloading {}'.format(filename),
+                        total=self.total_size,
+                        unit='iB',
+                        unit_scale=True,
+                        unit_divisor=1024,
+                        bar_format='{desc} |{bar:30} {percentage:3.0f}% {remaining}',
                     ) as bar:
                         for data in r.iter_content(chunk_size=1024):
                             size = file.write(data)
@@ -187,7 +186,7 @@ class SrvFileDownload(metaclass=MetaService):
                         for data in r.iter_content(chunk_size=1024):
                             size = file.write(data)
                             progress = '.' * part
-                            click.echo(f"Downloading{progress}\r", nl=False)
+                            click.echo(f'Downloading{progress}\r', nl=False)
                             if part > 5:
                                 part = 0
                             else:
@@ -214,16 +213,18 @@ class SrvFileDownload(metaclass=MetaService):
                 # if project file/folder in the list under same zone, append accordingly to the list
                 if project_code + f'_{self.core}' in proccessed_project and self.core == label:
                     download_tasks[project_code + f'_{self.core}']['files'] = download_tasks.get(
-                        f'{project_code}_{self.core}', {}).get('files') + [file_geid]
+                        f'{project_code}_{self.core}', {}
+                    ).get('files') + [file_geid]
                 elif project_code + f'_{self.green}' in proccessed_project and self.green == label:
                     download_tasks[project_code + f'_{self.green}']['files'] = download_tasks.get(
-                        f'{project_code}_{self.green}', {}).get('files') + [file_geid]
+                        f'{project_code}_{self.green}', {}
+                    ).get('files') + [file_geid]
                 else:
                     # If project file/folder not in the list, append to the list
                     proccessed_project.append(f'{project_code}_{label}')
                     download_tasks[f'{project_code}_{label}'] = {
                         'files': download_tasks.get(f'{project_code}_{label}', []) + [file_geid],
-                        'total_size': total_size
+                        'total_size': total_size,
                     }
             elif node.get('status') == 'Permission Denied':
                 SrvErrorHandler.customized_handle(ECustomizedError.PERMISSION_DENIED, self.interactive)
@@ -231,9 +232,8 @@ class SrvFileDownload(metaclass=MetaService):
                 SrvErrorHandler.customized_handle(ECustomizedError.INVALID_DOWNLOAD, self.interactive, value=file_geid)
             elif node.get('status') == 'Can only work on file or folder not in Trash Bin':
                 SrvErrorHandler.customized_handle(
-                    ECustomizedError.INVALID_DOWNLOAD,
-                    self.interactive,
-                    value="Can only download file or folder")
+                    ECustomizedError.INVALID_DOWNLOAD, self.interactive, value='Can only download file or folder'
+                )
             else:
                 SrvErrorHandler.customized_handle(ECustomizedError.DOWNLOAD_FAIL, self.interactive)
         return download_tasks
@@ -258,7 +258,7 @@ class SrvFileDownload(metaclass=MetaService):
 
     @require_valid_token()
     def simple_download_file(self, output_path, item_res):
-        click.secho("preparing\r", fg='white', nl=False)
+        click.secho('preparing\r', fg='white', nl=False)
         presigned_task, filename = self.handle_geid_downloading(item_res)
         if not filename:
             return

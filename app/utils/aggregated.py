@@ -24,8 +24,7 @@ from urllib3.util.retry import Retry
 
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import SrvErrorHandler
+from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
 
 
@@ -38,7 +37,8 @@ def resilient_session():
     retries = Retry(
         total=AppConfig.Env.resilient_retry,
         backoff_factor=AppConfig.Env.resilient_backoff,
-        status_forcelist=AppConfig.Env.resilient_retry_code)
+        status_forcelist=AppConfig.Env.resilient_retry_code,
+    )
     s.mount('http://', HTTPAdapter(max_retries=retries))
     s.mount('https://', HTTPAdapter(max_retries=retries))
     return s
@@ -46,16 +46,16 @@ def resilient_session():
 
 @require_valid_token()
 def search_item(project_code, zone, folder_relative_path, item_type, token, container_type='project'):
-    url = AppConfig.Connections.url_bff + "/v1/project/{}/search".format(project_code)
+    url = AppConfig.Connections.url_bff + '/v1/project/{}/search'.format(project_code)
     params = {
         'zone': zone,
         'project_code': project_code,
         'path': folder_relative_path,
         'item_type': item_type,
-        'container_type': container_type
+        'container_type': container_type,
     }
     headers = {
-        'Authorization': "Bearer " + token,
+        'Authorization': 'Bearer ' + token,
     }
     __res = requests.get(url, params=params, headers=headers)
     return __res.json()
@@ -64,9 +64,7 @@ def search_item(project_code, zone, folder_relative_path, item_type, token, cont
 @require_valid_token()
 def get_file_info_by_geid(geid: list, token):
     payload = {'geid': geid}
-    headers = {
-        'Authorization': "Bearer " + token
-    }
+    headers = {'Authorization': 'Bearer ' + token}
     url = AppConfig.Connections.url_bff + '/v1/query/geid'
     res = resilient_session().post(url, headers=headers, json=payload)
     return res.json()['result']
@@ -75,19 +73,19 @@ def get_file_info_by_geid(geid: list, token):
 def fit_terminal_width(string_to_format):
     string_to_format = string_to_format.split('...')
     current_len = 0
-    sentence = ""
+    sentence = ''
     terminal_width = shutil.get_terminal_size().columns
     for word in string_to_format:
         word_len = len(word)
-        if current_len + word_len < terminal_width and word != "\n":
+        if current_len + word_len < terminal_width and word != '\n':
             current_len = current_len + word_len + 1
-            sentence = sentence + word + " "
+            sentence = sentence + word + ' '
         elif word == '\n':
             current_len = 1
-            sentence = sentence + "\n"
+            sentence = sentence + '\n'
         else:
             current_len = len(word) + 1
-            sentence = sentence + "\n" + word + " "
+            sentence = sentence + '\n' + word + ' '
     return sentence
 
 
@@ -112,9 +110,11 @@ def validate_folder_name(folder_name):
 
 def doc(arg):
     """Docstring decorator."""
+
     def decorator(func):
         func.__doc__ = arg
         return func
+
     return decorator
 
 
@@ -127,20 +127,18 @@ def void_validate_zone(action, zone):
         variables = f.readlines()
         for var in variables:
             if var.startswith('ZONE'):
-                current_env_var = var[5:].replace("\n", "").replace('"', "")
+                current_env_var = var[5:].replace('\n', '').replace('"', '')
     user = UserConfig()
-    url = AppConfig.Connections.url_bff + "/v1/validate/env"
-    headers = {
-        'Authorization': "Bearer " + user.access_token
-    }
-    payload = {"action": action, "environ": current_env_var, 'zone': zone}
+    url = AppConfig.Connections.url_bff + '/v1/validate/env'
+    headers = {'Authorization': 'Bearer ' + user.access_token}
+    payload = {'action': action, 'environ': current_env_var, 'zone': zone}
     res = requests.post(url, headers=headers, json=payload)
     validation_result = res.json().get('result')
-    validation_error = res.json().get('error_msg').replace("Invalid action: ", "")
+    validation_error = res.json().get('error_msg').replace('Invalid action: ', '')
     if validation_result == 'valid':
         pass
     else:
-        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_ACTION, True, f"{validation_error}")
+        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_ACTION, True, f'{validation_error}')
 
 
 def get_file_in_folder(path):

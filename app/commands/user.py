@@ -17,23 +17,27 @@ import click
 import app.services.output_manager.help_page as user_help
 import app.services.output_manager.message_handler as mhandler
 from app.services.user_authentication.decorator import require_login_session
-from app.services.user_authentication.user_login_logout import user_login
-from app.services.user_authentication.user_login_logout import user_logout
+from app.services.user_authentication.user_login_logout import user_login, user_logout
 from app.utils.aggregated import doc
 
 
 @click.command()
 def cli():
-    """User Actions"""
+    """User Actions."""
     pass
 
 
 @click.command()
-@click.option('-U', '--username', prompt='Username',
-              help=(user_help.user_help_page(user_help.UserHELP.USER_LOGIN_USERNAME)))
-@click.option('-P', '--password', prompt='Password',
-              help=(user_help.user_help_page(user_help.UserHELP.USER_LOGIN_PASSWORD)),
-              hide_input=True)
+@click.option(
+    '-U', '--username', prompt='Username', help=(user_help.user_help_page(user_help.UserHELP.USER_LOGIN_USERNAME))
+)
+@click.option(
+    '-P',
+    '--password',
+    prompt='Password',
+    help=(user_help.user_help_page(user_help.UserHELP.USER_LOGIN_PASSWORD)),
+    hide_input=True,
+)
 @doc(user_help.user_help_page(user_help.UserHELP.USER_LOGIN))
 def login(username, password):
     user_login(username, password)
@@ -41,10 +45,15 @@ def login(username, password):
 
 
 @click.command()
-@click.option('-y', '--yes', is_flag=True,
-              callback=mhandler.SrvOutPutHandler.abort_if_false, expose_value=False,
-              help=user_help.user_help_page(user_help.UserHELP.USER_LOGOUT_CONFIRM),
-              prompt='Are you sure you want to logout?')
+@click.option(
+    '-y',
+    '--yes',
+    is_flag=True,
+    callback=mhandler.SrvOutPutHandler.abort_if_false,
+    expose_value=False,
+    help=user_help.user_help_page(user_help.UserHELP.USER_LOGOUT_CONFIRM),
+    prompt='Are you sure you want to logout?',
+)
 @require_login_session
 @doc(user_help.user_help_page(user_help.UserHELP.USER_LOGOUT))
 def logout():

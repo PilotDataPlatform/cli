@@ -21,13 +21,14 @@ import app.services.logger_services.log_functions as logger
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.models.service_meta_class import MetaService
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import OverSizeError
-from app.services.output_manager.error_handler import SrvErrorHandler
-from app.services.output_manager.error_handler import customized_error_msg
+from app.services.output_manager.error_handler import (
+    ECustomizedError,
+    OverSizeError,
+    SrvErrorHandler,
+    customized_error_msg,
+)
 from app.services.user_authentication.decorator import require_valid_token
-from app.utils.aggregated import get_file_in_folder
-from app.utils.aggregated import resilient_session
+from app.utils.aggregated import get_file_in_folder, resilient_session
 
 
 class SrvKGResourceMgr(metaclass=MetaService):
@@ -38,7 +39,7 @@ class SrvKGResourceMgr(metaclass=MetaService):
     def pre_load_data(self, paths):
         json_data = {}
         for path in paths:
-            invalid_json_msg = f"{path} is an invalid json file"
+            invalid_json_msg = f'{path} is an invalid json file'
             try:
                 self.validate_file_size(path)
                 with open(path) as f:
@@ -61,7 +62,7 @@ class SrvKGResourceMgr(metaclass=MetaService):
 
     @require_valid_token()
     def import_resource(self):
-        url = AppConfig.Connections.url_bff + "/v1/kg/resources"
+        url = AppConfig.Connections.url_bff + '/v1/kg/resources'
         file_to_process = []
         try:
             for path in self.paths:
@@ -73,32 +74,27 @@ class SrvKGResourceMgr(metaclass=MetaService):
                     file_to_process.append(path)
             duplicate_file_list = [f for f, count in collections.Counter(file_to_process).items() if count > 1]
             if duplicate_file_list:
-                duplicate_files = ", \n".join(duplicate_file_list)
-                logger.warn(f"Following files have multiple input, it will process one time: \n{duplicate_files}")
+                duplicate_files = ', \n'.join(duplicate_file_list)
+                logger.warn(f'Following files have multiple input, it will process one time: \n{duplicate_files}')
             json_data = self.pre_load_data(file_to_process)
             if not json_data:
                 return
 
-            payload = {
-                "dataset_code": [],
-                "data": json_data
-            }
-            headers = {
-                'Authorization': "Bearer " + self.user.access_token
-            }
+            payload = {'dataset_code': [], 'data': json_data}
+            headers = {'Authorization': 'Bearer ' + self.user.access_token}
             res = resilient_session().post(url, headers=headers, json=payload)
             response = res.json()
-            code = response.get("code")
-            result = response.get("result")
+            code = response.get('code')
+            result = response.get('result')
             if code == 200:
-                ignored = result.get("ignored")
-                processed = result.get("processing")
+                ignored = result.get('ignored')
+                processed = result.get('processing')
                 if ignored:
-                    ignored_files = ", \n".join(list(ignored.keys()))
-                    logger.warn(f"File skipped: \n{ignored_files}")
+                    ignored_files = ', \n'.join(list(ignored.keys()))
+                    logger.warn(f'File skipped: \n{ignored_files}')
                 if processed:
-                    processed_files = ", \n".join(list(processed.keys()))
-                    logger.succeed(f"File imported: \n{processed_files}")
+                    processed_files = ', \n'.join(list(processed.keys()))
+                    logger.succeed(f'File imported: \n{processed_files}')
             else:
                 SrvErrorHandler.customized_handle(ECustomizedError.ERROR_CONNECTION, True)
         except Exception as e:
