@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
       # Setup python version
       - name: Setup python
@@ -40,7 +40,6 @@ jobs:
       - name: Install dependencies
         # if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
-          source .venv/bin/activate
           pip install -U pip
           poetry install --no-interaction --no-root
   linter:
@@ -69,7 +68,6 @@ jobs:
       run: |
           source .venv/bin/activate
           python3 -m pip show pre_commit
-          pip3 uninstall importlib-metadata -y
           python3 -m pre_commit run flake8 --all-files
   tests:
     needs: build
