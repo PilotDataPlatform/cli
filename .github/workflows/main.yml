@@ -60,7 +60,7 @@ jobs:
     - name: Install importlib-metadata
       run: |
           source .venv/bin/activate
-          pip3 install importlib-metadata<5.0
+          pip3 install importlib-metadata==4.8
     - name: Install pre-commit
       run: |
           source .venv/bin/activate
