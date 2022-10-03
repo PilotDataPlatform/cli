@@ -16,10 +16,12 @@ requests = "2.24.0"
 python-dotenv = "^0.20.0"
 pydantic = "^1.9.2"
 cffi = "^1.15.1"
+pre-commit = "^2.19.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "6.2.5"
 requests-mock = "^1.9.3"
+flake8 = "^4.0.1"
 pytest-mock = "^3.7.0"
 pytest-cov = "^3.0.0"
 
