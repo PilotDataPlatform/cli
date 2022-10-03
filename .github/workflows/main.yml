@@ -134,7 +134,7 @@ jobs:
       with:
         tag_name: ${{env.TAG_VERSION}}
         release_name: Release ${{env.TAG_VERSION}}
-        body: ${{ github.event.head_commit.message }}
+        # body: ${{ github.event.head_commit.message }}
         body_path: ./app/bundled_app/linux/pilotcli
         draft: false
         prerelease: false
