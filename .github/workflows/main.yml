@@ -121,7 +121,7 @@ jobs:
         source .venv/bin/activate
         pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --paths=./.venv/lib/python3.9/site-packages ./app/pilotcli.py -n pilotcli
     - name: Set version in env
-        run: echo "TAG_VERSION=`poetry version --short`" >> $GITHUB_ENV
+      run: echo "TAG_VERSION=`poetry version --short`" >> $GITHUB_ENV
     - name: Create Release
       uses: actions/create-release@v1
       env:
