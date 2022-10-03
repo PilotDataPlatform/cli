@@ -58,6 +58,7 @@ jobs:
     - name: Install pre-commit
       run: |
           source .venv/bin/activate
+          pip3 install importlib-metadata==4.8
           pip3 install pre_commit
           python3 -m pre_commit install
     - name: isort
