@@ -25,8 +25,7 @@ import app.services.logger_services.log_functions as logger
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.models.service_meta_class import MetaService
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import SrvErrorHandler
+from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler
 from app.services.output_manager.message_handler import SrvOutPutHandler
 
 from ..user_authentication.decorator import require_valid_token
@@ -38,7 +37,7 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
         self.output = output_path
         self.dataset_code = dataset_code
         self.dataset_geid = dataset_geid
-        self.session_id = "cli-" + str(int(time.time()))
+        self.session_id = 'cli-' + str(int(time.time()))
         self.hash_code = ''
         self.version = ''
         self.download_url = ''
@@ -48,9 +47,9 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
     def pre_dataset_version_download(self):
         url = AppConfig.Connections.url_dataset + f'/{self.dataset_geid}/download/pre'
         headers = {
-            'Authorization': "Bearer " + self.user.access_token,
+            'Authorization': 'Bearer ' + self.user.access_token,
             'Refresh-token': self.user.refresh_token,
-            'Session-ID': self.session_id
+            'Session-ID': self.session_id,
         }
         payload = {'version': self.version}
         try:
@@ -68,15 +67,11 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
     def pre_dataset_download(self):
         url = AppConfig.Connections.url_dataset_v2download + '/download/pre'
         headers = {
-            'Authorization': "Bearer " + self.user.access_token,
+            'Authorization': 'Bearer ' + self.user.access_token,
             'Refresh-token': self.user.refresh_token,
-            'Session-ID': self.session_id
+            'Session-ID': self.session_id,
         }
-        payload = {
-            "dataset_code": self.dataset_code,
-            "session_id": self.session_id,
-            "operator": self.user.username
-        }
+        payload = {'dataset_code': self.dataset_code, 'session_id': self.session_id, 'operator': self.user.username}
         try:
             response = requests.post(url, headers=headers, json=payload)
             res = response.json()
@@ -86,11 +81,11 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
 
     def generate_download_url(self):
         if self.version:
-            download_url = AppConfig.Connections.url_dataset_v2download + f"/download/{self.hash_code}"
+            download_url = AppConfig.Connections.url_dataset_v2download + f'/download/{self.hash_code}'
         else:
-            download_url = AppConfig.Connections.url_download_core + f"v1/download/{self.hash_code}"
+            download_url = AppConfig.Connections.url_download_core + f'v1/download/{self.hash_code}'
         headers = {
-            'Authorization': "Bearer " + self.user.access_token,
+            'Authorization': 'Bearer ' + self.user.access_token,
         }
         res = requests.get(download_url, headers=headers)
         res_json = res.json()
@@ -104,7 +99,7 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
 
     @require_valid_token()
     def download_status(self):
-        url = AppConfig.Connections.url_download_core + f"v1/download/status/{self.hash_code}"
+        url = AppConfig.Connections.url_download_core + f'v1/download/status/{self.hash_code}'
         res = requests.get(url)
         res_json = res.json()
         if res_json.get('code') == 200:
@@ -123,12 +118,12 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
 
     @require_valid_token()
     def send_download_request(self):
-        logger.info("start downloading...")
+        logger.info('start downloading...')
         with requests.get(self.download_url, stream=True, allow_redirects=True) as r:
             r.raise_for_status()
             # Since version zip file was created by our system, thus no need to consider filename contain '?'
             if not self.default_filename:
-                filename = f"{self.dataset_code}_{self.version}_{str(datetime.datetime.now())}"
+                filename = f'{self.dataset_code}_{self.version}_{str(datetime.datetime.now())}'
             else:
                 filename = self.default_filename
             output_path = self.avoid_duplicate_file_name(self.output.rstrip('/') + '/' + filename)
@@ -139,7 +134,7 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
                 unit_scale=True,
                 total=self.total_size,
                 unit_divisor=1024,
-                bar_format="{desc} |{bar:30} {percentage:3.0f}% {remaining}"
+                bar_format='{desc} |{bar:30} {percentage:3.0f}% {remaining}',
             ) as bar:
                 for data in r.iter_content(chunk_size=1024):
                     size = file.write(data)
@@ -158,7 +153,7 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
                 if filename == original_filename:
                     break
                 else:
-                    logger.warn(f"{original_filename} already exist, file will be saved as {filename}")
+                    logger.warn(f'{original_filename} already exist, file will be saved as {filename}')
                     break
         return filename
 

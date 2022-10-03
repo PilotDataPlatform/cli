@@ -17,36 +17,41 @@ import os
 
 import click
 
-from app.services.user_authentication.decorator import require_config
-from app.services.user_authentication.decorator import require_login_session
+from app.services.user_authentication.decorator import (
+    require_config,
+    require_login_session,
+)
 
-from .container_registry import create_project
-from .container_registry import get_secret
-from .container_registry import invite_member
-from .container_registry import list_projects
-from .container_registry import list_repositories
-from .dataset import dataset_download
-from .dataset import dataset_list
-from .dataset import dataset_show_detail
-from .file import file_check_manifest
-from .file import file_download
-from .file import file_export_manifest
-from .file import file_list
-from .file import file_put
+from .container_registry import (
+    create_project,
+    get_secret,
+    invite_member,
+    list_projects,
+    list_repositories,
+)
+from .dataset import dataset_download, dataset_list, dataset_show_detail
+from .file import (
+    file_check_manifest,
+    file_download,
+    file_export_manifest,
+    file_list,
+    file_put,
+)
 
 # Import custom commands
-from .hpc import hpc_auth
-from .hpc import hpc_get_node
-from .hpc import hpc_get_partition
-from .hpc import hpc_job_info
-from .hpc import hpc_job_submit
-from .hpc import hpc_list_nodes
-from .hpc import hpc_list_partitions
+from .hpc import (
+    hpc_auth,
+    hpc_get_node,
+    hpc_get_partition,
+    hpc_job_info,
+    hpc_job_submit,
+    hpc_list_nodes,
+    hpc_list_partitions,
+)
 from .kg_resource import kg_resource
 from .project import project_list_all
 from .use_config import set_env
-from .user import login
-from .user import logout
+from .user import login, logout
 
 hpc_enabled = os.environ.get('PILOT_CLI_HPC_ENABLED', 'false') == 'true'
 kg_enabled = os.environ.get('PILOT_CLI_KG_ENABLED', 'false') == 'true'
@@ -66,39 +71,39 @@ def entry_point():
     pass
 
 
-@entry_point.group(name="project")
+@entry_point.group(name='project')
 @require_config
 @require_login_session
 def project_group():
     pass
 
 
-@entry_point.group(name="dataset")
+@entry_point.group(name='dataset')
 @require_config
 @require_login_session
 def dataset_group():
     pass
 
 
-@entry_point.group(name="file")
+@entry_point.group(name='file')
 @require_config
 @require_login_session
 def file_group():
     pass
 
 
-@entry_point.group(name="user")
+@entry_point.group(name='user')
 @require_config
 def user_group():
     pass
 
 
-@entry_point.group(name="use_config")
+@entry_point.group(name='use_config')
 def config_group():
     pass
 
 
-@entry_point.group(name="container_registry")
+@entry_point.group(name='container_registry')
 @require_config
 def cr_group():
     pass
@@ -124,7 +129,8 @@ config_group.add_command(set_env)
 
 # Custom commands
 if hpc_enabled:
-    @entry_point.group(name="hpc")
+
+    @entry_point.group(name='hpc')
     def hpc_group():
         pass
 
@@ -137,7 +143,8 @@ if hpc_enabled:
     hpc_group.add_command(hpc_get_partition)
 
 if kg_enabled:
-    @entry_point.group(name="kg_resource")
+
+    @entry_point.group(name='kg_resource')
     def kg_resource_group():
         pass
 

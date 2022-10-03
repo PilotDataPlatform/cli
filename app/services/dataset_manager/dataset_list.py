@@ -16,8 +16,7 @@
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.models.service_meta_class import MetaService
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import SrvErrorHandler
+from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler
 from app.services.output_manager.message_handler import SrvOutPutHandler
 from app.utils.aggregated import resilient_session
 
@@ -33,18 +32,15 @@ class SrvDatasetListManager(metaclass=MetaService):
     def list_datasets(self, page, page_size):
         url = AppConfig.Connections.url_bff + '/v1/datasets'
         headers = {
-            'Authorization': "Bearer " + self.user.access_token,
+            'Authorization': 'Bearer ' + self.user.access_token,
         }
-        params = {
-            'page': page,
-            'page_size': page_size
-        }
+        params = {'page': page, 'page_size': page_size}
         try:
             response = resilient_session().get(url, headers=headers, params=params)
             if response.status_code == 200:
                 res_to_dict = response.json()['result']
                 if self.interactive:
-                    SrvOutPutHandler.print_list_header("Dataset Title", "Dataset Code")
+                    SrvOutPutHandler.print_list_header('Dataset Title', 'Dataset Code')
                     for dataset in res_to_dict:
                         dataset_code = str(dataset['code'])
                         if len(str(dataset['title'])) > 37:

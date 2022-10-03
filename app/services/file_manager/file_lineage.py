@@ -16,8 +16,7 @@
 import requests
 
 from app.configs.app_config import AppConfig
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import SrvErrorHandler
+from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler
 
 
 def create_lineage(lineage_event):
@@ -29,14 +28,15 @@ def create_lineage(lineage_event):
         'pipeline_name': lineage_event['pipeline_name'],
         'input_name': lineage_event['input_name'],
         'output_name': lineage_event['output_name'],
-        'description': 'straight upload by ' + lineage_event['operator']
+        'description': 'straight upload by ' + lineage_event['operator'],
     }
     headers = {
-        'Authorization': "Bearer " + lineage_event['token'],
+        'Authorization': 'Bearer ' + lineage_event['token'],
     }
     __res = requests.post(url, json=payload, headers=headers)
     if __res.status_code == 200:
         return __res.json()['result']
     else:
         SrvErrorHandler.customized_handle(
-            ECustomizedError.INVALID_LINEAGE, True, value=str(__res.status_code) + str(__res.text))
+            ECustomizedError.INVALID_LINEAGE, True, value=str(__res.status_code) + str(__res.text)
+        )

@@ -19,8 +19,7 @@ import app.services.logger_services.log_functions as logger
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.models.service_meta_class import MetaService
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import SrvErrorHandler
+from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler
 
 from ..user_authentication.decorator import require_valid_token
 
@@ -34,12 +33,9 @@ class SrvDatasetDetailManager(metaclass=MetaService):
     def dataset_detail(self, code, page=0, page_size=10):
         url = AppConfig.Connections.url_bff + f'/v1/dataset/{code}'
         headers = {
-            'Authorization': "Bearer " + self.user.access_token,
+            'Authorization': 'Bearer ' + self.user.access_token,
         }
-        params = {
-            'page': page,
-            'page_size': page_size
-        }
+        params = {'page': page, 'page_size': page_size}
         try:
             response = requests.get(url, headers=headers, params=params)
             res = response.json()

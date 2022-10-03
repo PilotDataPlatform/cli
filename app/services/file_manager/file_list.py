@@ -20,11 +20,9 @@ import app.services.logger_services.log_functions as logger
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.models.service_meta_class import MetaService
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import SrvErrorHandler
+from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
-from app.utils.aggregated import fit_terminal_width
-from app.utils.aggregated import search_item
+from app.utils.aggregated import fit_terminal_width, search_item
 
 
 class SrvFileList(metaclass=MetaService):
@@ -42,7 +40,7 @@ class SrvFileList(metaclass=MetaService):
             res = search_item(project_code, zone, folder_rel_path, 'folder', self.user.access_token)
         get_url = AppConfig.Connections.url_bff + f'/v1/{project_code}/files/query'
         headers = {
-            'Authorization': "Bearer " + self.user.access_token,
+            'Authorization': 'Bearer ' + self.user.access_token,
         }
         params = {
             'project_code': project_code,
@@ -50,7 +48,7 @@ class SrvFileList(metaclass=MetaService):
             'source_type': source_type,
             'zone': zone,
             'page': page,
-            'page_size': page_size
+            'page_size': page_size,
         }
         response = requests.get(get_url, params=params, headers=headers)
         res_json = response.json()
@@ -87,10 +85,7 @@ class SrvFileList(metaclass=MetaService):
                 choice = ['previous page', 'next page', 'exit']
             query_result = fit_terminal_width(files)
             logger.info(query_result)
-            val = questionary.select(
-                "\nWhat do you want?",
-                qmark="",
-                choices=choice).ask()
+            val = questionary.select('\nWhat do you want?', qmark='', choices=choice).ask()
             if val == 'exit':
                 break
             elif val == 'next page':

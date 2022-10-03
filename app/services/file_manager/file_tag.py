@@ -20,9 +20,11 @@ import requests
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.models.service_meta_class import MetaService
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import SrvErrorHandler
-from app.services.output_manager.error_handler import customized_error_msg
+from app.services.output_manager.error_handler import (
+    ECustomizedError,
+    SrvErrorHandler,
+    customized_error_msg,
+)
 from app.services.user_authentication.decorator import require_valid_token
 
 
@@ -35,8 +37,8 @@ class SrvFileTag(metaclass=MetaService):
 
     @staticmethod
     def validate_tag(tag):
-        tag_requirement = re.compile("^[a-z0-9-]{1,32}$")
-        if tag == "copied-to-core":
+        tag_requirement = re.compile('^[a-z0-9-]{1,32}$')
+        if tag == 'copied-to-core':
             return False, ECustomizedError.RESERVED_TAG
         elif not re.search(tag_requirement, tag):
             return False, ECustomizedError.INVALID_TAG_ERROR
@@ -67,13 +69,10 @@ class SrvFileTag(metaclass=MetaService):
 
     @require_valid_token()
     def add_tag(self, tags: list, geid: str):
-        payload = {"taglist": tags, "geid": geid}
-        payload = {
-            "tags": tags,
-            "inherit": False
-        }
+        payload = {'taglist': tags, 'geid': geid}
+        payload = {'tags': tags, 'inherit': False}
         headers = {
-            'Authorization': "Bearer " + self.user.access_token,
+            'Authorization': 'Bearer ' + self.user.access_token,
         }
         url = self.appconfig.Connections.url_file_tag % geid
         res = requests.post(url, headers=headers, json=payload)

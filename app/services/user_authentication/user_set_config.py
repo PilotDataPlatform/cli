@@ -3,8 +3,7 @@ import shutil
 
 from app.configs import app_config
 from app.services.logger_services import log_functions as logger
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import SrvErrorHandler
+from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler
 
 
 def check_config():

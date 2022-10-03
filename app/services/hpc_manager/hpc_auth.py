@@ -15,8 +15,7 @@
 
 from app.configs.app_config import AppConfig
 from app.models.service_meta_class import HPCMetaService
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import SrvErrorHandler
+from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
 from app.utils.aggregated import resilient_session
 
@@ -28,11 +27,7 @@ class HPCTokenManager(metaclass=HPCMetaService):
     @require_valid_token()
     def auth_user(self, host, username, password):
         url = AppConfig.Connections.url_bff + '/v1/hpc/auth'
-        payload = {
-            "token_issuer": host,
-            "username": username,
-            "password": password
-        }
+        payload = {'token_issuer': host, 'username': username, 'password': password}
         headers = {'Authorization': 'Bearer ' + self.token}
         res = resilient_session().post(url, headers=headers, json=payload)
         _res = res.json()

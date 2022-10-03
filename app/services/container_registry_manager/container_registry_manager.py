@@ -20,8 +20,7 @@ import requests
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.models.service_meta_class import MetaService
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import SrvErrorHandler
+from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
 
 
@@ -57,9 +56,7 @@ class SrvContainerRegistryMgr(metaclass=MetaService):
     @require_valid_token()
     def get_all_projects(self) -> list:
         api_url = f'{AppConfig.Connections.url_harbor}/api/v2.0/projects'
-        headers = {
-            'Authorization': 'Bearer ' + self.user.access_token
-        }
+        headers = {'Authorization': 'Bearer ' + self.user.access_token}
         try:
             response = requests.get(api_url, headers=headers, verify=False)
             if response.status_code == 200:
@@ -81,9 +78,7 @@ class SrvContainerRegistryMgr(metaclass=MetaService):
         api_url = f'{AppConfig.Connections.url_harbor}/api/v2.0/repositories'
         if project:
             api_url = f'{AppConfig.Connections.url_harbor}/api/v2.0/projects/{project}/repositories'
-        headers = {
-            'Authorization': 'Bearer ' + self.user.access_token
-        }
+        headers = {'Authorization': 'Bearer ' + self.user.access_token}
         try:
             response = requests.get(api_url, headers=headers, verify=False)
             if response.status_code == 200:
@@ -103,9 +98,7 @@ class SrvContainerRegistryMgr(metaclass=MetaService):
     @require_valid_token(azp='harbor')
     def get_current_user_secret(self) -> str:
         api_url = f'{AppConfig.Connections.url_harbor}/api/v2.0/users/current'
-        headers = {
-            'Authorization': 'Bearer ' + self.user.access_token
-        }
+        headers = {'Authorization': 'Bearer ' + self.user.access_token}
         try:
             response = requests.get(api_url, headers=headers, verify=False)
             if response.status_code == 200:
@@ -123,9 +116,7 @@ class SrvContainerRegistryMgr(metaclass=MetaService):
     def create_project(self, name: str, visibility: str) -> bool:
         public = self.get_public(visibility)
         api_url = f'{AppConfig.Connections.url_harbor}/api/v2.0/projects'
-        headers = {
-            'Authorization': 'Bearer ' + self.user.access_token
-        }
+        headers = {'Authorization': 'Bearer ' + self.user.access_token}
         payload = {
             'project_name': name,
             'public': public,
@@ -136,7 +127,7 @@ class SrvContainerRegistryMgr(metaclass=MetaService):
                 'severity': 'none',
                 'auto_scan': 'false',
                 'reuse_sys_cve_allowlist': 'true',
-                'retention_id': 'cli'
+                'retention_id': 'cli',
             },
             'registry_id': None,
             'storage_limit': 0,
@@ -153,7 +144,8 @@ class SrvContainerRegistryMgr(metaclass=MetaService):
                 SrvErrorHandler.customized_handle(ECustomizedError.ERROR_CONNECTION, self.interactive)
             elif response.status_code == 409:
                 SrvErrorHandler.customized_handle(
-                    ECustomizedError.CONTAINER_REGISTRY_DUPLICATE_PROJECT, self.interactive)
+                    ECustomizedError.CONTAINER_REGISTRY_DUPLICATE_PROJECT, self.interactive
+                )
             else:
                 SrvErrorHandler.customized_handle(ECustomizedError.CONTAINER_REGISTRY_OTHER, self.interactive)
         except Exception:
@@ -164,15 +156,8 @@ class SrvContainerRegistryMgr(metaclass=MetaService):
     def share_project(self, role: str, project: str, username: str) -> bool:
         api_url = f'{AppConfig.Connections.url_harbor}/api/v2.0/projects/{project}/members'
         role_number = self.get_role_number(role)
-        headers = {
-            'Authorization': 'Bearer ' + self.user.access_token
-        }
-        payload = {
-            'role_id': role_number,
-            'member_user': {
-                'username': username
-            }
-        }
+        headers = {'Authorization': 'Bearer ' + self.user.access_token}
+        payload = {'role_id': role_number, 'member_user': {'username': username}}
         try:
             response = requests.post(api_url, headers=headers, json=payload, verify=False)
             if response.status_code == 200 or response.status_code == 201:
