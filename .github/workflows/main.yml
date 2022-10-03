@@ -131,5 +131,6 @@ jobs:
         #   Changes in this Release
         #   - First Change
         #   - Second Change
+        body_path: ./app/bundled_app/linux/pilotcli
         draft: false
         prerelease: false
