@@ -42,7 +42,7 @@ jobs:
         run: |
           source .venv/bin/activate
           pip install -U pip
-          pip3 uninstall importlib-metadata
+          pip3 uninstall importlib-metadata -y
           pip3 install importlib-metadata==4.8
           poetry install --no-interaction --no-root
   linter:
