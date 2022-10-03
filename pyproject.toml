@@ -16,7 +16,6 @@ requests = "2.24.0"
 python-dotenv = "^0.20.0"
 pydantic = "^1.9.2"
 cffi = "^1.15.1"
-importlib-metadata = "4.8"
 
 [tool.poetry.dev-dependencies]
 pytest = "6.2.5"
