@@ -38,7 +38,7 @@ jobs:
           key: venv-${{ hashFiles('**/poetry.lock') }}
       # In stall dependencies
       - name: Install dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        # if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
           pip install -U pip
           pip3 uninstall importlib-metadata
