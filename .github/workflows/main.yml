@@ -42,8 +42,6 @@ jobs:
         run: |
           source .venv/bin/activate
           pip install -U pip
-          pip3 uninstall importlib-metadata -y
-          pip3 install importlib-metadata==4.8
           poetry install --no-interaction --no-root
   linter:
     needs: build
@@ -63,6 +61,8 @@ jobs:
           source .venv/bin/activate
           pip3 install pre_commit
           python3 -m pre_commit install
+          pip3 uninstall importlib-metadata -y
+          pip3 install importlib-metadata==4.8
     - name: isort
       run: |
           source .venv/bin/activate
