@@ -55,6 +55,12 @@ jobs:
       with:
         path: .venv
         key: venv-${{ hashFiles('**/poetry.lock') }}
+    # the newest version of importlib-metadata will break
+    # flake8. So manually install the lower version
+    - name: Install importlib-metadata
+      run: |
+          source .venv/bin/activate
+          pip3 install importlib-metadata<5.0
     - name: Install pre-commit
       run: |
           source .venv/bin/activate
