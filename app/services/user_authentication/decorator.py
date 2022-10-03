@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from functools import wraps
+import time
 
 from app.configs.user_config import UserConfig
 
@@ -24,7 +25,7 @@ from .user_login_logout import user_login
 from .user_set_config import check_config
 
 
-def require_valid_token(azp=None):
+def require_valid_token(azp='kong'):
     def decorate(func):
         @wraps(func)
         def decorated(*args, **kwargs):

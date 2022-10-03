@@ -52,7 +52,7 @@ class SrvTokenManager(metaclass=MetaService):
         tokens = self.get_token()
         return jwt.decode(tokens[1], verify=False)
 
-    def check_valid(self, required_azp=None):
+    def check_valid(self, required_azp):
         '''
         check token validation
         0: valid
@@ -63,9 +63,11 @@ class SrvTokenManager(metaclass=MetaService):
         expiry_at = datetime.datetime.utcfromtimestamp(decoded_access_token['exp'])
         now = datetime.datetime.utcnow()
         diff = int((expiry_at - now).seconds)
+
+        # TODO: check why here will need enforce the token refresh when
+        # azp is not `kong``
         azp_token_condition = decoded_access_token['azp'] != required_azp
-        kong_token_condition = not required_azp and decoded_access_token['azp'] != 'kong'
-        if azp_token_condition or kong_token_condition:
+        if azp_token_condition:
             return 3
         if expiry_at <= now:
             return 2

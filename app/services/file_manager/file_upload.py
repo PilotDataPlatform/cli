@@ -188,6 +188,7 @@ class SrvSingleFileUploader(metaclass=MetaService):
             SrvErrorHandler.default_handle(str(response.status_code) + ": " + str(response.content), self.regular_file)
 
     def stream_upload(self):
+        test = time.time()
         count = 0
         remaining_size = self.upload_form.resumable_total_size
         with tqdm(
@@ -210,6 +211,7 @@ class SrvSingleFileUploader(metaclass=MetaService):
                     count += 1  # uploaded successfully
                     remaining_size = remaining_size - self.chunk_size
             f.close()
+        print("inside chunk upload: ", time.time() - test)
 
     @require_valid_token()
     def upload_chunk(self, chunk_number, chunk):
@@ -227,6 +229,7 @@ class SrvSingleFileUploader(metaclass=MetaService):
             'chunk_data': chunk,
         }
         # retry three times
+        test = time.time()
         for i in range(AppConfig.Env.resilient_retry):
             response = resilient_session().post(url, data=payload, headers=headers, files=files)
             if response.status_code == 200:
@@ -236,8 +239,11 @@ class SrvSingleFileUploader(metaclass=MetaService):
                 if i == 2:
                     SrvErrorHandler.default_handle(response.content, True)
 
+        print("inside chunk upload:", time.time() - test)
+
     @require_valid_token()
     def on_succeed(self):
+        test = time.time()
         url = self.base_url + "/v1/files"
         payload = uf.generate_on_success_form(
             self.project_code, self.operator, self.upload_form,
@@ -249,11 +255,20 @@ class SrvSingleFileUploader(metaclass=MetaService):
             'Refresh-token': self.user.refresh_token,
             'Session-ID': self.session_id
         }
+        # test1 = time.time()
+        # print("stage 1:", test1 - test)
+
+        # test2 = time.time()
         response = resilient_session().post(url, json=payload, headers=headers)
+        # print("stage 2:", test2 - test1)
         res_json = response.json()
+
         if res_json.get('code') == 200:
             mhandler.SrvOutPutHandler.start_finalizing()
             result = res_json['result']
+            # test3 = time.time()
+            # print("stage 3:", test3 - test2)
+            # print("total time inside succes: ", test3 - test)
             return result
         else:
             SrvErrorHandler.default_handle(response.content, True)
@@ -373,8 +388,11 @@ def simple_upload(upload_event):
     regular_file = upload_event.get('regular_file', True)
     source_file = upload_event.get('valid_source')
     attribute = upload_event.get('attribute')
+
     mhandler.SrvOutPutHandler.start_uploading(my_file)
     base_path = ''
+    # if the input request zip folder then process the path as single file
+    # otherwise read throught the folder to get path underneath
     if os.path.isdir(my_file):
         job_type = 'AS_FILE' if compress_zip else 'AS_FOLDER'
         if job_type == 'AS_FILE':
@@ -390,6 +408,8 @@ def simple_upload(upload_event):
         job_type = 'AS_FILE'
         upload_file_path = [my_file]
         target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
+
+    # prepare for the upload
     file_uploader = SrvSingleFileUploader(
         file_path=upload_file_path,
         project_code=project_code,
@@ -402,7 +422,12 @@ def simple_upload(upload_event):
         current_folder_node=target_folder,
         regular_file=regular_file)
 
+    # sending the pre upload request to generate
+    # the placeholder in object storage
     file_identities = file_uploader.pre_upload()
+
+    # now loop over each file under the folder and start
+    # the chunk upload
     for path in upload_file_path:
         file_uploader.path = path
         file_uploader.upload_form.resumable_filename = os.path.basename(path)
@@ -413,8 +438,18 @@ def simple_upload(upload_event):
             file_uploader.upload_form.resumable_relative_path = target_folder + '/' + '/'.join(rel_path.split('/')[1:])
         file_uploader.upload_form.resumable_identifier = file_identities.get(converted_filename)
         file_uploader.generate_meta()
+        
+        upload_start_time = time.time()
         file_uploader.stream_upload()
+        upload_end_time = time.time()
+
         file_uploader.on_succeed()
+        conbime_chunks_time = time.time()
+
+        logger.info("chunk upload time spend: %.2f"%(upload_end_time - upload_start_time))
+        logger.info("total time: %.2f"%(conbime_chunks_time - upload_start_time))
+
+
     if source_file or attribute:
         continue_loop = True
         while continue_loop:

@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from importlib.resources import path
 import re
 
 import click
@@ -132,7 +133,9 @@ def file_put(**kwargs):
             upload_message = AppConfig.Env.default_upload_message
     # Unique Paths
     paths = set(paths)
-    # upload files
+    
+    # the loop will read all input path(folder or files)
+    # and process them one by one
     for f in paths:
         current_folder_node, result_file = assemble_path(
             f, target_folder, project_code, zone, user.access_token, zipping)
