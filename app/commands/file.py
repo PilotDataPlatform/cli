@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from importlib.resources import path
 import re
 
 import click
@@ -25,72 +24,94 @@ from app.configs.user_config import UserConfig
 from app.services.file_manager.file_download import SrvFileDownload
 from app.services.file_manager.file_list import SrvFileList
 from app.services.file_manager.file_manifests import SrvFileManifests
-from app.services.file_manager.file_upload import UploadEventValidator
-from app.services.file_manager.file_upload import assemble_path
-from app.services.file_manager.file_upload import simple_upload
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import SrvErrorHandler
-from app.services.output_manager.error_handler import customized_error_msg
+from app.services.file_manager.file_upload import (
+    UploadEventValidator,
+    assemble_path,
+    simple_upload,
+)
+from app.services.output_manager.error_handler import (
+    ECustomizedError,
+    SrvErrorHandler,
+    customized_error_msg,
+)
 from app.services.user_authentication.decorator import require_valid_token
-from app.utils.aggregated import doc
-from app.utils.aggregated import fit_terminal_width
-from app.utils.aggregated import get_file_info_by_geid
-from app.utils.aggregated import get_zone
-from app.utils.aggregated import identify_target_folder
-from app.utils.aggregated import search_item
-from app.utils.aggregated import void_validate_zone
+from app.utils.aggregated import (
+    doc,
+    fit_terminal_width,
+    get_file_info_by_geid,
+    get_zone,
+    identify_target_folder,
+    search_item,
+    void_validate_zone,
+)
 
 
 @click.command()
 def cli():
-    """File Actions"""
+    """File Actions."""
     pass
 
 
-@click.command(name="upload")
-@click.argument("paths",
-                type=click.Path(exists=True),
-                nargs=-1)
-@click.option('-p', '--project-path',
-              help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_P))
-@click.option('-a', '--attribute',
-              default=None,
-              required=False,
-              help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_A),
-              # type=click.Path(exists=True),
-              show_default=True)
-@click.option('-t', '--tag',
-              default=None,
-              required=False,
-              multiple=True,
-              help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_T),
-              show_default=True)
-@click.option('-z', '--zone',
-              default=AppConfig.Env.green_zone,
-              required=False,
-              help=file_help.file_help_page(file_help.FileHELP.FILE_Z),
-              show_default=True)
-@click.option('-m', '--upload-message',
-              default='',
-              required=False,
-              help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_M),
-              show_default=True)
-@click.option('-s', '--source-file',
-              default=None,
-              required=False,
-              help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_S),
-              show_default=True)
-@click.option('--pipeline',
-              default=None,
-              required=False,
-              help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_PIPELINE),
-              show_default=True)
-@click.option('--zip',
-              default=None,
-              required=False,
-              is_flag=True,
-              help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_ZIP),
-              show_default=True)
+@click.command(name='upload')
+@click.argument('paths', type=click.Path(exists=True), nargs=-1)
+@click.option('-p', '--project-path', help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_P))
+@click.option(
+    '-a',
+    '--attribute',
+    default=None,
+    required=False,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_A),
+    # type=click.Path(exists=True),
+    show_default=True,
+)
+@click.option(
+    '-t',
+    '--tag',
+    default=None,
+    required=False,
+    multiple=True,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_T),
+    show_default=True,
+)
+@click.option(
+    '-z',
+    '--zone',
+    default=AppConfig.Env.green_zone,
+    required=False,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_Z),
+    show_default=True,
+)
+@click.option(
+    '-m',
+    '--upload-message',
+    default='',
+    required=False,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_M),
+    show_default=True,
+)
+@click.option(
+    '-s',
+    '--source-file',
+    default=None,
+    required=False,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_S),
+    show_default=True,
+)
+@click.option(
+    '--pipeline',
+    default=None,
+    required=False,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_PIPELINE),
+    show_default=True,
+)
+@click.option(
+    '--zip',
+    default=None,
+    required=False,
+    is_flag=True,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_ZIP),
+    show_default=True,
+)
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD))
 def file_put(**kwargs):
     paths = kwargs.get('paths')
@@ -114,10 +135,14 @@ def file_put(**kwargs):
     project_code, target_folder = identify_target_folder(project_path)
     srv_manifest = SrvFileManifests()
     upload_val_event = {
-        "zone": zone, "upload_message": upload_message,
-        "source": source_file, "process_pipeline": pipeline,
-        "project_code": project_code, "token": user.access_token,
-        "attribute": attribute, "tag": tag
+        'zone': zone,
+        'upload_message': upload_message,
+        'source': source_file,
+        'process_pipeline': pipeline,
+        'project_code': project_code,
+        'token': user.access_token,
+        'attribute': attribute,
+        'tag': tag,
     }
     validated_fieds = validate_upload_event(upload_val_event)
     src_file_info = validated_fieds['source_file']
@@ -127,18 +152,19 @@ def file_put(**kwargs):
             # after validation, if not pipeline, provide default value
             pipeline = AppConfig.Env.pipeline_straight_upload
         else:
-            if not bool(re.match(r"^[a-z0-9_-]{1,20}$", pipeline)):
+            if not bool(re.match(r'^[a-z0-9_-]{1,20}$', pipeline)):
                 SrvErrorHandler.customized_handle(ECustomizedError.INVALID_PIPELINENAME, True)
         if not upload_message:
             upload_message = AppConfig.Env.default_upload_message
     # Unique Paths
     paths = set(paths)
-    
+
     # the loop will read all input path(folder or files)
     # and process them one by one
     for f in paths:
         current_folder_node, result_file = assemble_path(
-            f, target_folder, project_code, zone, user.access_token, zipping)
+            f, target_folder, project_code, zone, user.access_token, zipping
+        )
         upload_event = {
             'project_code': project_code,
             'file': f,
@@ -147,7 +173,7 @@ def file_put(**kwargs):
             'upload_message': upload_message,
             'current_folder_node': current_folder_node,
             'compress_zip': zipping,
-            'attribute': attribute
+            'attribute': attribute,
         }
         if pipeline:
             upload_event['process_pipeline'] = pipeline
@@ -159,9 +185,7 @@ def file_put(**kwargs):
 
 
 def validate_upload_event(event):
-    """
-    validate upload request, raise error when filed
-    """
+    """validate upload request, raise error when filed."""
     zone = event.get('zone')
     upload_message = event.get('upload_message')
     source = event.get('source')
@@ -171,18 +195,16 @@ def validate_upload_event(event):
     attribute = event.get('attribute')
     tag = event.get('tag')
     validator = UploadEventValidator(
-        project_code, zone, upload_message, source,
-        process_pipeline, token, attribute, tag
+        project_code, zone, upload_message, source, process_pipeline, token, attribute, tag
     )
     converted_content = validator.validate_upload_event()
     return converted_content
 
 
-@click.command(name="attribute-list")
+@click.command(name='attribute-list')
 @click.option(
-    '-p', '--project-code',
-    prompt='ProjectCode',
-    help=file_help.file_help_page(file_help.FileHELP.FILE_ATTRIBUTE_P))
+    '-p', '--project-code', prompt='ProjectCode', help=file_help.file_help_page(file_help.FileHELP.FILE_ATTRIBUTE_P)
+)
 @require_valid_token()
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_ATTRIBUTE_LIST))
 def file_check_manifest(project_code):
@@ -201,15 +223,13 @@ def file_check_manifest(project_code):
 
 
 # to ignore unsupported option: context_settings=dict(ignore_unknown_options=True,  allow_extra_args=True,)
-@click.command(name="attribute-export")
+@click.command(name='attribute-export')
 @click.option(
-    '-p', '--project-code',
-    prompt='ProjectCode',
-    help=file_help.file_help_page(file_help.FileHELP.FILE_ATTRIBUTE_P))
+    '-p', '--project-code', prompt='ProjectCode', help=file_help.file_help_page(file_help.FileHELP.FILE_ATTRIBUTE_P)
+)
 @click.option(
-    '-n', '--attribute-name',
-    prompt='AttributeName',
-    help=file_help.file_help_page(file_help.FileHELP.FILE_ATTRIBUTE_N))
+    '-n', '--attribute-name', prompt='AttributeName', help=file_help.file_help_page(file_help.FileHELP.FILE_ATTRIBUTE_N)
+)
 @require_valid_token()
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_ATTRIBUTE_EXPORT))
 def file_export_manifest(project_code, attribute_name):
@@ -224,29 +244,27 @@ def file_export_manifest(project_code, attribute_name):
         message_handler.SrvOutPutHandler.project_has_no_manifest(project_code)
 
 
-@click.command(name="list")
-@click.argument("paths",
-                type=click.STRING,
-                nargs=1)
-@click.option('-z', '--zone',
-              default='greenroom',
-              required=False,
-              help=file_help.file_help_page(file_help.FileHELP.FILE_Z),
-              show_default=True)
-@click.option('--page',
-              default=0,
-              required=False,
-              help=' The page to be listed',
-              show_default=True)
-@click.option('--page-size',
-              default=10,
-              required=False,
-              help='number of objects per page',
-              show_default=True)
-@click.option('-d', '--detached',
-              default=None, required=False,
-              is_flag=True, help='whether run in detached mode',
-              show_default=True)
+@click.command(name='list')
+@click.argument('paths', type=click.STRING, nargs=1)
+@click.option(
+    '-z',
+    '--zone',
+    default='greenroom',
+    required=False,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_Z),
+    show_default=True,
+)
+@click.option('--page', default=0, required=False, help=' The page to be listed', show_default=True)
+@click.option('--page-size', default=10, required=False, help='number of objects per page', show_default=True)
+@click.option(
+    '-d',
+    '--detached',
+    default=None,
+    required=False,
+    is_flag=True,
+    help='whether run in detached mode',
+    show_default=True,
+)
 @require_valid_token()
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_LIST))
 def file_list(paths, zone, page, page_size, detached):
@@ -262,30 +280,34 @@ def file_list(paths, zone, page, page_size, detached):
         srv_list.list_files_with_pagination(paths, zone, page, page_size)
 
 
-@click.command(name="sync")
-@click.argument("paths",
-                type=click.STRING,
-                nargs=-1)
-@click.argument("output_path",
-                type=click.Path(exists=True),
-                nargs=1)
-@click.option('-z', '--zone',
-              default=AppConfig.Env.green_zone,
-              required=False,
-              help=file_help.file_help_page(file_help.FileHELP.FILE_SYNC_Z),
-              show_default=False)
-@click.option('--zip',
-              default=None,
-              required=False,
-              is_flag=True,
-              help=file_help.file_help_page(file_help.FileHELP.FILE_SYNC_ZIP),
-              show_default=True)
-@click.option('-i', '--geid',
-              default=None,
-              required=False,
-              is_flag=True,
-              help=file_help.file_help_page(file_help.FileHELP.FILE_SYNC_I),
-              show_default=True)
+@click.command(name='sync')
+@click.argument('paths', type=click.STRING, nargs=-1)
+@click.argument('output_path', type=click.Path(exists=True), nargs=1)
+@click.option(
+    '-z',
+    '--zone',
+    default=AppConfig.Env.green_zone,
+    required=False,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_SYNC_Z),
+    show_default=False,
+)
+@click.option(
+    '--zip',
+    default=None,
+    required=False,
+    is_flag=True,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_SYNC_ZIP),
+    show_default=True,
+)
+@click.option(
+    '-i',
+    '--geid',
+    default=None,
+    required=False,
+    is_flag=True,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_SYNC_I),
+    show_default=True,
+)
 @require_valid_token()
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_SYNC))
 def file_download(**kwargs):

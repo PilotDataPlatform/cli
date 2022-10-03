@@ -29,19 +29,19 @@ from app.configs.user_config import UserConfig
 from app.models.service_meta_class import MetaService
 from app.services.file_manager.file_manifests import SrvFileManifests
 from app.services.file_manager.file_tag import SrvFileTag
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import SrvErrorHandler
-from app.services.output_manager.error_handler import customized_error_msg
+from app.services.output_manager.error_handler import (
+    ECustomizedError,
+    SrvErrorHandler,
+    customized_error_msg,
+)
 from app.services.user_authentication.decorator import require_valid_token
-from app.utils.aggregated import resilient_session
-from app.utils.aggregated import search_item
+from app.utils.aggregated import resilient_session, search_item
 
 from .file_lineage import create_lineage
 from ...utils.aggregated import get_file_in_folder
 
 
 class UploadEventValidator:
-
     def __init__(self, project_code, zone, upload_message, source, process_pipeline, token, attribute, tag):
         self.project_code = project_code
         self.zone = zone
@@ -56,13 +56,12 @@ class UploadEventValidator:
         source_file_info = {}
         if not self.upload_message:
             SrvErrorHandler.customized_handle(
-                ECustomizedError.INVALID_UPLOAD_REQUEST, True, value="upload-message is required")
+                ECustomizedError.INVALID_UPLOAD_REQUEST, True, value='upload-message is required'
+            )
         if self.source:
             if not self.process_pipeline:
                 SrvErrorHandler.customized_handle(
-                    ECustomizedError.INVALID_UPLOAD_REQUEST,
-                    True,
-                    value="process pipeline name required"
+                    ECustomizedError.INVALID_UPLOAD_REQUEST, True, value='process pipeline name required'
                 )
             else:
                 source_file_info = search_item(self.project_code, self.zone, self.source, 'file', self.token)
@@ -100,17 +99,19 @@ class UploadEventValidator:
 
 
 class SrvSingleFileUploader(metaclass=MetaService):
-    def __init__(self,
-                 file_path,
-                 project_code,
-                 tags,
-                 relative_path,
-                 zone=AppConfig.Env.green_zone,
-                 upload_message="cli straight upload",
-                 job_type='AS_FILE',
-                 process_pipeline=None,
-                 current_folder_node='',
-                 regular_file=True):
+    def __init__(
+        self,
+        file_path,
+        project_code,
+        tags,
+        relative_path,
+        zone=AppConfig.Env.green_zone,
+        upload_message='cli straight upload',
+        job_type='AS_FILE',
+        process_pipeline=None,
+        current_folder_node='',
+        regular_file=True,
+    ):
         self.user = UserConfig()
         self.operator = self.user.username
         self.path = file_path
@@ -118,13 +119,13 @@ class SrvSingleFileUploader(metaclass=MetaService):
         self.chunk_size = 1024 * 1024 * AppConfig.Env.chunk_size
         self.base_url = {
             AppConfig.Env.green_zone: AppConfig.Connections.url_upload_greenroom,
-            AppConfig.Env.core_zone: AppConfig.Connections.url_upload_core
+            AppConfig.Env.core_zone: AppConfig.Connections.url_upload_core,
         }.get(zone.lower())
         self.zone = zone
         self.job_type = job_type
         self.project_code = project_code
         self.process_pipeline = process_pipeline
-        self.session_id = "cli-" + str(int(time.time()))
+        self.session_id = 'cli-' + str(int(time.time()))
         self.upload_form = uf.FileUploadForm()
         self.upload_form.tags = tags
         self.upload_form.uploader = self.user.username
@@ -136,19 +137,23 @@ class SrvSingleFileUploader(metaclass=MetaService):
     def generate_meta(self):
         file_length_in_bytes = os.path.getsize(self.path)
         self.upload_form.resumable_total_size = file_length_in_bytes
-        self.upload_form.resumable_total_chunks = math.ceil(
-            self.upload_form.resumable_total_size / self.chunk_size)
-        mhandler.SrvOutPutHandler.uploading_files(self.upload_form.uploader,
-                                                  self.project_code,
-                                                  self.upload_form.resumable_total_size,
-                                                  self.upload_form.resumable_total_chunks,
-                                                  self.upload_form.resumable_relative_path.strip('/'))
+        self.upload_form.resumable_total_chunks = math.ceil(self.upload_form.resumable_total_size / self.chunk_size)
+        mhandler.SrvOutPutHandler.uploading_files(
+            self.upload_form.uploader,
+            self.project_code,
+            self.upload_form.resumable_total_size,
+            self.upload_form.resumable_total_chunks,
+            self.upload_form.resumable_relative_path.strip('/'),
+        )
         return self.upload_form.to_dict
 
     @require_valid_token()
     def pre_upload(self):
-        url = AppConfig.Connections.url_bff + "/v1/project/{}/files".format(self.project_code) \
-            if self.zone == AppConfig.Env.core_zone else self.base_url + "/v1/files/jobs"
+        url = (
+            AppConfig.Connections.url_bff + '/v1/project/{}/files'.format(self.project_code)
+            if self.zone == AppConfig.Env.core_zone
+            else self.base_url + '/v1/files/jobs'
+        )
         payload = uf.generate_pre_upload_form(
             self.project_code,
             self.operator,
@@ -156,15 +161,13 @@ class SrvSingleFileUploader(metaclass=MetaService):
             zone=self.zone,
             upload_message=self.upload_message,
             job_type=self.job_type,
-            current_folder_node=self.current_folder_node)
-        headers = {
-            'Authorization': "Bearer " + self.user.access_token,
-            'Session-ID': self.session_id
-        }
+            current_folder_node=self.current_folder_node,
+        )
+        headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.session_id}
         response = resilient_session().post(url, json=payload, headers=headers)
         if response.status_code == 200:
             res_to_dict = response.json()
-            result = res_to_dict.get("result")
+            result = res_to_dict.get('result')
             res = {}
             for job in result:
                 relative_path = job.get('source')
@@ -185,16 +188,15 @@ class SrvSingleFileUploader(metaclass=MetaService):
         elif response.status_code == 500 and 'Invalid operation, locked' in response.json().get('error_msg'):
             SrvErrorHandler.customized_handle(ECustomizedError.FILE_LOCKED, True)
         else:
-            SrvErrorHandler.default_handle(str(response.status_code) + ": " + str(response.content), self.regular_file)
+            SrvErrorHandler.default_handle(str(response.status_code) + ': ' + str(response.content), self.regular_file)
 
     def stream_upload(self):
-        test = time.time()
         count = 0
         remaining_size = self.upload_form.resumable_total_size
         with tqdm(
             total=self.upload_form.resumable_total_size,
             leave=True,
-            bar_format="{desc} |{bar:30} {percentage:3.0f}% {remaining}"
+            bar_format='{desc} |{bar:30} {percentage:3.0f}% {remaining}',
         ) as bar:
             bar.set_description('Uploading {}'.format(self.upload_form.resumable_filename))
             f = open(self.path, 'rb')
@@ -211,25 +213,16 @@ class SrvSingleFileUploader(metaclass=MetaService):
                     count += 1  # uploaded successfully
                     remaining_size = remaining_size - self.chunk_size
             f.close()
-        print("inside chunk upload: ", time.time() - test)
 
     @require_valid_token()
     def upload_chunk(self, chunk_number, chunk):
-        url = self.base_url + "/v1/files/chunks"
-        payload = uf.generate_chunk_form(
-            self.project_code,
-            self.operator,
-            self.upload_form,
-            chunk_number)
-        headers = {
-            'Authorization': "Bearer " + self.user.access_token,
-            'Session-ID': self.session_id
-        }
+        url = self.base_url + '/v1/files/chunks'
+        payload = uf.generate_chunk_form(self.project_code, self.operator, self.upload_form, chunk_number)
+        headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.session_id}
         files = {
             'chunk_data': chunk,
         }
         # retry three times
-        test = time.time()
         for i in range(AppConfig.Env.resilient_retry):
             response = resilient_session().post(url, data=payload, headers=headers, files=files)
             if response.status_code == 200:
@@ -239,36 +232,28 @@ class SrvSingleFileUploader(metaclass=MetaService):
                 if i == 2:
                     SrvErrorHandler.default_handle(response.content, True)
 
-        print("inside chunk upload:", time.time() - test)
-
     @require_valid_token()
     def on_succeed(self):
-        test = time.time()
-        url = self.base_url + "/v1/files"
+        url = self.base_url + '/v1/files'
         payload = uf.generate_on_success_form(
-            self.project_code, self.operator, self.upload_form,
+            self.project_code,
+            self.operator,
+            self.upload_form,
             [],
             process_pipeline=self.process_pipeline,
-            upload_message=self.upload_message)
+            upload_message=self.upload_message,
+        )
         headers = {
-            'Authorization': "Bearer " + self.user.access_token,
+            'Authorization': 'Bearer ' + self.user.access_token,
             'Refresh-token': self.user.refresh_token,
-            'Session-ID': self.session_id
+            'Session-ID': self.session_id,
         }
-        # test1 = time.time()
-        # print("stage 1:", test1 - test)
-
-        # test2 = time.time()
         response = resilient_session().post(url, json=payload, headers=headers)
-        # print("stage 2:", test2 - test1)
         res_json = response.json()
 
         if res_json.get('code') == 200:
             mhandler.SrvOutPutHandler.start_finalizing()
             result = res_json['result']
-            # test3 = time.time()
-            # print("stage 3:", test3 - test2)
-            # print("total time inside succes: ", test3 - test)
             return result
         else:
             SrvErrorHandler.default_handle(response.content, True)
@@ -282,29 +267,26 @@ class SrvSingleFileUploader(metaclass=MetaService):
             parent_file_geid = source_file['id']
             child_file_geid = child_file['id']
             lineage_event = {
-                "input_id": parent_file_geid,
-                "output_id": child_file_geid,
-                "input_name": source_file['name'],
-                "output_name": child_file['name'],
-                "project_code": self.project_code,
-                "pipeline_name": self.process_pipeline,
-                "operator": self.operator,
-                "token": self.user.access_token
+                'input_id': parent_file_geid,
+                'output_id': child_file_geid,
+                'input_name': source_file['name'],
+                'output_name': child_file['name'],
+                'project_code': self.project_code,
+                'pipeline_name': self.process_pipeline,
+                'operator': self.operator,
+                'token': self.user.access_token,
             }
             create_lineage(lineage_event)
 
     @require_valid_token()
     def check_status(self, converted_filename):
         url = AppConfig.Connections.url_status
-        headers = {
-            'Authorization': "Bearer " + self.user.access_token,
-            'Session-ID': self.session_id
-        }
+        headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.session_id}
         query = {
             'action': 'data_upload',
             'project_code': self.project_code,
             'operator': self.operator,
-            'session_id': self.session_id
+            'session_id': self.session_id,
         }
         response = resilient_session().get(url, headers=headers, params=query)
         mhandler.SrvOutPutHandler.finalize_upload()
@@ -347,7 +329,8 @@ def convert_filename(path, base_name, job_type, target_folder):
     else:
         _base_file_name = relative_file_path.index(base_name)
         converted_filename = relative_file_path[_base_file_name:]
-        _relative_path = relative_file_path[_base_file_name: (relative_file_path.rindex(file_name) - 1)]
+        end_index = relative_file_path.rindex(file_name) - 1
+        _relative_path = relative_file_path[_base_file_name:end_index]
         if target_folder == '':
             pass
         else:
@@ -400,8 +383,7 @@ def simple_upload(upload_event):
             target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
             compress_folder_to_zip(my_file)
         else:
-            logger.warn("Current version does not support folder tagging, "
-                        "any selected tags will be ignored")
+            logger.warn('Current version does not support folder tagging, ' 'any selected tags will be ignored')
             upload_file_path = get_file_in_folder(my_file)
             base_path = my_file.rstrip('/').split('/')[-1]
     else:
@@ -420,7 +402,8 @@ def simple_upload(upload_event):
         process_pipeline=process_pipeline,
         relative_path=base_path,
         current_folder_node=target_folder,
-        regular_file=regular_file)
+        regular_file=regular_file,
+    )
 
     # sending the pre upload request to generate
     # the placeholder in object storage
@@ -432,13 +415,13 @@ def simple_upload(upload_event):
         file_uploader.path = path
         file_uploader.upload_form.resumable_filename = os.path.basename(path)
         converted_filename, rel_path = convert_filename(path, base_path, job_type, target_folder)
-        if target_folder == "":
+        if target_folder == '':
             file_uploader.upload_form.resumable_relative_path = rel_path
         else:
             file_uploader.upload_form.resumable_relative_path = target_folder + '/' + '/'.join(rel_path.split('/')[1:])
         file_uploader.upload_form.resumable_identifier = file_identities.get(converted_filename)
         file_uploader.generate_meta()
-        
+
         upload_start_time = time.time()
         file_uploader.stream_upload()
         upload_end_time = time.time()
@@ -446,9 +429,8 @@ def simple_upload(upload_event):
         file_uploader.on_succeed()
         conbime_chunks_time = time.time()
 
-        logger.info("chunk upload time spend: %.2f"%(upload_end_time - upload_start_time))
-        logger.info("total time: %.2f"%(conbime_chunks_time - upload_start_time))
-
+        logger.info('chunk upload time spend: %.2f' % (upload_end_time - upload_start_time))
+        logger.info('total time: %.2f' % (conbime_chunks_time - upload_start_time))
 
     if source_file or attribute:
         continue_loop = True

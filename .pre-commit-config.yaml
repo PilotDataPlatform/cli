@@ -1,3 +1,4 @@
+# PILOT
 # Copyright (C) 2022 Indoc Research
 #
 # This program is free software: you can redistribute it and/or modify
@@ -22,7 +23,7 @@ repos:
       - id: check-docstring-first
       - id: check-merge-conflict
       - id: check-toml
-      - id: check-yaml
+      # - id: check-yaml
       - id: double-quote-string-fixer
       - id: end-of-file-fixer
       - id: requirements-txt-fixer
@@ -44,7 +45,6 @@ repos:
         args: [
             '--profile=black',
             '--filter-files',
-            '--force-single-line-imports',
             '--reverse-relative',
         ]
 
@@ -53,19 +53,20 @@ repos:
     hooks:
       - id: flake8
         additional_dependencies: [
-            'pycodestyle==2.7.0',
-            'pyflakes==2.3.0',
-            'mccabe==0.6.1',
-            'flake8-bugbear==21.3.2',
-            'flake8-builtins==1.5.3',
-            'flake8-comprehensions==3.3.1',
-            'flake8-debugger==4.0.0',
-            'flake8-print==4.0.0',
+            'pycodestyle==2.7.0',  # E,W
+            'pyflakes==2.3.0',  # F
+            'mccabe==0.6.1',  # C
+            'flake8-bugbear==21.3.2',  # B
+            'flake8-builtins==1.5.3',  # A
+            'flake8-comprehensions==3.3.1',  # C4
+            'flake8-debugger==4.0.0',  # T1
+            # 'flake8-logging-format==0.6.0',  # G
+            'flake8-print==4.0.0',  # T0
         ]
         args: [
             '--select=E,W,F,C,B,A,C4,T1,G,T0',
             '--ignore=W503,B008,B305,A003,G003,G004',
-            '--max-complexity=10',
+            '--max-complexity=25',
             '--max-line-length=120',
         ]
 

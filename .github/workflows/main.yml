@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v3
-      
+
       # Setup python version
       - name: Setup python
         uses: actions/setup-python@v2
@@ -91,7 +91,7 @@ jobs:
         file: ./coverage.xml
         fail_ci_if_error: false
   push-binary:
-    needs: tests
+    needs: [tests, linter]
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v1
