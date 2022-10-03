@@ -103,6 +103,7 @@ jobs:
       with:
         file: ./coverage.xml
         fail_ci_if_error: false
+
   push-binary:
     needs: [tests, linter]
     runs-on: ubuntu-20.04
@@ -116,6 +117,8 @@ jobs:
       with:
         path: .venv
         key: venv-${{ hashFiles('**/poetry.lock') }}
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
     - name: build binary
       run: |
         source .venv/bin/activate
