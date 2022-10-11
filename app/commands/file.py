@@ -112,8 +112,20 @@ def cli():
     help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_ZIP),
     show_default=True,
 )
-@doc(file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD))
+# @doc(file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD))
 def file_put(**kwargs):
+    '''
+
+    Summary:
+
+        Upload files/folders to a given Project path.
+
+    \b
+    Example:
+    \b
+        pilotcli file upload <file/folder_in_local> -p <project_code>/<file_path>
+    '''
+
     paths = kwargs.get('paths')
     project_path = kwargs.get('project_path')
     tag = kwargs.get('tag')
@@ -129,8 +141,14 @@ def file_put(**kwargs):
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
     void_validate_zone('upload', zone)
     toc = customized_error_msg(ECustomizedError.TOU_CONTENT).replace(' ', '...')
+
     if zone.lower() == AppConfig.Env.core_zone.lower() and click.confirm(fit_terminal_width(toc), abort=True):
         pass
+
+    # check if user input at least one file/folder
+    if len(paths) == 0:
+        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_PATHS, True)
+
     project_path = click.prompt('ProjectCode') if not project_path else project_path
     project_code, target_folder = identify_target_folder(project_path)
     srv_manifest = SrvFileManifests()
