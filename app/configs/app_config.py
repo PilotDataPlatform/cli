@@ -17,27 +17,27 @@ from env import ConfigClass
 
 
 class AppConfig(object):
-
     class Env(object):
-        section = "environment"
+        section = 'environment'
         project = ConfigClass.project
         user_config_path = ConfigClass.config_path
         msg_path = ConfigClass.custom_path
-        user_config_file = f"{user_config_path}/config.ini"
-        token_warn_need_refresh = 120  # seconds
+        user_config_file = f'{user_config_path}/config.ini'
+        token_warn_need_refresh = 280  # seconds
         chunk_size = 5  # chunk size mb
         resilient_retry = 3
         resilient_backoff = 1
+        resilient_retry_interval = 5  # seconds
         resilient_retry_code = [502, 503, 504, 404, 401]
-        pipeline_straight_upload = f"{project}cli_upload"
-        default_upload_message = f"{project}cli straight uploaded"
+        pipeline_straight_upload = f'{project}cli_upload'
+        default_upload_message = f'{project}cli straight uploaded'
         session_duration = 3600.0
         harbor_client_secret = ConfigClass.harbor_client_secret
         core_zone = 'core'
         green_zone = 'greenroom'
 
     class Connections(object):
-        section = "connections"
+        section = 'connections'
         url_harbor = ConfigClass.url_harbor
         url_authn = ConfigClass.url_authn
         url_refresh_token = ConfigClass.url_refresh_token
