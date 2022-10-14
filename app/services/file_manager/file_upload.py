@@ -17,6 +17,7 @@ import math
 import os
 import time
 import zipfile
+from multiprocessing.pool import ThreadPool
 
 import click
 from tqdm import tqdm
@@ -138,13 +139,13 @@ class SrvSingleFileUploader(metaclass=MetaService):
         file_length_in_bytes = os.path.getsize(self.path)
         self.upload_form.resumable_total_size = file_length_in_bytes
         self.upload_form.resumable_total_chunks = math.ceil(self.upload_form.resumable_total_size / self.chunk_size)
-        mhandler.SrvOutPutHandler.uploading_files(
-            self.upload_form.uploader,
-            self.project_code,
-            self.upload_form.resumable_total_size,
-            self.upload_form.resumable_total_chunks,
-            self.upload_form.resumable_relative_path.strip('/'),
-        )
+        # mhandler.SrvOutPutHandler.uploading_files(
+        #     self.upload_form.uploader,
+        #     self.project_code,
+        #     self.upload_form.resumable_total_size,
+        #     self.upload_form.resumable_total_chunks,
+        #     self.upload_form.resumable_relative_path.strip('/'),
+        # )
         return self.upload_form.to_dict
 
     @require_valid_token()
@@ -216,21 +217,27 @@ class SrvSingleFileUploader(metaclass=MetaService):
 
     @require_valid_token()
     def upload_chunk(self, chunk_number, chunk):
-        url = self.base_url + '/v1/files/chunks'
-        payload = uf.generate_chunk_form(self.project_code, self.operator, self.upload_form, chunk_number)
-        headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.session_id}
-        files = {
-            'chunk_data': chunk,
-        }
         # retry three times
         for i in range(AppConfig.Env.resilient_retry):
+            url = self.base_url + '/v1/files/chunks'
+            payload = uf.generate_chunk_form(self.project_code, self.operator, self.upload_form, chunk_number)
+            headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.session_id}
+            # print(self.user.access_token)
+            files = {
+                'chunk_data': chunk,
+            }
             response = resilient_session().post(url, data=payload, headers=headers, files=files)
             if response.status_code == 200:
                 res_to_dict = response.json()
                 return res_to_dict
             else:
+                SrvErrorHandler.default_handle('Retry', True)
                 if i == 2:
                     SrvErrorHandler.default_handle(response.content, True)
+
+            # wait certain amount of time and retry
+            # the time will be longer for more retry
+            time.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
 
     @require_valid_token()
     def on_succeed(self):
@@ -252,7 +259,7 @@ class SrvSingleFileUploader(metaclass=MetaService):
         res_json = response.json()
 
         if res_json.get('code') == 200:
-            mhandler.SrvOutPutHandler.start_finalizing()
+            # mhandler.SrvOutPutHandler.start_finalizing()
             result = res_json['result']
             return result
         else:
@@ -409,6 +416,17 @@ def simple_upload(upload_event):
     # the placeholder in object storage
     file_identities = file_uploader.pre_upload()
 
+    pool = ThreadPool(4)
+
+    def temp_upload_bundle(file_uploader):
+        file_uploader.generate_meta()
+        # print(file_uploader)
+        file_uploader.stream_upload()
+        file_uploader.on_succeed()
+
+    def token_refresh():
+        require_valid_token()
+
     # now loop over each file under the folder and start
     # the chunk upload
     for path in upload_file_path:
@@ -420,17 +438,28 @@ def simple_upload(upload_event):
         else:
             file_uploader.upload_form.resumable_relative_path = target_folder + '/' + '/'.join(rel_path.split('/')[1:])
         file_uploader.upload_form.resumable_identifier = file_identities.get(converted_filename)
-        file_uploader.generate_meta()
 
-        upload_start_time = time.time()
-        file_uploader.stream_upload()
-        upload_end_time = time.time()
+        from copy import deepcopy
 
-        file_uploader.on_succeed()
-        conbime_chunks_time = time.time()
+        t = deepcopy(file_uploader)
+        t.user = file_uploader.user
 
-        logger.info('chunk upload time spend: %.2f' % (upload_end_time - upload_start_time))
-        logger.info('total time: %.2f' % (conbime_chunks_time - upload_start_time))
+        pool.apply_async(temp_upload_bundle, args=(t,))
+
+        # file_uploader.generate_meta()
+
+        # upload_start_time = time.time()
+        # file_uploader.stream_upload()
+        # upload_end_time = time.time()
+
+        # file_uploader.on_succeed()
+        # conbime_chunks_time = time.time()
+
+        # logger.info('chunk upload time spend: %.2f' % (upload_end_time - upload_start_time))
+        # logger.info('total time: %.2f' % (conbime_chunks_time - upload_start_time))
+
+    pool.close()
+    pool.join()
 
     if source_file or attribute:
         continue_loop = True

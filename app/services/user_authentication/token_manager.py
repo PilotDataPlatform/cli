@@ -28,13 +28,13 @@ from app.services.user_authentication.user_login_logout import get_tokens
 class SrvTokenManager(metaclass=MetaService):
     def __init__(self):
         user_config = UserConfig()
-        has_user = user_config.config.has_section("USER")
-        has_access_token = user_config.config.has_option("USER", "access_token")
-        has_refresh_token = user_config.config.has_option("USER", "refresh_token")
+        has_user = user_config.config.has_section('USER')
+        has_access_token = user_config.config.has_option('USER', 'access_token')
+        has_refresh_token = user_config.config.has_option('USER', 'refresh_token')
         if has_user and has_access_token and has_refresh_token:
             self.config = user_config
         else:
-            raise(Exception('Login session not found, please login first.'))
+            raise (Exception('Login session not found, please login first.'))
 
     def update_token(self, access_token, refresh_token):
         self.config.access_token = access_token
@@ -67,23 +67,21 @@ class SrvTokenManager(metaclass=MetaService):
         # TODO: check why here will need enforce the token refresh when
         # azp is not `kong``
         azp_token_condition = decoded_access_token['azp'] != required_azp
+
         if azp_token_condition:
             return 3
         if expiry_at <= now:
             return 2
+        # print(expiry_at, now)
+        # print(diff, AppConfig.Env.token_warn_need_refresh)
         if diff <= AppConfig.Env.token_warn_need_refresh:
             return 1
         return 0
 
     def request_default_tokens(self):
         url = AppConfig.Connections.url_refresh_token
-        payload = {
-            'refreshtoken': self.config.refresh_token
-        }
-        headers = {
-            'Authorization': 'Bearer ' + self.config.access_token,
-            'Content-Type': 'application/json'
-        }
+        payload = {'refreshtoken': self.config.refresh_token}
+        headers = {'Authorization': 'Bearer ' + self.config.access_token, 'Content-Type': 'application/json'}
         response = requests.post(url, json=payload, headers=headers)
         if response.status_code == 200:
             self.update_token(response.json()['result']['access_token'], response.json()['result']['refresh_token'])
@@ -97,11 +95,9 @@ class SrvTokenManager(metaclass=MetaService):
             'grant_type': 'refresh_token',
             'refresh_token': self.config.refresh_token,
             'client_id': 'harbor',
-            'client_secret': AppConfig.Env.harbor_client_secret
+            'client_secret': AppConfig.Env.harbor_client_secret,
         }
-        headers = {
-            'Content-Type': 'application/x-www-form-urlencoded'
-        }
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         response = requests.post(url, data=payload, headers=headers, verify=False)
         if response.status_code == 200:
             self.update_token(response.json()['access_token'], response.json()['refresh_token'])

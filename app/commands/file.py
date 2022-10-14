@@ -112,19 +112,9 @@ def cli():
     help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_ZIP),
     show_default=True,
 )
-# @doc(file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD))
+@doc(file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD))
 def file_put(**kwargs):
-    '''
-
-    Summary:
-
-        Upload files/folders to a given Project path.
-
-    \b
-    Example:
-    \b
-        pilotcli file upload <file/folder_in_local> -p <project_code>/<file_path>
-    '''
+    """"""
 
     paths = kwargs.get('paths')
     project_path = kwargs.get('project_path')
@@ -197,7 +187,9 @@ def file_put(**kwargs):
             upload_event['process_pipeline'] = pipeline
         if source_file:
             upload_event['valid_source'] = src_file_info
+
         simple_upload(upload_event)
+
         srv_manifest.attach_manifest(attribute, result_file, zone) if attribute else None
         message_handler.SrvOutPutHandler.all_file_uploaded()
 
