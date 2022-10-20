@@ -18,9 +18,8 @@ import os
 import re
 import shutil
 
+import httpx
 import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
@@ -33,15 +32,17 @@ def get_current_datetime():
 
 
 def resilient_session():
-    s = requests.Session()
-    retries = Retry(
-        total=AppConfig.Env.resilient_retry,
-        backoff_factor=AppConfig.Env.resilient_backoff,
-        status_forcelist=AppConfig.Env.resilient_retry_code,
-    )
-    s.mount('http://', HTTPAdapter(max_retries=retries))
-    s.mount('https://', HTTPAdapter(max_retries=retries))
-    return s
+    # s = requests.Session()
+    # retries = Retry(
+    #     total=AppConfig.Env.resilient_retry,
+    #     backoff_factor=AppConfig.Env.resilient_backoff,
+    #     status_forcelist=AppConfig.Env.resilient_retry_code,
+    # )
+    # s.mount('http://', HTTPAdapter(max_retries=retries))
+    # s.mount('https://', HTTPAdapter(max_retries=retries))
+    # return s
+
+    return httpx.Client(timeout=60)
 
 
 @require_valid_token()

@@ -219,6 +219,8 @@ class SrvSingleFileUploader(metaclass=MetaService):
     def upload_chunk(self, chunk_number, chunk):
         # retry three times
         for i in range(AppConfig.Env.resilient_retry):
+            if i > 0:
+                SrvErrorHandler.default_handle('retry number %s' % i)
             url = self.base_url + '/v1/files/chunks'
             payload = uf.generate_chunk_form(self.project_code, self.operator, self.upload_form, chunk_number)
             headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.session_id}
@@ -231,9 +233,11 @@ class SrvSingleFileUploader(metaclass=MetaService):
                 res_to_dict = response.json()
                 return res_to_dict
             else:
-                SrvErrorHandler.default_handle('Retry', True)
+                SrvErrorHandler.default_handle('Chunk Error: retry number %s' % i)
                 if i == 2:
-                    SrvErrorHandler.default_handle(response.content, True)
+                    SrvErrorHandler.default_handle('retry over 3 times')
+                    SrvErrorHandler.default_handle(response.content)
+                    # SrvErrorHandler.default_handle(response.content, True)
 
             # wait certain amount of time and retry
             # the time will be longer for more retry
@@ -241,29 +245,36 @@ class SrvSingleFileUploader(metaclass=MetaService):
 
     @require_valid_token()
     def on_succeed(self):
-        url = self.base_url + '/v1/files'
-        payload = uf.generate_on_success_form(
-            self.project_code,
-            self.operator,
-            self.upload_form,
-            [],
-            process_pipeline=self.process_pipeline,
-            upload_message=self.upload_message,
-        )
-        headers = {
-            'Authorization': 'Bearer ' + self.user.access_token,
-            'Refresh-token': self.user.refresh_token,
-            'Session-ID': self.session_id,
-        }
-        response = resilient_session().post(url, json=payload, headers=headers)
-        res_json = response.json()
+        for i in range(AppConfig.Env.resilient_retry):
+            url = self.base_url + '/v1/files'
+            payload = uf.generate_on_success_form(
+                self.project_code,
+                self.operator,
+                self.upload_form,
+                [],
+                process_pipeline=self.process_pipeline,
+                upload_message=self.upload_message,
+            )
+            headers = {
+                'Authorization': 'Bearer ' + self.user.access_token,
+                'Refresh-token': self.user.refresh_token,
+                'Session-ID': self.session_id,
+            }
+            response = resilient_session().post(url, json=payload, headers=headers)
+            res_json = response.json()
 
-        if res_json.get('code') == 200:
-            # mhandler.SrvOutPutHandler.start_finalizing()
-            result = res_json['result']
-            return result
-        else:
-            SrvErrorHandler.default_handle(response.content, True)
+            if res_json.get('code') == 200:
+                # mhandler.SrvOutPutHandler.start_finalizing()
+                result = res_json['result']
+                return result
+            else:
+                SrvErrorHandler.default_handle('Combine Error: retry number %s' % i)
+                SrvErrorHandler.default_handle(response.content)
+                if i == 2:
+                    SrvErrorHandler.default_handle('retry over 3 times')
+                # SrvErrorHandler.default_handle(response.content, True)
+
+            time.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
 
     @require_valid_token()
     def create_file_lineage(self, source_file):
@@ -295,6 +306,7 @@ class SrvSingleFileUploader(metaclass=MetaService):
             'operator': self.operator,
             'session_id': self.session_id,
         }
+
         response = resilient_session().get(url, headers=headers, params=query)
         mhandler.SrvOutPutHandler.finalize_upload()
         if response.status_code == 200:
@@ -367,6 +379,7 @@ def assemble_path(f, target_folder, project_code, zone, access_token, zipping=Fa
 
 
 def simple_upload(upload_event):
+    upload_start_time = time.time()
     my_file = upload_event.get('file')
     project_code = upload_event.get('project_code')
     tags = upload_event.get('tags')
@@ -398,6 +411,10 @@ def simple_upload(upload_event):
         upload_file_path = [my_file]
         target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
 
+    # print("==================")
+    # print(len(upload_file_path))
+    # raise "1111111111"
+
     # prepare for the upload
     file_uploader = SrvSingleFileUploader(
         file_path=upload_file_path,
@@ -416,7 +433,7 @@ def simple_upload(upload_event):
     # the placeholder in object storage
     file_identities = file_uploader.pre_upload()
 
-    pool = ThreadPool(4)
+    pool = ThreadPool(5)
 
     def temp_upload_bundle(file_uploader):
         file_uploader.generate_meta()
@@ -424,25 +441,22 @@ def simple_upload(upload_event):
         file_uploader.stream_upload()
         file_uploader.on_succeed()
 
-    def token_refresh():
-        require_valid_token()
-
     # now loop over each file under the folder and start
     # the chunk upload
     for path in upload_file_path:
-        file_uploader.path = path
-        file_uploader.upload_form.resumable_filename = os.path.basename(path)
-        converted_filename, rel_path = convert_filename(path, base_path, job_type, target_folder)
-        if target_folder == '':
-            file_uploader.upload_form.resumable_relative_path = rel_path
-        else:
-            file_uploader.upload_form.resumable_relative_path = target_folder + '/' + '/'.join(rel_path.split('/')[1:])
-        file_uploader.upload_form.resumable_identifier = file_identities.get(converted_filename)
-
         from copy import deepcopy
 
         t = deepcopy(file_uploader)
         t.user = file_uploader.user
+
+        t.path = path
+        t.upload_form.resumable_filename = os.path.basename(path)
+        converted_filename, rel_path = convert_filename(path, base_path, job_type, target_folder)
+        if target_folder == '':
+            t.upload_form.resumable_relative_path = rel_path
+        else:
+            t.upload_form.resumable_relative_path = target_folder + '/' + '/'.join(rel_path.split('/')[1:])
+        t.upload_form.resumable_identifier = file_identities.get(converted_filename)
 
         pool.apply_async(temp_upload_bundle, args=(t,))
 
@@ -470,3 +484,5 @@ def simple_upload(upload_event):
         if source_file:
             file_uploader.create_file_lineage(source_file)
             os.remove(upload_file_path[0]) if os.path.isdir(my_file) and job_type == 'AS_FILE' else None
+
+    logger.info('Upload Time: %.2f' % (time.time() - upload_start_time))
