@@ -433,7 +433,7 @@ def simple_upload(upload_event):
     # the placeholder in object storage
     file_identities = file_uploader.pre_upload()
 
-    pool = ThreadPool(5)
+    pool = ThreadPool(7)
 
     def temp_upload_bundle(file_uploader):
         file_uploader.generate_meta()
