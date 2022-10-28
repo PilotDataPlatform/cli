@@ -19,6 +19,7 @@ from dotenv import load_dotenv
 from pydantic import BaseSettings, Extra
 
 load_dotenv()
+load_dotenv('/etc/environment')
 
 
 class Settings(BaseSettings):
@@ -32,6 +33,9 @@ class Settings(BaseSettings):
     url_harbor: str = ''
     url_bff: str = ''
     url_keycloak: str = ''
+
+    VM_INFO: str = None
+    VM_INFO_1: str = None
 
     def modify_values(self, settings):
         settings.url_authn = settings.base_url + 'portal/users/auth'
@@ -47,6 +51,14 @@ class Settings(BaseSettings):
         settings.url_dataset = settings.base_url + 'portal/v1/dataset'
         settings.url_validation = settings.base_url + 'v1/files/validation'
         settings.url_lineage = settings.url_bff + '/v1/lineage'
+
+        # config_path = '/etc/environment'
+        # f = open(config_path)
+        # variables = f.readlines()
+        # for var in variables:
+        #     if var.startswith('VM_INFO'):
+        #         _, settings.VM_INFO = var.split("=", 1)
+
         return settings
 
     class Config:

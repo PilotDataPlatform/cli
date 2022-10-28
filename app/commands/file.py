@@ -124,15 +124,20 @@ def file_put(**kwargs):
     zipping = kwargs.get('zip')
     attribute = kwargs.get('attribute')
 
+    # get project code from user's input direcly if specified
+    # else extract from project path
+    project_path = click.prompt('ProjectCode') if not project_path else project_path
+    project_code, target_folder = identify_target_folder(project_path)
+
     user = UserConfig()
     # Check zone and upload-message
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
-    void_validate_zone('upload', zone)
+    void_validate_zone('upload', zone, project_code)
+    raise Exception('test')
     toc = customized_error_msg(ECustomizedError.TOU_CONTENT).replace(' ', '...')
     if zone.lower() == AppConfig.Env.core_zone.lower() and click.confirm(fit_terminal_width(toc), abort=True):
         pass
-    project_path = click.prompt('ProjectCode') if not project_path else project_path
-    project_code, target_folder = identify_target_folder(project_path)
+
     srv_manifest = SrvFileManifests()
     upload_val_event = {
         'zone': zone,

@@ -18,6 +18,7 @@ pydantic = "^1.9.2"
 cffi = "^1.15.1"
 pre-commit = "^2.19.0"
 pyinstaller = "^5.4.1"
+httpx = "^0.23.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "6.2.5"
