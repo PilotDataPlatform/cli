@@ -132,8 +132,10 @@ def file_put(**kwargs):
     user = UserConfig()
     # Check zone and upload-message
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
-    void_validate_zone('upload', zone, project_code)
-    raise Exception('test')
+
+    # TODO somehow remove it
+    # void_validate_zone('upload', zone, project_code)
+
     toc = customized_error_msg(ECustomizedError.TOU_CONTENT).replace(' ', '...')
     if zone.lower() == AppConfig.Env.core_zone.lower() and click.confirm(fit_terminal_width(toc), abort=True):
         pass
