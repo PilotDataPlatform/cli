@@ -150,9 +150,10 @@ class SrvSingleFileUploader(metaclass=MetaService):
     @require_valid_token()
     def pre_upload(self):
         url = (
-            AppConfig.Connections.url_bff + '/v1/project/{}/files'.format(self.project_code)
-            if self.zone == AppConfig.Env.core_zone
-            else self.base_url + '/v1/files/jobs'
+            AppConfig.Connections.url_bff
+            + '/v1/project/{}/files'.format(self.project_code)
+            # if self.zone == AppConfig.Env.core_zone
+            # else self.base_url + '/v1/files/jobs'
         )
         payload = uf.generate_pre_upload_form(
             self.project_code,
