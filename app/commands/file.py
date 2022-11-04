@@ -42,7 +42,6 @@ from app.utils.aggregated import (
     get_zone,
     identify_target_folder,
     search_item,
-    void_validate_zone,
 )
 
 
@@ -325,7 +324,8 @@ def file_download(**kwargs):
     geid = kwargs.get('geid')
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone
     interactive = False if len(paths) > 1 else True
-    void_validate_zone('download', zone)
+    # void_validate_zone('download', zone)
+
     user = UserConfig()
     if len(paths) == 0:
         SrvErrorHandler.customized_handle(ECustomizedError.MISSING_PROJECT_CODE, interactive)
@@ -352,11 +352,12 @@ def file_download(**kwargs):
                 item_geid = path
             # when file not exist there will be no response, the geid will be input geid for error handling
             item_res.append({'status': item_status, 'result': item_result, 'geid': item_geid})
+
     # Downloading by batch or single
     if zipping and len(paths) > 1:
-        srv_download = SrvFileDownload(interactive)
+        srv_download = SrvFileDownload(zone, interactive)
         srv_download.batch_download_file(output_path, item_res)
     else:
         for item in item_res:
-            srv_download = SrvFileDownload(interactive)
+            srv_download = SrvFileDownload(zone, interactive)
             srv_download.simple_download_file(output_path, [item])
