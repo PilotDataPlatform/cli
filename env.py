@@ -46,7 +46,7 @@ class Settings(BaseSettings):
         settings.url_status = settings.base_url + 'portal/v1/files/actions/tasks'
         settings.url_download_greenroom = settings.base_url + 'portal/download/gr/'
         settings.url_download_core = settings.base_url + 'portal/download/core/'
-        settings.url_v2_download_pre = settings.base_url + 'portal/v2/download/pre'
+        settings.url_v2_download_pre = settings.url_bff + '/v1/project/%s/files/download'
         settings.url_dataset_v2download = settings.base_url + 'portal/download/core/v2/dataset'
         settings.url_dataset = settings.base_url + 'portal/v1/dataset'
         settings.url_validation = settings.base_url + 'v1/files/validation'
