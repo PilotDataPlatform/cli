@@ -54,5 +54,5 @@ class SrvDatasetListManager(metaclass=MetaService):
                 SrvErrorHandler.customized_handle(ECustomizedError.USER_DISABLED, True)
             else:
                 SrvErrorHandler.default_handle(response.content, True)
-        except Exception:
-            SrvErrorHandler.default_handle(response.content, True)
+        except Exception as e:
+            SrvErrorHandler.default_handle(f'Error: {str(e)}', True)
