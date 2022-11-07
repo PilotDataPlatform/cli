@@ -73,6 +73,7 @@ class SrvFileDownload(metaclass=MetaService):
         #         pre_status, file_path = f2.result()
         # self.print_prepare_msg('preparing')
         pre_status, file_path = self.prepare_download()
+
         self.check_point = False
         return pre_status, file_path
 

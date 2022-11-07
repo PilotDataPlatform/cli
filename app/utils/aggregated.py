@@ -22,7 +22,6 @@ import httpx
 import requests
 
 from app.configs.app_config import AppConfig
-from app.configs.user_config import UserConfig
 from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
 from env import ConfigClass
@@ -113,27 +112,19 @@ def doc(arg):
     return decorator
 
 
-@require_valid_token()
-def void_validate_zone(action, zone, project_code):
-    # config_path = '/etc/environment'
-    # current_env_var = ''
-    # if os.path.isfile(config_path):
-    #     f = open(config_path)
-    #     variables = f.readlines()
-    #     for var in variables:
-    #         if var.startswith('ZONE'):
-    #             current_env_var = var[5:].replace('\n', '').replace('"', '')
-    user = UserConfig()
-    url = AppConfig.Connections.url_bff + '/v1/validate/env'
-    headers = {'Authorization': 'Bearer ' + user.access_token, 'VM_Info': ConfigClass.VM_INFO_1}
-    payload = {'action': action, 'environ': 'current_env_var', 'zone': zone, 'project_code': project_code}
-    res = requests.post(url, headers=headers, json=payload)
-    validation_result = res.json().get('result')
-    validation_error = res.json().get('error_msg').replace('Invalid action: ', '')
-    if validation_result == 'valid':
-        pass
-    else:
-        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_ACTION, True, f'{validation_error}')
+# @require_valid_token()
+# def void_validate_zone(action, zone, project_code):
+#     user = UserConfig()
+#     url = AppConfig.Connections.url_bff + '/v1/validate/env'
+#     headers = {'Authorization': 'Bearer ' + user.access_token, 'VM_Info': ConfigClass.VM_INFO_1}
+#     payload = {'action': action, 'environ': 'current_env_var', 'zone': zone, 'project_code': project_code}
+#     res = requests.post(url, headers=headers, json=payload)
+#     validation_result = res.json().get('result')
+#     validation_error = res.json().get('error_msg').replace('Invalid action: ', '')
+#     if validation_result == 'valid':
+#         pass
+#     else:
+#         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_ACTION, True, f'{validation_error}')
 
 
 def get_file_in_folder(path):
