@@ -45,6 +45,7 @@ class SrvFileDownload(metaclass=MetaService):
         self.check_point = False
         self.core = self.appconfig.Env.core_zone
         self.green = self.appconfig.Env.green_zone
+        self.zone = zone
 
     def print_prepare_msg(self, message):
         space_width = len(message)
