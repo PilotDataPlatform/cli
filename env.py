@@ -51,13 +51,6 @@ class Settings(BaseSettings):
         settings.url_validation = settings.base_url + 'v1/files/validation'
         settings.url_lineage = settings.url_bff + '/v1/lineage'
 
-        # config_path = '/etc/environment'
-        # f = open(config_path)
-        # variables = f.readlines()
-        # for var in variables:
-        #     if var.startswith('VM_INFO'):
-        #         _, settings.VM_INFO = var.split("=", 1)
-
         return settings
 
     class Config:
