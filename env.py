@@ -35,7 +35,6 @@ class Settings(BaseSettings):
     url_keycloak: str = ''
 
     VM_INFO: str = None
-    VM_INFO_1: str = None
 
     def modify_values(self, settings):
         settings.url_authn = settings.base_url + 'portal/users/auth'
