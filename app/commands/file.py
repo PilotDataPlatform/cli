@@ -42,7 +42,6 @@ from app.utils.aggregated import (
     get_zone,
     identify_target_folder,
     search_item,
-    void_validate_zone,
 )
 
 
@@ -124,15 +123,22 @@ def file_put(**kwargs):
     zipping = kwargs.get('zip')
     attribute = kwargs.get('attribute')
 
+    # get project code from user's input direcly if specified
+    # else extract from project path
+    project_path = click.prompt('ProjectCode') if not project_path else project_path
+    project_code, target_folder = identify_target_folder(project_path)
+
     user = UserConfig()
     # Check zone and upload-message
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
-    void_validate_zone('upload', zone)
+
+    # TODO somehow remove it
+    # void_validate_zone('upload', zone, project_code)
+
     toc = customized_error_msg(ECustomizedError.TOU_CONTENT).replace(' ', '...')
     if zone.lower() == AppConfig.Env.core_zone.lower() and click.confirm(fit_terminal_width(toc), abort=True):
         pass
-    project_path = click.prompt('ProjectCode') if not project_path else project_path
-    project_code, target_folder = identify_target_folder(project_path)
+
     srv_manifest = SrvFileManifests()
     upload_val_event = {
         'zone': zone,
@@ -318,7 +324,8 @@ def file_download(**kwargs):
     geid = kwargs.get('geid')
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone
     interactive = False if len(paths) > 1 else True
-    void_validate_zone('download', zone)
+    # void_validate_zone('download', zone)
+
     user = UserConfig()
     if len(paths) == 0:
         SrvErrorHandler.customized_handle(ECustomizedError.MISSING_PROJECT_CODE, interactive)
@@ -345,11 +352,12 @@ def file_download(**kwargs):
                 item_geid = path
             # when file not exist there will be no response, the geid will be input geid for error handling
             item_res.append({'status': item_status, 'result': item_result, 'geid': item_geid})
+
     # Downloading by batch or single
     if zipping and len(paths) > 1:
-        srv_download = SrvFileDownload(interactive)
+        srv_download = SrvFileDownload(zone, interactive)
         srv_download.batch_download_file(output_path, item_res)
     else:
         for item in item_res:
-            srv_download = SrvFileDownload(interactive)
+            srv_download = SrvFileDownload(zone, interactive)
             srv_download.simple_download_file(output_path, [item])
