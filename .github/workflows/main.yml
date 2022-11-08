@@ -12,7 +12,7 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  
+
   extract-branch-name:
     runs-on: ubuntu-latest
     outputs:
@@ -117,7 +117,7 @@ jobs:
 
   push-binary:
     needs: [tests, linter, extract-branch-name]
-    if: ${{ needs.extract-branch-name.outputs.branch == 'main' }}
+    if: ${{ needs.extract-branch-name.outputs.branch == 'main' or needs.extract-branch-name.outputs.branch == 'develop'  }}
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v1
