@@ -18,6 +18,7 @@ import os
 import time
 
 import click
+import httpx
 from tqdm import tqdm
 
 import app.services.logger_services.log_functions as logger
@@ -31,7 +32,7 @@ from app.utils.aggregated import resilient_session
 
 
 class SrvFileDownload(metaclass=MetaService):
-    def __init__(self, interactive=True):
+    def __init__(self, zone: str, interactive=True):
         self.appconfig = AppConfig()
         self.user = UserConfig()
         self.operator = self.user.username
@@ -44,6 +45,7 @@ class SrvFileDownload(metaclass=MetaService):
         self.check_point = False
         self.core = self.appconfig.Env.core_zone
         self.green = self.appconfig.Env.green_zone
+        self.zone = zone
 
     def print_prepare_msg(self, message):
         space_width = len(message)
@@ -65,11 +67,14 @@ class SrvFileDownload(metaclass=MetaService):
         return url
 
     def pre_download(self):
-        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-            f1 = executor.submit(self.print_prepare_msg, 'preparing')
-            f2 = executor.submit(self.prepare_download)
-            for _ in concurrent.futures.wait([f1, f2], return_when='FIRST_COMPLETED'):
-                pre_status, file_path = f2.result()
+        # with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        #     f1 = executor.submit(self.print_prepare_msg, 'preparing')
+        #     f2 = executor.submit(self.prepare_download)
+        #     for _ in concurrent.futures.wait([f1, f2], return_when='FIRST_COMPLETED'):
+        #         pre_status, file_path = f2.result()
+        # self.print_prepare_msg('preparing')
+        pre_status, file_path = self.prepare_download()
+
         self.check_point = False
         return pre_status, file_path
 
@@ -80,6 +85,7 @@ class SrvFileDownload(metaclass=MetaService):
             files.append({'id': f})
         payload = {
             'files': files,
+            'zone': self.zone,
             'operator': self.operator,
             'container_code': self.project_code,
             'container_type': 'project',
@@ -89,7 +95,7 @@ class SrvFileDownload(metaclass=MetaService):
             'Refresh-token': self.user.refresh_token,
             'Session-ID': self.session_id,
         }
-        url = self.appconfig.Connections.url_v2_download_pre
+        url = self.appconfig.Connections.url_v2_download_pre % (self.project_code)
         res = resilient_session().post(url, headers=headers, json=payload)
         res_json = res.json()
         self.check_point = True
@@ -163,7 +169,7 @@ class SrvFileDownload(metaclass=MetaService):
         logger.info('start downloading...')
         filename = local_filename.split('/')[-1]
         try:
-            with resilient_session().get(url, stream=True) as r:
+            with httpx.stream('GET', url) as r:
                 r.raise_for_status()
                 if r.headers.get('Content-Type') == 'application/zip' or download_mode == 'batch':
                     size = r.headers.get('Content-length')
@@ -177,13 +183,13 @@ class SrvFileDownload(metaclass=MetaService):
                         unit_divisor=1024,
                         bar_format='{desc} |{bar:30} {percentage:3.0f}% {remaining}',
                     ) as bar:
-                        for data in r.iter_content(chunk_size=1024):
+                        for data in r.iter_bytes(chunk_size=1024):
                             size = file.write(data)
                             bar.update(size)
                 else:
                     with open(local_filename, 'wb') as file:
                         part = 0
-                        for data in r.iter_content(chunk_size=1024):
+                        for data in r.iter_bytes(chunk_size=1024):
                             size = file.write(data)
                             progress = '.' * part
                             click.echo(f'Downloading{progress}\r', nl=False)
@@ -262,6 +268,7 @@ class SrvFileDownload(metaclass=MetaService):
         presigned_task, filename = self.handle_geid_downloading(item_res)
         if not filename:
             return
+
         pre_status, zip_file_path = self.pre_download()
         if pre_status == 'ZIPPING' and not presigned_task:
             filename = zip_file_path.split('/')[-1]
@@ -271,9 +278,11 @@ class SrvFileDownload(metaclass=MetaService):
             status = self.check_download_preparing_status()
             mhandler.SrvOutPutHandler.download_status(status)
             download_url = self.generate_download_url()
+
         output_filename = output_path.rstrip('/') + '/' + filename
         local_filename = self.avoid_duplicate_file_name(output_filename)
         saved_filename = self.download_file(download_url, local_filename)
+
         if os.path.isfile(saved_filename):
             mhandler.SrvOutPutHandler.download_success(saved_filename)
         else:

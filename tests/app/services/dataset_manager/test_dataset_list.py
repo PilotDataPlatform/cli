@@ -16,37 +16,20 @@
 from app.services.dataset_manager.dataset_list import SrvDatasetListManager
 
 
-def test_list_datasets(requests_mock, mocker, capsys):
-    mocker.patch(
-        'app.services.user_authentication.token_manager.SrvTokenManager.check_valid',
-        return_value=0
-    )
-    requests_mock.get(
-        'http://bff_cli' + '/v1/datasets',
+def test_list_datasets(httpx_mock, mocker, capsys):
+    mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
+    httpx_mock.add_response(
+        method='GET',
+        url='http://bff_cli/v1/datasets?page=1&page_size=10',
         json={
-            "code": 200,
-            "error_msg": "",
-            "result": [
-                {
-                    'id': 'fake-id1',
-                    'code': 'testdataset1',
-                    'title': 'testdatasetA',
-                    'creator': 'test-user'
-                },
-                {
-                    'id': 'fake-id2',
-                    'code': 'testdataset2',
-                    'title': 'testdatasetB',
-                    'creator': 'test-user'
-                },
-                {
-                    'id': 'fake-id3',
-                    'code': 'testdataset3',
-                    'title': 'testdatasetC',
-                    'creator': 'test-user'
-                }
-            ]
-        }
+            'code': 200,
+            'error_msg': '',
+            'result': [
+                {'id': 'fake-id1', 'code': 'testdataset1', 'title': 'testdatasetA', 'creator': 'test-user'},
+                {'id': 'fake-id2', 'code': 'testdataset2', 'title': 'testdatasetB', 'creator': 'test-user'},
+                {'id': 'fake-id3', 'code': 'testdataset3', 'title': 'testdatasetC', 'creator': 'test-user'},
+            ],
+        },
     )
     dataset_mgr = SrvDatasetListManager()
     dataset_mgr.list_datasets(page=1, page_size=10)

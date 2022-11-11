@@ -72,7 +72,10 @@ class Error:
         'FILE_LOCKED': (
             'File/Folder action cannot be proceed at this moment due to other processes. Please try again later.'
         ),
-        'NO_FILE_PERMMISION': 'File does not exist in Project. Please verify your role and check that the file exists.',
+        'NO_FILE_PERMMISION': (
+            'File does not exist or you do not have correct permission in Project. '
+            'Please verify your role and check that the file exists.'
+        ),
         'FOLDER_NOT_FOUND': 'Folder not found in the Project.',
         'INVALID_ZONE': 'The data zone invalid. Please verify the data location and try again.',
         'FOLDER_EMPTY': 'Folder is empty.',
