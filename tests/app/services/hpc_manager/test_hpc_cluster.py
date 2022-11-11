@@ -22,35 +22,27 @@ from app.services.output_manager.error_handler import ECustomizedError
 from tests.conftest import decoded_token
 
 
-def test_hpc_list_partitions(requests_mock, mocker):
+def test_hpc_list_partitions(httpx_mock, mocker):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
-        return_value=decoded_token()
+        return_value=decoded_token(),
     )
-    requests_mock.get(
-        'http://bff_cli' + '/v1/hpc/partitions',
+    httpx_mock.add_response(
+        method='GET',
+        url='http://bff_cli/v1/hpc/partitions?host=test_host&username=test-user&token=test-hpc-token',
         json={
-            "code": 200,
-            "error_msg": "",
-            "result": [
-                {
-                    "partition1": {
-                        'nodes': ['hpc-node1'],
-                        'tres': "cpu=2,mem=4G,node=1,billing=2"
-                    }
-                },
-                {
-                    "partition2": {
-                        "nodes": ["hpc-node2"],
-                        "tres": "cpu=1,mem=8G,node=1,billing=1"
-                    }
-                }
-            ]
-        }
+            'code': 200,
+            'error_msg': '',
+            'result': [
+                {'partition1': {'nodes': ['hpc-node1'], 'tres': 'cpu=2,mem=4G,node=1,billing=2'}},
+                {'partition2': {'nodes': ['hpc-node2'], 'tres': 'cpu=1,mem=8G,node=1,billing=1'}},
+            ],
+        },
     )
+
     expected_partitions = [
         {'partition1': {'nodes': ['hpc-node1'], 'tres': 'cpu=2,mem=4G,node=1,billing=2'}},
-        {'partition2': {'nodes': ['hpc-node2'], 'tres': 'cpu=1,mem=8G,node=1,billing=1'}}
+        {'partition2': {'nodes': ['hpc-node2'], 'tres': 'cpu=1,mem=8G,node=1,billing=1'}},
     ]
     hpc_mgr = HPCPartitionManager()
     partion = hpc_mgr.list_partitions('test_host')
@@ -60,7 +52,7 @@ def test_hpc_list_partitions(requests_mock, mocker):
 def test_hpc_list_partitions_no_token(mocker, capsys, monkeypatch):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
-        return_value=decoded_token()
+        return_value=decoded_token(),
     )
     monkeypatch.setattr(UserConfig, 'hpc_token', '')
     with pytest.raises(SystemExit):

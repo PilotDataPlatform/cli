@@ -12,6 +12,17 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
+
+  extract-branch-name:
+    runs-on: ubuntu-latest
+    outputs:
+      branch: ${{steps.extract_branch.outputs.branch}}
+    steps:
+      - name: Extract Branch Name
+        id: extract_branch
+        shell: bash
+        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+
   build:
     runs-on: ubuntu-latest
     steps:
@@ -105,7 +116,8 @@ jobs:
         fail_ci_if_error: false
 
   push-binary:
-    needs: [tests, linter]
+    needs: [tests, linter, extract-branch-name]
+    if: ${{ needs.extract-branch-name.outputs.branch == 'main' }}
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v1

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "app"
-version = "0.1.0"
+version = "0.1.1"
 description = "This service is designed to support pilot platform"
 authors = ["Indoc Research"]
 
@@ -30,6 +30,9 @@ pytest-cov = "^3.0.0"
 
 [tool.poetry.scripts]
 pilotcli = "app.pilotcli:cli"
+
+[tool.poetry.group.dev.dependencies]
+pytest-httpx = "^0.21.2"
 
 [build-system]
 requires = ["poetry_core>=1.0.0"]
