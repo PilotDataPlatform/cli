@@ -111,6 +111,14 @@ def cli():
     help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_ZIP),
     show_default=True,
 )
+@click.option(
+    '--thread',
+    '-t',
+    default=1,
+    required=False,
+    help='The number of thread for upload a file',
+    show_default=True,
+)
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD))
 def file_put(**kwargs):
     """"""
@@ -124,6 +132,7 @@ def file_put(**kwargs):
     pipeline = kwargs.get('pipeline')
     zipping = kwargs.get('zip')
     attribute = kwargs.get('attribute')
+    thread = kwargs.get('thread')
 
     # get project code from user's input direcly if specified
     # else extract from project path
@@ -195,7 +204,7 @@ def file_put(**kwargs):
         if source_file:
             upload_event['valid_source'] = src_file_info
 
-        simple_upload(upload_event)
+        simple_upload(upload_event, num_of_thread=thread)
 
         srv_manifest.attach_manifest(attribute, result_file, zone) if attribute else None
         message_handler.SrvOutPutHandler.all_file_uploaded()

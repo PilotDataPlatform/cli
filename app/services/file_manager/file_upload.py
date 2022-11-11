@@ -374,7 +374,7 @@ def assemble_path(f, target_folder, project_code, zone, access_token, zipping=Fa
     return current_folder_node, result_file
 
 
-def simple_upload(upload_event):
+def simple_upload(upload_event, num_of_thread: int = 1):
     upload_start_time = time.time()
     my_file = upload_event.get('file')
     project_code = upload_event.get('project_code')
@@ -429,7 +429,7 @@ def simple_upload(upload_event):
     # the placeholder in object storage
     file_identities = file_uploader.pre_upload()
 
-    pool = ThreadPool(7)
+    pool = ThreadPool(num_of_thread)
 
     def temp_upload_bundle(file_uploader):
         file_uploader.generate_meta()
