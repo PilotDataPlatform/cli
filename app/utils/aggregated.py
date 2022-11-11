@@ -34,7 +34,7 @@ def get_current_datetime():
 def resilient_session():
     # each resilient session will
     headers = {'VM_Info': ConfigClass.VM_INFO}
-    client = httpx.Client(headers=headers, timeout=60)
+    client = httpx.Client(headers=headers, timeout=None)
     return client
 
 
