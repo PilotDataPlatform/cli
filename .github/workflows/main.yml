@@ -117,7 +117,7 @@ jobs:
 
   push-binary:
     needs: [tests, linter, extract-branch-name]
-    if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'main' }}
+    if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop' }}
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v1
