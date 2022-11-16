@@ -160,7 +160,7 @@ class SrvSingleFileUploader(metaclass=MetaService):
             current_folder_node=self.current_folder_node,
         )
         headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.session_id}
-        response = resilient_session().post(url, json=payload, headers=headers)
+        response = resilient_session().post(url, json=payload, headers=headers, timeout=None)
         if response.status_code == 200:
             res_to_dict = response.json()
             result = res_to_dict.get('result')
@@ -387,53 +387,65 @@ def simple_upload(upload_event):
         upload_file_path = [my_file]
         target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
 
-    # prepare for the upload
-    file_uploader = SrvSingleFileUploader(
-        file_path=upload_file_path,
-        project_code=project_code,
-        tags=tags,
-        zone=zone,
-        job_type=job_type,
-        upload_message=upload_message,
-        process_pipeline=process_pipeline,
-        relative_path=base_path,
-        current_folder_node=target_folder,
-        regular_file=regular_file,
-    )
+    # here add the batch of 500 per loop, the pre upload api cannot
+    # process very large amount of file at same time. otherwise it
+    # wil; timeout
+    batch_size = AppConfig.Env.upload_batch_size
+    num_of_batchs = math.ceil(len(upload_file_path) / AppConfig.Env.upload_batch_size)
+    for batch in range(0, num_of_batchs):
+        start_index = batch * batch_size
+        end_index = (batch + 1) * batch_size
+        file_batchs = upload_file_path[start_index:end_index]
+        # print(file_batchs)
+        # prepare for the upload
+        file_uploader = SrvSingleFileUploader(
+            file_path=file_batchs,
+            project_code=project_code,
+            tags=tags,
+            zone=zone,
+            job_type=job_type,
+            upload_message=upload_message,
+            process_pipeline=process_pipeline,
+            relative_path=base_path,
+            current_folder_node=target_folder,
+            regular_file=regular_file,
+        )
 
-    # sending the pre upload request to generate
-    # the placeholder in object storage
-    file_identities = file_uploader.pre_upload()
+        # sending the pre upload request to generate
+        # the placeholder in object storage
+        file_identities = file_uploader.pre_upload()
 
-    # now loop over each file under the folder and start
-    # the chunk upload
-    for path in upload_file_path:
-        file_uploader.path = path
-        file_uploader.upload_form.resumable_filename = os.path.basename(path)
-        converted_filename, rel_path = convert_filename(path, base_path, job_type, target_folder)
-        if target_folder == '':
-            file_uploader.upload_form.resumable_relative_path = rel_path
-        else:
-            file_uploader.upload_form.resumable_relative_path = target_folder + '/' + '/'.join(rel_path.split('/')[1:])
-        file_uploader.upload_form.resumable_identifier = file_identities.get(converted_filename)
-        file_uploader.generate_meta()
+        # now loop over each file under the folder and start
+        # the chunk upload
+        for path in file_batchs:
+            file_uploader.path = path
+            file_uploader.upload_form.resumable_filename = os.path.basename(path)
+            converted_filename, rel_path = convert_filename(path, base_path, job_type, target_folder)
+            if target_folder == '':
+                file_uploader.upload_form.resumable_relative_path = rel_path
+            else:
+                file_uploader.upload_form.resumable_relative_path = (
+                    target_folder + '/' + '/'.join(rel_path.split('/')[1:])
+                )
+            file_uploader.upload_form.resumable_identifier = file_identities.get(converted_filename)
+            file_uploader.generate_meta()
 
-        upload_start_time = time.time()
-        file_uploader.stream_upload()
-        upload_end_time = time.time()
+            upload_start_time = time.time()
+            file_uploader.stream_upload()
+            upload_end_time = time.time()
 
-        file_uploader.on_succeed()
-        conbime_chunks_time = time.time()
+            file_uploader.on_succeed()
+            conbime_chunks_time = time.time()
 
-        logger.info('chunk upload time spend: %.2f' % (upload_end_time - upload_start_time))
-        logger.info('total time: %.2f' % (conbime_chunks_time - upload_start_time))
+            logger.info('chunk upload time spend: %.2f' % (upload_end_time - upload_start_time))
+            logger.info('total time: %.2f' % (conbime_chunks_time - upload_start_time))
 
-    if source_file or attribute:
-        continue_loop = True
-        while continue_loop:
-            succeed = file_uploader.check_status(converted_filename)
-            continue_loop = not succeed
-            time.sleep(0.5)
-        if source_file:
-            file_uploader.create_file_lineage(source_file)
-            os.remove(upload_file_path[0]) if os.path.isdir(my_file) and job_type == 'AS_FILE' else None
+        if source_file or attribute:
+            continue_loop = True
+            while continue_loop:
+                succeed = file_uploader.check_status(converted_filename)
+                continue_loop = not succeed
+                time.sleep(0.5)
+            if source_file:
+                file_uploader.create_file_lineage(source_file)
+                os.remove(file_batchs[0]) if os.path.isdir(my_file) and job_type == 'AS_FILE' else None
