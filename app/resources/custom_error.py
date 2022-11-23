@@ -52,6 +52,12 @@ class Error:
             'Invalid pipeline name. Pipeline names must be between 1 and 20 characters long and '
             'may only contain lowercase letters, numbers, and/or special characters of -_, .'
         ),
+        'INVALID_PATHS': 'The input path is empty. Please select at least one file or folder to upload',
+        'INVALID_FOLDERNAME': (
+            'The input folder name is not valid. Please follow the rule:\n'
+            ' - cannot contains special characters.\n'
+            ' - the length should be smaller than 20 characters.'
+        ),
         'INVALID_TOKEN': 'Your login session has expired. Please try again or log in again.',
         'PERMISSION_DENIED': (
             'Permission denied. Please verify your role in the Project has permission to perform this action.'
