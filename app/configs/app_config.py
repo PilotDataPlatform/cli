@@ -27,6 +27,7 @@ class AppConfig(object):
         chunk_size = 5  # chunk size mb
         resilient_retry = 3
         resilient_backoff = 1
+        resilient_retry_interval = 1  # seconds
         resilient_retry_code = [502, 503, 504, 404, 401]
         pipeline_straight_upload = f'{project}cli_upload'
         default_upload_message = f'{project}cli straight uploaded'

@@ -24,6 +24,12 @@ from .app_config import AppConfig
 
 
 class UserConfig(metaclass=Singleton):
+    """The class to maintain the user access/fresh token Note here: the base class is Singleton, meaning no matter how
+    code initializes the class.
+
+    This user config is global.
+    """
+
     def __init__(self):
         if not os.path.exists(AppConfig.Env.user_config_path):
             os.makedirs(AppConfig.Env.user_config_path)

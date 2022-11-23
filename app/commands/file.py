@@ -111,8 +111,18 @@ def cli():
     help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_ZIP),
     show_default=True,
 )
+@click.option(
+    '--thread',
+    '-t',
+    default=1,
+    required=False,
+    help='The number of thread for upload a file',
+    show_default=True,
+)
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD))
 def file_put(**kwargs):
+    """"""
+
     paths = kwargs.get('paths')
     project_path = kwargs.get('project_path')
     tag = kwargs.get('tag')
@@ -122,6 +132,7 @@ def file_put(**kwargs):
     pipeline = kwargs.get('pipeline')
     zipping = kwargs.get('zip')
     attribute = kwargs.get('attribute')
+    thread = kwargs.get('thread')
 
     # get project code from user's input direcly if specified
     # else extract from project path
@@ -136,9 +147,16 @@ def file_put(**kwargs):
     # void_validate_zone('upload', zone, project_code)
 
     toc = customized_error_msg(ECustomizedError.TOU_CONTENT).replace(' ', '...')
+
     if zone.lower() == AppConfig.Env.core_zone.lower() and click.confirm(fit_terminal_width(toc), abort=True):
         pass
 
+    # check if user input at least one file/folder
+    if len(paths) == 0:
+        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_PATHS, True)
+
+    project_path = click.prompt('ProjectCode') if not project_path else project_path
+    project_code, target_folder = identify_target_folder(project_path)
     srv_manifest = SrvFileManifests()
     upload_val_event = {
         'zone': zone,
@@ -185,7 +203,9 @@ def file_put(**kwargs):
             upload_event['process_pipeline'] = pipeline
         if source_file:
             upload_event['valid_source'] = src_file_info
-        simple_upload(upload_event)
+
+        simple_upload(upload_event, num_of_thread=thread)
+
         srv_manifest.attach_manifest(attribute, result_file, zone) if attribute else None
         message_handler.SrvOutPutHandler.all_file_uploaded()
 
