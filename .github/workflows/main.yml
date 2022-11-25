@@ -121,6 +121,8 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v1
+      with:
+        ref: ${{ needs.extract-branch-name.outputs.branch }}
     - uses: actions/setup-python@v2
       with:
         python-version: 3.9
@@ -134,7 +136,7 @@ jobs:
     - name: build binary
       run: |
         source .venv/bin/activate
-        pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --paths=./.venv/lib/python3.9/site-packages ./app/pilotcli.py -n pilotcli
+        pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --paths=./.venv/lib/python3.9/site-packages ./app/pilotcli.py -n ${{ github.sha }}
     - name: Set version in env
       run: |
         source .venv/bin/activate
@@ -157,6 +159,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-        asset_path: ./app/bundled_app/linux/pilotcli
+        asset_path: ./app/bundled_app/linux/${{ github.sha }}
         asset_name: pilotcli
         asset_content_type: application/octet-stream
