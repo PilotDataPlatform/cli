@@ -32,7 +32,7 @@ class AppConfig(object):
         pipeline_straight_upload = f'{project}cli_upload'
         default_upload_message = f'{project}cli straight uploaded'
         session_duration = 3600.0
-        upload_batch_size = 500
+        upload_batch_size = 100
         harbor_client_secret = ConfigClass.harbor_client_secret
         core_zone = 'core'
         green_zone = 'greenroom'
