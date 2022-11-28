@@ -20,6 +20,9 @@ import zipfile
 from multiprocessing.pool import ThreadPool
 
 import click
+
+# import httpx
+import requests
 from tqdm import tqdm
 
 import app.models.upload_form as uf
@@ -222,10 +225,10 @@ class SrvSingleFileUploader(metaclass=MetaService):
             payload = uf.generate_chunk_form(self.project_code, self.operator, self.upload_form, chunk_number)
             headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.session_id}
             # print(self.user.access_token)
-            files = {
-                'chunk_data': chunk,
-            }
-            response = resilient_session().post(url, data=payload, headers=headers, files=files)
+            files = {'chunk_data': chunk}
+            # start_time = time.time()
+            response = requests.post(url, data=payload, headers=headers, files=files)
+            # print(f'\napi {url} spent {time.time() - start_time}s')
             if response.status_code == 200:
                 res_to_dict = response.json()
                 return res_to_dict
@@ -257,7 +260,9 @@ class SrvSingleFileUploader(metaclass=MetaService):
                 'Refresh-token': self.user.refresh_token,
                 'Session-ID': self.session_id,
             }
+            # start_time = time.time()
             response = resilient_session().post(url, json=payload, headers=headers)
+            # print(f'\napi {url} spent {time.time() - start_time}s')
             res_json = response.json()
 
             if res_json.get('code') == 200:
@@ -445,10 +450,18 @@ def simple_upload(upload_event, num_of_thread: int = 1):
         pool = ThreadPool(num_of_thread)
 
         def temp_upload_bundle(file_uploader: SrvSingleFileUploader):
+            upload_start_time = time.time()
             file_uploader.generate_meta()
 
             file_uploader.stream_upload()
+            upload_end_time = time.time()
+
             file_uploader.on_succeed()
+            conbime_chunks_time = time.time()
+
+            logger.info('chunk upload time spend: %.2f' % (upload_end_time - upload_start_time))
+            logger.info('total time: %.2f' % (conbime_chunks_time - upload_start_time))
+            logger.info('=============================================')
 
         # now loop over each file under the folder and start
         # the chunk upload
