@@ -289,10 +289,10 @@ class SrvSingleFileUploader(metaclass=MetaService):
             lineage_event = {
                 'input_id': parent_file_geid,
                 'output_id': child_file_geid,
-                'input_name': source_file['name'],
-                'output_name': child_file['name'],
+                'input_path': os.join(source_file['parent_path'], source_file['name']),
+                'output_path': os.join(child_file['parent_path'], child_file['name']),
                 'project_code': self.project_code,
-                'pipeline_name': self.process_pipeline,
+                'action_type': self.process_pipeline,
                 'operator': self.operator,
                 'token': self.user.access_token,
             }

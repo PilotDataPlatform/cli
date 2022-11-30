@@ -25,9 +25,9 @@ def create_lineage(lineage_event):
         'input_id': lineage_event['input_id'],
         'output_id': lineage_event['output_id'],
         'project_code': lineage_event['project_code'],
-        'pipeline_name': lineage_event['pipeline_name'],
-        'input_name': lineage_event['input_name'],
-        'output_name': lineage_event['output_name'],
+        'action_type': lineage_event['action_type'],
+        'input_path': lineage_event['input_path'],
+        'output_path': lineage_event['output_path'],
         'description': 'straight upload by ' + lineage_event['operator'],
     }
     headers = {
