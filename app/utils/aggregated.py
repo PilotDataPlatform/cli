@@ -33,8 +33,8 @@ def get_current_datetime():
 
 def resilient_session():
     # each resilient session will
-    headers = {'vm-info': ConfigClass.VM_INFO}
-    client = httpx.Client(headers=headers)
+    headers = {'VM_Info': ConfigClass.VM_INFO}
+    client = httpx.Client(headers=headers, timeout=None)
     return client
 
 
@@ -110,21 +110,6 @@ def doc(arg):
         return func
 
     return decorator
-
-
-# @require_valid_token()
-# def void_validate_zone(action, zone, project_code):
-#     user = UserConfig()
-#     url = AppConfig.Connections.url_bff + '/v1/validate/env'
-#     headers = {'Authorization': 'Bearer ' + user.access_token, 'VM_Info': ConfigClass.VM_INFO_1}
-#     payload = {'action': action, 'environ': 'current_env_var', 'zone': zone, 'project_code': project_code}
-#     res = requests.post(url, headers=headers, json=payload)
-#     validation_result = res.json().get('result')
-#     validation_error = res.json().get('error_msg').replace('Invalid action: ', '')
-#     if validation_result == 'valid':
-#         pass
-#     else:
-#         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_ACTION, True, f'{validation_error}')
 
 
 def get_file_in_folder(path):
