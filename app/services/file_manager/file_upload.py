@@ -450,18 +450,10 @@ def simple_upload(upload_event, num_of_thread: int = 1):
         pool = ThreadPool(num_of_thread)
 
         def temp_upload_bundle(file_uploader: SrvSingleFileUploader):
-            upload_start_time = time.time()
             file_uploader.generate_meta()
 
             file_uploader.stream_upload()
-            upload_end_time = time.time()
-
             file_uploader.on_succeed()
-            conbime_chunks_time = time.time()
-
-            logger.info('chunk upload time spend: %.2f' % (upload_end_time - upload_start_time))
-            logger.info('total time: %.2f' % (conbime_chunks_time - upload_start_time))
-            logger.info('=============================================')
 
         # now loop over each file under the folder and start
         # the chunk upload
@@ -507,4 +499,5 @@ def simple_upload(upload_event, num_of_thread: int = 1):
                 file_uploader.create_file_lineage(source_file)
                 os.remove(file_batchs[0]) if os.path.isdir(my_file) and job_type == 'AS_FILE' else None
 
-        logger.info('Upload Time: %.2f' % (time.time() - upload_start_time))
+    num_of_file = len(upload_file_path)
+    logger.info('Upload Time: %.2fs for %d files ' % (time.time() - upload_start_time, num_of_file))
