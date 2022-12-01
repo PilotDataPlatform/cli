@@ -17,8 +17,12 @@ import math
 import os
 import time
 import zipfile
+from multiprocessing.pool import ThreadPool
 
 import click
+
+# import httpx
+import requests
 from tqdm import tqdm
 
 import app.models.upload_form as uf
@@ -64,7 +68,9 @@ class UploadEventValidator:
                     ECustomizedError.INVALID_UPLOAD_REQUEST, True, value='process pipeline name required'
                 )
             else:
-                source_file_info = search_item(self.project_code, self.zone, self.source, 'file', self.token)
+                source_file_info = search_item(
+                    self.project_code, AppConfig.Env.green_zone.lower(), self.source, 'file', self.token
+                )
                 source_file_info = source_file_info['result']
                 if not source_file_info:
                     SrvErrorHandler.customized_handle(ECustomizedError.INVALID_SOURCE_FILE, True, value=self.source)
@@ -138,13 +144,13 @@ class SrvSingleFileUploader(metaclass=MetaService):
         file_length_in_bytes = os.path.getsize(self.path)
         self.upload_form.resumable_total_size = file_length_in_bytes
         self.upload_form.resumable_total_chunks = math.ceil(self.upload_form.resumable_total_size / self.chunk_size)
-        mhandler.SrvOutPutHandler.uploading_files(
-            self.upload_form.uploader,
-            self.project_code,
-            self.upload_form.resumable_total_size,
-            self.upload_form.resumable_total_chunks,
-            self.upload_form.resumable_relative_path.strip('/'),
-        )
+        # mhandler.SrvOutPutHandler.uploading_files(
+        #     self.upload_form.uploader,
+        #     self.project_code,
+        #     self.upload_form.resumable_total_size,
+        #     self.upload_form.resumable_total_chunks,
+        #     self.upload_form.resumable_relative_path.strip('/'),
+        # )
         return self.upload_form.to_dict
 
     @require_valid_token()
@@ -160,7 +166,8 @@ class SrvSingleFileUploader(metaclass=MetaService):
             current_folder_node=self.current_folder_node,
         )
         headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.session_id}
-        response = resilient_session().post(url, json=payload, headers=headers)
+        response = resilient_session().post(url, json=payload, headers=headers, timeout=None)
+
         if response.status_code == 200:
             res_to_dict = response.json()
             result = res_to_dict.get('result')
@@ -212,47 +219,66 @@ class SrvSingleFileUploader(metaclass=MetaService):
 
     @require_valid_token()
     def upload_chunk(self, chunk_number, chunk):
-        url = self.base_url + '/v1/files/chunks'
-        payload = uf.generate_chunk_form(self.project_code, self.operator, self.upload_form, chunk_number)
-        headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.session_id}
-        files = {
-            'chunk_data': chunk,
-        }
         # retry three times
         for i in range(AppConfig.Env.resilient_retry):
-            response = resilient_session().post(url, data=payload, headers=headers, files=files)
+            if i > 0:
+                SrvErrorHandler.default_handle('retry number %s' % i)
+            url = self.base_url + '/v1/files/chunks'
+            payload = uf.generate_chunk_form(self.project_code, self.operator, self.upload_form, chunk_number)
+            headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.session_id}
+            # print(self.user.access_token)
+            files = {'chunk_data': chunk}
+            # start_time = time.time()
+            response = requests.post(url, data=payload, headers=headers, files=files)
+            # print(f'\napi {url} spent {time.time() - start_time}s')
             if response.status_code == 200:
                 res_to_dict = response.json()
                 return res_to_dict
             else:
+                SrvErrorHandler.default_handle('Chunk Error: retry number %s' % i)
                 if i == 2:
-                    SrvErrorHandler.default_handle(response.content, True)
+                    SrvErrorHandler.default_handle('retry over 3 times')
+                    SrvErrorHandler.default_handle(response.content)
+                    # SrvErrorHandler.default_handle(response.content, True)
+
+            # wait certain amount of time and retry
+            # the time will be longer for more retry
+            time.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
 
     @require_valid_token()
     def on_succeed(self):
-        url = self.base_url + '/v1/files'
-        payload = uf.generate_on_success_form(
-            self.project_code,
-            self.operator,
-            self.upload_form,
-            [],
-            process_pipeline=self.process_pipeline,
-            upload_message=self.upload_message,
-        )
-        headers = {
-            'Authorization': 'Bearer ' + self.user.access_token,
-            'Refresh-token': self.user.refresh_token,
-            'Session-ID': self.session_id,
-        }
-        response = resilient_session().post(url, json=payload, headers=headers)
-        res_json = response.json()
+        for i in range(AppConfig.Env.resilient_retry):
+            url = self.base_url + '/v1/files'
+            payload = uf.generate_on_success_form(
+                self.project_code,
+                self.operator,
+                self.upload_form,
+                [],
+                process_pipeline=self.process_pipeline,
+                upload_message=self.upload_message,
+            )
+            headers = {
+                'Authorization': 'Bearer ' + self.user.access_token,
+                'Refresh-token': self.user.refresh_token,
+                'Session-ID': self.session_id,
+            }
+            # start_time = time.time()
+            response = resilient_session().post(url, json=payload, headers=headers)
+            # print(f'\napi {url} spent {time.time() - start_time}s')
+            res_json = response.json()
 
-        if res_json.get('code') == 200:
-            mhandler.SrvOutPutHandler.start_finalizing()
-            result = res_json['result']
-            return result
-        else:
-            SrvErrorHandler.default_handle(response.content, True)
+            if res_json.get('code') == 200:
+                # mhandler.SrvOutPutHandler.start_finalizing()
+                result = res_json['result']
+                return result
+            else:
+                SrvErrorHandler.default_handle('Combine Error: retry number %s' % i)
+                SrvErrorHandler.default_handle(response.content)
+                if i == 2:
+                    SrvErrorHandler.default_handle('retry over 3 times')
+                # SrvErrorHandler.default_handle(response.content, True)
+
+            time.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
 
     @require_valid_token()
     def create_file_lineage(self, source_file):
@@ -265,8 +291,8 @@ class SrvSingleFileUploader(metaclass=MetaService):
             lineage_event = {
                 'input_id': parent_file_geid,
                 'output_id': child_file_geid,
-                'input_path': os.join(source_file['parent_path'], source_file['name']),
-                'output_path': os.join(child_file['parent_path'], child_file['name']),
+                'input_path': os.path.join(source_file['parent_path'], source_file['name']),
+                'output_path': os.path.join(child_file['parent_path'], child_file['name']),
                 'project_code': self.project_code,
                 'action_type': self.process_pipeline,
                 'operator': self.operator,
@@ -284,6 +310,7 @@ class SrvSingleFileUploader(metaclass=MetaService):
             'operator': self.operator,
             'session_id': self.session_id,
         }
+
         response = resilient_session().get(url, headers=headers, params=query)
         mhandler.SrvOutPutHandler.finalize_upload()
         if response.status_code == 200:
@@ -355,7 +382,8 @@ def assemble_path(f, target_folder, project_code, zone, access_token, zipping=Fa
     return current_folder_node, result_file
 
 
-def simple_upload(upload_event):
+def simple_upload(upload_event, num_of_thread: int = 1):
+    upload_start_time = time.time()
     my_file = upload_event.get('file')
     project_code = upload_event.get('project_code')
     tags = upload_event.get('tags')
@@ -387,53 +415,91 @@ def simple_upload(upload_event):
         upload_file_path = [my_file]
         target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
 
-    # prepare for the upload
-    file_uploader = SrvSingleFileUploader(
-        file_path=upload_file_path,
-        project_code=project_code,
-        tags=tags,
-        zone=zone,
-        job_type=job_type,
-        upload_message=upload_message,
-        process_pipeline=process_pipeline,
-        relative_path=base_path,
-        current_folder_node=target_folder,
-        regular_file=regular_file,
-    )
+    # here add the batch of 500 per loop, the pre upload api cannot
+    # process very large amount of file at same time. otherwise it
+    # wil; timeout
+    num_of_batchs = math.ceil(len(upload_file_path) / AppConfig.Env.upload_batch_size)
+    # here is list of pre upload result. We decided to call pre upload api by batch
+    # the result will store as (UploaderObject, preupload_id_mapping)
+    # TODO: somehow here can be refactored
+    pre_upload_info = []
+    for batch in range(0, num_of_batchs):
+        start_index = batch * AppConfig.Env.upload_batch_size
+        end_index = (batch + 1) * AppConfig.Env.upload_batch_size
+        file_batchs = upload_file_path[start_index:end_index]
 
-    # sending the pre upload request to generate
-    # the placeholder in object storage
-    file_identities = file_uploader.pre_upload()
+        # prepare for the upload
+        file_uploader = SrvSingleFileUploader(
+            file_path=file_batchs,
+            project_code=project_code,
+            tags=tags,
+            zone=zone,
+            job_type=job_type,
+            upload_message=upload_message,
+            process_pipeline=process_pipeline,
+            relative_path=base_path,
+            current_folder_node=target_folder,
+            regular_file=regular_file,
+        )
 
-    # now loop over each file under the folder and start
-    # the chunk upload
-    for path in upload_file_path:
-        file_uploader.path = path
-        file_uploader.upload_form.resumable_filename = os.path.basename(path)
-        converted_filename, rel_path = convert_filename(path, base_path, job_type, target_folder)
-        if target_folder == '':
-            file_uploader.upload_form.resumable_relative_path = rel_path
-        else:
-            file_uploader.upload_form.resumable_relative_path = target_folder + '/' + '/'.join(rel_path.split('/')[1:])
-        file_uploader.upload_form.resumable_identifier = file_identities.get(converted_filename)
-        file_uploader.generate_meta()
+        # sending the pre upload request to generate
+        # the placeholder in object storage
+        file_identities = file_uploader.pre_upload()
+        pre_upload_info.append((file_uploader, file_identities))
 
-        upload_start_time = time.time()
-        file_uploader.stream_upload()
-        upload_end_time = time.time()
+    # then do the chunk upload/combine for each bach
+    for (file_uploader, file_identities) in pre_upload_info:
+        pool = ThreadPool(num_of_thread)
 
-        file_uploader.on_succeed()
-        conbime_chunks_time = time.time()
+        def temp_upload_bundle(file_uploader: SrvSingleFileUploader):
+            file_uploader.generate_meta()
 
-        logger.info('chunk upload time spend: %.2f' % (upload_end_time - upload_start_time))
-        logger.info('total time: %.2f' % (conbime_chunks_time - upload_start_time))
+            file_uploader.stream_upload()
+            file_uploader.on_succeed()
 
-    if source_file or attribute:
-        continue_loop = True
-        while continue_loop:
-            succeed = file_uploader.check_status(converted_filename)
-            continue_loop = not succeed
-            time.sleep(0.5)
-        if source_file:
-            file_uploader.create_file_lineage(source_file)
-            os.remove(upload_file_path[0]) if os.path.isdir(my_file) and job_type == 'AS_FILE' else None
+        # now loop over each file under the folder and start
+        # the chunk upload
+        for path in file_uploader.path:
+            from copy import deepcopy
+
+            t = deepcopy(file_uploader)
+            t.user = file_uploader.user
+
+            t.path = path
+            t.upload_form.resumable_filename = os.path.basename(path)
+            converted_filename, rel_path = convert_filename(path, base_path, job_type, target_folder)
+            if target_folder == '':
+                t.upload_form.resumable_relative_path = rel_path
+            else:
+                t.upload_form.resumable_relative_path = target_folder + '/' + '/'.join(rel_path.split('/')[1:])
+            t.upload_form.resumable_identifier = file_identities.get(converted_filename)
+
+            pool.apply_async(temp_upload_bundle, args=(t,))
+
+            # file_uploader.generate_meta()
+
+            # upload_start_time = time.time()
+            # file_uploader.stream_upload()
+            # upload_end_time = time.time()
+
+            # file_uploader.on_succeed()
+            # conbime_chunks_time = time.time()
+
+            # logger.info('chunk upload time spend: %.2f' % (upload_end_time - upload_start_time))
+            # logger.info('total time: %.2f' % (conbime_chunks_time - upload_start_time))
+
+        pool.close()
+        pool.join()
+
+        if source_file or attribute:
+            continue_loop = True
+            while continue_loop:
+                succeed = file_uploader.check_status(converted_filename)
+                continue_loop = not succeed
+                time.sleep(0.5)
+            if source_file:
+                file_uploader.create_file_lineage(source_file)
+                os.remove(file_batchs[0]) if os.path.isdir(my_file) and job_type == 'AS_FILE' else None
+
+    num_of_file = len(upload_file_path)
+    logger.info('Upload Time: %.2fs for %d files ' % (time.time() - upload_start_time, num_of_file))
