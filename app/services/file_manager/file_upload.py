@@ -64,7 +64,9 @@ class UploadEventValidator:
                     ECustomizedError.INVALID_UPLOAD_REQUEST, True, value='process pipeline name required'
                 )
             else:
-                source_file_info = search_item(self.project_code, self.zone, self.source, 'file', self.token)
+                source_file_info = search_item(
+                    self.project_code, AppConfig.Env.green_zone.lower(), self.source, 'file', self.token
+                )
                 source_file_info = source_file_info['result']
                 if not source_file_info:
                     SrvErrorHandler.customized_handle(ECustomizedError.INVALID_SOURCE_FILE, True, value=self.source)
@@ -265,8 +267,8 @@ class SrvSingleFileUploader(metaclass=MetaService):
             lineage_event = {
                 'input_id': parent_file_geid,
                 'output_id': child_file_geid,
-                'input_path': os.join(source_file['parent_path'], source_file['name']),
-                'output_path': os.join(child_file['parent_path'], child_file['name']),
+                'input_path': os.path.join(source_file['parent_path'], source_file['name']),
+                'output_path': os.path.join(child_file['parent_path'], child_file['name']),
                 'project_code': self.project_code,
                 'action_type': self.process_pipeline,
                 'operator': self.operator,
