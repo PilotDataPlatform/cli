@@ -314,7 +314,7 @@ class SrvSingleFileUploader(metaclass=MetaService):
         response = resilient_session().get(url, headers=headers, params=query)
         mhandler.SrvOutPutHandler.finalize_upload()
         if response.status_code == 200:
-            result = response.json().get('result')
+            result = response.json().get('task_info')
             for i in result:
                 if i.get('source') == converted_filename and i.get('status') == 'SUCCEED':
                     mhandler.SrvOutPutHandler.upload_job_done()
