@@ -36,6 +36,8 @@ class AppConfig(object):
         harbor_client_secret = ConfigClass.harbor_client_secret
         core_zone = 'core'
         green_zone = 'greenroom'
+        core_bucket_prefix = 'core'
+        greenroom_bucket_prefix = 'gr'
 
     class Connections(object):
         section = 'connections'

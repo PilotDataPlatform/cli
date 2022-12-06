@@ -36,6 +36,7 @@ def user_login(username, password):
         user_config.refresh_token = res_to_dict['result']['refresh_token']
         user_config.last_active = str(int(time.time()))
         user_config.hpc_token = ''
+        user_config.session_id = 'cli-' + str(int(time.time()))
         user_config.save()
     elif response.status_code == 401:
         res_to_dict = []

@@ -113,10 +113,18 @@ def cli():
 )
 @click.option(
     '--thread',
-    '-t',
+    '-td',
     default=1,
     required=False,
     help='The number of thread for upload a file',
+    show_default=True,
+)
+@click.option(
+    '--resumable-id',
+    '-rid',
+    default=None,
+    required=False,
+    help='The upload id to resume the failed upload job',
     show_default=True,
 )
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD))
@@ -133,6 +141,7 @@ def file_put(**kwargs):
     zipping = kwargs.get('zip')
     attribute = kwargs.get('attribute')
     thread = kwargs.get('thread')
+    resumable_id = kwargs.get('resumable_id')
 
     # get project code from user's input direcly if specified
     # else extract from project path
@@ -204,7 +213,7 @@ def file_put(**kwargs):
         if source_file:
             upload_event['valid_source'] = src_file_info
 
-        simple_upload(upload_event, num_of_thread=thread)
+        simple_upload(upload_event, num_of_thread=thread, resumable_id=resumable_id)
 
         srv_manifest.attach_manifest(attribute, result_file, zone) if attribute else None
         message_handler.SrvOutPutHandler.all_file_uploaded()
