@@ -187,7 +187,7 @@ class SrvSingleFileUploader(metaclass=MetaService):
             mhandler.SrvOutPutHandler.preupload_success()
             return res
         else:
-            url = self.base_url + '/v1/files/jobs'
+            url = AppConfig.Connections.url_bff + '/v1/project/{}/files'.format(self.project_code)
             payload = uf.generate_pre_upload_form(
                 self.project_code,
                 self.operator,
