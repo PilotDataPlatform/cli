@@ -46,6 +46,7 @@ class UserConfig(metaclass=Singleton):
                 'secret': generate_secret(),
                 'hpc_token': '',
                 'last_active': int(time.time()),
+                'session_id': '',
             }
             self.save()
 
@@ -62,6 +63,7 @@ class UserConfig(metaclass=Singleton):
             'hpc_token': '',
             'secret': generate_secret(),
             'last_active': 0,
+            'session_id': '',
         }
         self.save()
 
@@ -120,3 +122,11 @@ class UserConfig(metaclass=Singleton):
     @last_active.setter
     def last_active(self, val):
         self.config['USER']['last_active'] = val
+
+    @property
+    def session_id(self):
+        return self.config['USER']['session_id']
+
+    @session_id.setter
+    def session_id(self, val):
+        self.config['USER']['session_id'] = val

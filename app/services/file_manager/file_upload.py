@@ -127,11 +127,18 @@ class SrvSingleFileUploader(metaclass=MetaService):
             AppConfig.Env.green_zone: AppConfig.Connections.url_upload_greenroom,
             AppConfig.Env.core_zone: AppConfig.Connections.url_upload_core,
         }.get(zone.lower())
+
+        prefix = {
+            AppConfig.Env.green_zone: AppConfig.Env.greenroom_bucket_prefix,
+            AppConfig.Env.core_zone: AppConfig.Env.core_bucket_prefix,
+        }.get(zone.lower())
+        self.bucket = prefix + '-' + project_code
+
         self.zone = zone
         self.job_type = job_type
         self.project_code = project_code
         self.process_pipeline = process_pipeline
-        self.session_id = 'cli-' + str(int(time.time()))
+        self.session_id = UserConfig().session_id
         self.upload_form = uf.FileUploadForm()
         self.upload_form.tags = tags
         self.upload_form.uploader = self.user.username
@@ -154,32 +161,56 @@ class SrvSingleFileUploader(metaclass=MetaService):
         return self.upload_form.to_dict
 
     @require_valid_token()
-    def pre_upload(self):
-        url = AppConfig.Connections.url_bff + '/v1/project/{}/files'.format(self.project_code)
-        payload = uf.generate_pre_upload_form(
-            self.project_code,
-            self.operator,
-            self.upload_form,
-            zone=self.zone,
-            upload_message=self.upload_message,
-            job_type=self.job_type,
-            current_folder_node=self.current_folder_node,
-        )
+    def pre_upload(self, resumable_id: str = None):
         headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.session_id}
-        response = resilient_session().post(url, json=payload, headers=headers, timeout=None)
+        uploaded_chunks = []
+        if resumable_id:
+            url = 'http://localhost:5079/v1/files/resumable'
+            object_path = os.path.join(self.current_folder_node, self.upload_form.resumable_filename[0])
+            params = {
+                'bucket': self.bucket,
+                'object_path': object_path,
+                'upload_id': resumable_id,
+            }
+            response = resilient_session().get(url, params=params, headers=headers, timeout=None)
+            if response.status_code == 404:
+                SrvErrorHandler.customized_handle(ECustomizedError.UPLOAD_ID_NOT_EXIST, True)
+
+            uploaded_chunks = response.json().get('result', [])
+            chunks_info = {}
+            # restructure the chunk list to {<part_number>: <etag>}
+            for chunk_info in uploaded_chunks:
+                chunks_info.update({chunk_info.get('PartNumber'): chunk_info.get('ETag')})
+
+            res = {object_path: {'resumable_id': resumable_id, 'uploaded_chunks': chunks_info}}
+            # todo update to resumable success
+            mhandler.SrvOutPutHandler.preupload_success()
+            return res
+        else:
+            url = self.base_url + '/v1/files/jobs'
+            payload = uf.generate_pre_upload_form(
+                self.project_code,
+                self.operator,
+                self.upload_form,
+                zone=self.zone,
+                upload_message=self.upload_message,
+                job_type=self.job_type,
+                current_folder_node=self.current_folder_node,
+            )
+            response = resilient_session().post(url, json=payload, headers=headers, timeout=None)
 
         if response.status_code == 200:
-            res_to_dict = response.json()
-            result = res_to_dict.get('result')
+            result = response.json().get('result')
             res = {}
             for job in result:
                 relative_path = job.get('source')
                 resumable_id = job.get('payload').get('resumable_identifier')
                 res[relative_path] = resumable_id
+                res.update({relative_path: {'resumable_id': resumable_id, 'uploaded_chunks': {}}})
+
             mhandler.SrvOutPutHandler.preupload_success()
             return res
         elif response.status_code == 403:
-            res_to_dict = response.json()
             SrvErrorHandler.customized_handle(ECustomizedError.PERMISSION_DENIED, self.regular_file)
         elif response.status_code == 401:
             SrvErrorHandler.customized_handle(ECustomizedError.PROJECT_DENIED, self.regular_file)
@@ -193,7 +224,7 @@ class SrvSingleFileUploader(metaclass=MetaService):
         else:
             SrvErrorHandler.default_handle(str(response.status_code) + ': ' + str(response.content), self.regular_file)
 
-    def stream_upload(self):
+    def stream_upload(self, uploaded_chunks):
         count = 0
         remaining_size = self.upload_form.resumable_total_size
         with tqdm(
@@ -201,20 +232,32 @@ class SrvSingleFileUploader(metaclass=MetaService):
             leave=True,
             bar_format='{desc} |{bar:30} {percentage:3.0f}% {remaining}',
         ) as bar:
-            bar.set_description('Uploading {}'.format(self.upload_form.resumable_filename))
+            bar.set_description(
+                'Uploading {} , resumable_id: {}'.format(
+                    self.upload_form.resumable_filename, self.upload_form.resumable_identifier
+                )
+            )
             f = open(self.path, 'rb')
             while True:
                 chunk = f.read(self.chunk_size)
                 if not chunk:
                     break
+                # if current chunk has been uploaded to object storage
+                # TODO only check the md5 if the file is same. If ture,
+                # skip current chunk, if not, raise the error.
+                elif uploaded_chunks.get(count + 1):
+                    # print(f"the chunk has been uploaded with etag {uploaded_chunks.get(count + 1)}")
+                    pass
                 else:
                     self.upload_chunk(count + 1, chunk)
-                    if self.chunk_size > remaining_size:
-                        bar.update(remaining_size)
-                    else:
-                        bar.update(self.chunk_size)
-                    count += 1  # uploaded successfully
-                    remaining_size = remaining_size - self.chunk_size
+
+                # update progress bar
+                if self.chunk_size > remaining_size:
+                    bar.update(remaining_size)
+                else:
+                    bar.update(self.chunk_size)
+                count += 1  # uploaded successfully
+                remaining_size = remaining_size - self.chunk_size
             f.close()
 
     @require_valid_token()
@@ -226,11 +269,9 @@ class SrvSingleFileUploader(metaclass=MetaService):
             url = self.base_url + '/v1/files/chunks'
             payload = uf.generate_chunk_form(self.project_code, self.operator, self.upload_form, chunk_number)
             headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.session_id}
-            # print(self.user.access_token)
             files = {'chunk_data': chunk}
-            # start_time = time.time()
             response = requests.post(url, data=payload, headers=headers, files=files)
-            # print(f'\napi {url} spent {time.time() - start_time}s')
+
             if response.status_code == 200:
                 res_to_dict = response.json()
                 return res_to_dict
@@ -382,7 +423,7 @@ def assemble_path(f, target_folder, project_code, zone, access_token, zipping=Fa
     return current_folder_node, result_file
 
 
-def simple_upload(upload_event, num_of_thread: int = 1):
+def simple_upload(upload_event, num_of_thread: int = 1, resumable_id: str = None):
     upload_start_time = time.time()
     my_file = upload_event.get('file')
     project_code = upload_event.get('project_code')
@@ -406,6 +447,8 @@ def simple_upload(upload_event, num_of_thread: int = 1):
             upload_file_path = [my_file.rstrip('/').lstrip() + '.zip']
             target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
             compress_folder_to_zip(my_file)
+        elif job_type == 'AS_FOLDER' and resumable_id:
+            SrvErrorHandler.customized_handle(ECustomizedError.UNSUPPORTED_PROJECT, True, project_code)
         else:
             logger.warn('Current version does not support folder tagging, ' 'any selected tags will be ignored')
             upload_file_path = get_file_in_folder(my_file)
@@ -416,8 +459,7 @@ def simple_upload(upload_event, num_of_thread: int = 1):
         target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
 
     # here add the batch of 500 per loop, the pre upload api cannot
-    # process very large amount of file at same time. otherwise it
-    # wil; timeout
+    # process very large amount of file at same time. otherwise it will timeout
     num_of_batchs = math.ceil(len(upload_file_path) / AppConfig.Env.upload_batch_size)
     # here is list of pre upload result. We decided to call pre upload api by batch
     # the result will store as (UploaderObject, preupload_id_mapping)
@@ -444,17 +486,17 @@ def simple_upload(upload_event, num_of_thread: int = 1):
 
         # sending the pre upload request to generate
         # the placeholder in object storage
-        file_identities = file_uploader.pre_upload()
+        file_identities = file_uploader.pre_upload(resumable_id)
         pre_upload_info.append((file_uploader, file_identities))
 
     # then do the chunk upload/combine for each bach
     for (file_uploader, file_identities) in pre_upload_info:
         pool = ThreadPool(num_of_thread)
 
-        def temp_upload_bundle(file_uploader: SrvSingleFileUploader):
+        def temp_upload_bundle(file_uploader: SrvSingleFileUploader, uploaded_chunks: list):
             file_uploader.generate_meta()
 
-            file_uploader.stream_upload()
+            file_uploader.stream_upload(uploaded_chunks)
             file_uploader.on_succeed()
 
         # now loop over each file under the folder and start
@@ -472,9 +514,16 @@ def simple_upload(upload_event, num_of_thread: int = 1):
                 t.upload_form.resumable_relative_path = rel_path
             else:
                 t.upload_form.resumable_relative_path = target_folder + '/' + '/'.join(rel_path.split('/')[1:])
-            t.upload_form.resumable_identifier = file_identities.get(converted_filename)
+            t.upload_form.resumable_identifier = file_identities.get(converted_filename).get('resumable_id')
+            uploaded_chunks = file_identities.get(converted_filename).get('uploaded_chunks')
 
-            pool.apply_async(temp_upload_bundle, args=(t,))
+            pool.apply_async(
+                temp_upload_bundle,
+                args=(
+                    t,
+                    uploaded_chunks,
+                ),
+            )
 
             # file_uploader.generate_meta()
 
