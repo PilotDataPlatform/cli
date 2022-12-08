@@ -192,7 +192,13 @@ def file_put(**kwargs):
     # and process them one by one
     for f in paths:
         current_folder_node, result_file = assemble_path(
-            f, target_folder, project_code, zone, user.access_token, zipping
+            f,
+            target_folder,
+            project_code,
+            zone,
+            user.access_token,
+            resumable_id,
+            zipping,
         )
         upload_event = {
             'project_code': project_code,

@@ -24,7 +24,7 @@ import click
 import app.services.logger_services.log_functions as logger
 import app.services.output_manager.message_handler as mhandler
 from app.configs.app_config import AppConfig
-from app.services.file_manager.file_upload.models import UploadType
+from app.services.file_manager.file_upload.models import FileObject, UploadType
 from app.services.file_manager.file_upload.upload_client import UploadClient
 from app.services.output_manager.error_handler import (
     ECustomizedError,
@@ -47,28 +47,7 @@ def compress_folder_to_zip(path):
     zipf.close()
 
 
-# def convert_filename(path, base_name, job_type, target_folder):
-#     file_name = os.path.basename(path)
-#     relative_file_path = os.path.relpath(path)
-#     if job_type == 'AS_FILE':
-#         if target_folder == '':
-#             converted_filename = file_name
-#         else:
-#             converted_filename = target_folder + '/' + file_name
-#         _relative_path = ''
-#     else:
-#         _base_file_name = relative_file_path.index(base_name)
-#         converted_filename = relative_file_path[_base_file_name:]
-#         end_index = relative_file_path.rindex(file_name) - 1
-#         _relative_path = relative_file_path[_base_file_name:end_index]
-#         if target_folder == '':
-#             pass
-#         else:
-#             converted_filename = target_folder + '/' + '/'.join(converted_filename.split('/')[1:])
-#     return converted_filename, _relative_path
-
-
-def assemble_path(f, target_folder, project_code, zone, access_token, zipping=False):
+def assemble_path(f, target_folder, project_code, zone, access_token, resumable_id, zipping=False):
     current_folder_node = target_folder + '/' + f.rstrip('/').split('/')[-1]
     result_file = current_folder_node
     name_folder = current_folder_node.split('/')[0].lower()
@@ -82,8 +61,10 @@ def assemble_path(f, target_folder, project_code, zone, access_token, zipping=Fa
     if len(current_folder_node.split('/')) > 2:
         parent_path = name_folder + '/' + '/'.join(current_folder_node.split('/')[1:-1])
         res = search_item(project_code, zone, parent_path, 'folder', access_token)
-        if not res['result']:
+        if not res['result'] and not resumable_id:
             click.confirm(customized_error_msg(ECustomizedError.CREATE_FOLDER_IF_NOT_EXIST), abort=True)
+        elif resumable_id:
+            mhandler.SrvOutPutHandler.resume_warning(resumable_id)
     if zipping:
         result_file = result_file + '.zip'
     return current_folder_node, result_file
@@ -140,29 +121,39 @@ def simple_upload(upload_event, num_of_thread: int = 1, resumable_id: str = None
     # here is list of pre upload result. We decided to call pre upload api by batch
     # the result will store as (UploaderObject, preupload_id_mapping)
     pre_upload_infos = []
-    for batch in range(0, num_of_batchs):
-        start_index = batch * AppConfig.Env.upload_batch_size
-        end_index = (batch + 1) * AppConfig.Env.upload_batch_size
-        file_batchs = upload_file_path[start_index:end_index]
 
-        # sending the pre upload request to generate
-        # the placeholder in object storage
-        pre_upload_infos.extend(upload_client.pre_upload(file_batchs))
+    # TODO later will adapt the folder resumable upload
+    # for now it is only for file resumable
+    if resumable_id:
+        pre_upload_infos.extend(upload_client.resume_upload(resumable_id, upload_file_path[0]))
+    else:
+        for batch in range(0, num_of_batchs):
+            start_index = batch * AppConfig.Env.upload_batch_size
+            end_index = (batch + 1) * AppConfig.Env.upload_batch_size
+            file_batchs = upload_file_path[start_index:end_index]
+
+            # sending the pre upload request to generate
+            # the placeholder in object storage
+            pre_upload_infos.extend(upload_client.pre_upload(file_batchs))
 
     # then do the chunk upload/combine for each bach
     pool = ThreadPool(num_of_thread)
 
-    # def temp_upload_bundle(file_uploader: SrvSingleFileUploader, uploaded_chunks: list):
-    #     file_uploader.generate_meta()
-
-    #     file_uploader.stream_upload(uploaded_chunks)
-    #     file_uploader.on_succeed()
+    def multithread_upload(client: UploadClient, file_object: FileObject, tags):
+        client.stream_upload(file_object)
+        client.on_succeed(file_object, tags)
 
     # now loop over each file under the folder and start
     # the chunk upload
     for file_object in pre_upload_infos:
-        upload_client.stream_upload(file_object)
-        upload_client.on_succeed(file_object, tags)
+        pool.apply_async(
+            multithread_upload,
+            args=(
+                upload_client,
+                file_object,
+                tags,
+            ),
+        )
 
     pool.close()
     pool.join()

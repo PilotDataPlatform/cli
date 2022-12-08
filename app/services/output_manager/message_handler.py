@@ -108,7 +108,12 @@ class SrvOutPutHandler(metaclass=MetaService):
     @staticmethod
     def resume_check_success():
         """e.g. notify the resumable check succeed."""
-        return logger.info('Resumable check complete.')
+        return logger.info('Resumable upload check complete.')
+
+    @staticmethod
+    def resume_warning(resumable_id: str):
+        """e.g. notify the user if they comfirm the resumable upload."""
+        return logger.warn(f'Resume the upload for {resumable_id}.')
 
     @staticmethod
     def start_finalizing():
