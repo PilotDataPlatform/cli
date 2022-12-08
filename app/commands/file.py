@@ -24,11 +24,11 @@ from app.configs.user_config import UserConfig
 from app.services.file_manager.file_download import SrvFileDownload
 from app.services.file_manager.file_list import SrvFileList
 from app.services.file_manager.file_manifests import SrvFileManifests
-from app.services.file_manager.file_upload import (
-    UploadEventValidator,
+from app.services.file_manager.file_upload.file_upload import (
     assemble_path,
     simple_upload,
 )
+from app.services.file_manager.file_upload.upload_validator import UploadEventValidator
 from app.services.output_manager.error_handler import (
     ECustomizedError,
     SrvErrorHandler,
@@ -53,7 +53,7 @@ def cli():
 
 @click.command(name='upload')
 @click.argument('paths', type=click.Path(exists=True), nargs=-1)
-@click.option('-p', '--project-path', help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_P))
+@click.option('-p', '--project-path', required=True, help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_P))
 @click.option(
     '-a',
     '--attribute',
@@ -143,12 +143,8 @@ def file_put(**kwargs):
     thread = kwargs.get('thread')
     resumable_id = kwargs.get('resumable_id')
 
-    # get project code from user's input direcly if specified
-    # else extract from project path
-    project_path = click.prompt('ProjectCode') if not project_path else project_path
-    project_code, target_folder = identify_target_folder(project_path)
-
     user = UserConfig()
+    project_code, target_folder = identify_target_folder(project_path)
     # Check zone and upload-message
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
 

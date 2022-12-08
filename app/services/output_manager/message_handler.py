@@ -106,6 +106,11 @@ class SrvOutPutHandler(metaclass=MetaService):
         return logger.info('Pre-upload complete.')
 
     @staticmethod
+    def resume_check_success():
+        """e.g. notify the resumable check succeed."""
+        return logger.info('Resumable check complete.')
+
+    @staticmethod
     def start_finalizing():
         """e.g. Start finalizing."""
         return logger.info('Starting finalization...')
