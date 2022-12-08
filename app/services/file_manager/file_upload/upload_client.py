@@ -100,31 +100,40 @@ class UploadClient:
         return total_size, total_chunks
 
     @require_valid_token()
-    def resume_upload(self, resumable_id: str):
-        headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.session_id}
-        uploaded_chunks = []
+    def resume_upload(self, resumable_id: str, local_path: str) -> dict:
+        headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
 
         url = 'http://localhost:5079/v1/files/resumable'
-        object_path = os.path.join(self.current_folder_node, self.upload_form.resumable_filename[0])
-        params = {
+        file_name = os.path.basename(local_path)
+        object_path = os.path.join(self.current_folder_node, file_name)
+        payload = {
             'bucket': self.bucket,
-            'object_path': object_path,
-            'upload_id': resumable_id,
+            'object_infos': [
+                {
+                    'object_path': object_path,
+                    'resumable_id': resumable_id,
+                }
+            ],
         }
-        response = resilient_session().get(url, params=params, headers=headers, timeout=None)
+        response = resilient_session().post(url, json=payload, headers=headers, timeout=None)
         if response.status_code == 404:
             SrvErrorHandler.customized_handle(ECustomizedError.UPLOAD_ID_NOT_EXIST, True)
 
-        uploaded_chunks = response.json().get('result', [])
-        chunks_info = {}
-        # restructure the chunk list to {<part_number>: <etag>}
-        for chunk_info in uploaded_chunks:
-            chunks_info.update({chunk_info.get('PartNumber'): chunk_info.get('ETag')})
-
-        res = {object_path: {'resumable_id': resumable_id, 'uploaded_chunks': chunks_info}}
-        # todo update to resumable success
+        # make the response into file objects
+        uploaded_infos = response.json().get('result', [])
+        file_objects = []
+        for uploaded_info in uploaded_infos:
+            file_objects.append(
+                FileObject(
+                    uploaded_info.get('resumable_id'),
+                    uploaded_info.get('object_path'),
+                    local_path,  # TODO change it after folder manifest is setup
+                    uploaded_info.get('chunks_info'),
+                )
+            )
         mhandler.SrvOutPutHandler.resume_check_success()
-        return res
+
+        return file_objects
 
     @require_valid_token()
     def pre_upload(self, local_file_paths: List[str]) -> List[FileObject]:
@@ -187,7 +196,7 @@ class UploadClient:
                 # if current chunk has been uploaded to object storage
                 # TODO only check the md5 if the file is same. If ture,
                 # skip current chunk, if not, raise the error.
-                elif file_object.uploaded_chunks.get(count + 1):
+                elif file_object.uploaded_chunks.get(str(count + 1)):
                     # print(f"the chunk has been uploaded with etag {uploaded_chunks.get(count + 1)}")
                     pass
                 else:
@@ -268,7 +277,7 @@ class UploadClient:
                 SrvErrorHandler.default_handle('Combine Error: retry number %s' % i)
                 SrvErrorHandler.default_handle(response.content)
                 if i == 2:
-                    SrvErrorHandler.default_handle('retry over 3 times')
+                    SrvErrorHandler.default_handle('retry over 3 times', True)
                 # SrvErrorHandler.default_handle(response.content, True)
 
             time.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))

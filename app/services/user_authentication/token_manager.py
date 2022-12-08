@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import datetime
+import time
 
 import jwt
 import requests
@@ -60,9 +60,9 @@ class SrvTokenManager(metaclass=MetaService):
         2: need login again
         '''
         decoded_access_token = self.decode_access_token()
-        expiry_at = datetime.datetime.utcfromtimestamp(decoded_access_token['exp'])
-        now = datetime.datetime.utcnow()
-        diff = int((expiry_at - now).seconds)
+        expiry_at = int(decoded_access_token['exp'])
+        now = time.time()
+        diff = expiry_at - now
 
         # TODO: check why here will need enforce the token refresh when
         # azp is not `kong``
