@@ -16,7 +16,6 @@
 import math
 import os
 import time
-from os.path import basename, dirname
 from typing import List, Tuple
 
 # import httpx
@@ -27,6 +26,7 @@ import app.models.upload_form as uf
 import app.services.output_manager.message_handler as mhandler
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
+from app.services.file_manager.file_upload.models import FileObject, UploadType
 from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
 from app.utils.aggregated import resilient_session, search_item
@@ -42,7 +42,7 @@ class UploadClient:
         # relative_path,
         zone=AppConfig.Env.green_zone,
         upload_message='cli straight upload',
-        job_type='AS_FILE',
+        job_type=UploadType.AS_FILE,
         process_pipeline=None,
         current_folder_node='',
         regular_file=True,
@@ -127,7 +127,7 @@ class UploadClient:
         return res
 
     @require_valid_token()
-    def pre_upload(self, local_file_paths: List[str]):
+    def pre_upload(self, local_file_paths: List[str]) -> List[FileObject]:
         headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
 
         url = AppConfig.Connections.url_bff + '/v1/project/{}/files'.format(self.project_code)
@@ -146,19 +146,11 @@ class UploadClient:
 
         if response.status_code == 200:
             result = response.json().get('result')
-            res = {}
+            res = []
             for job in result:
                 object_path = job.get('source')
                 resumable_id = job.get('payload').get('resumable_identifier')
-                res.update(
-                    {
-                        object_path: {
-                            'resumable_id': resumable_id,
-                            'uploaded_chunks': {},
-                            'local_path': file_mapping.get(object_path),
-                        }
-                    }
-                )
+                res.append(FileObject(resumable_id, object_path, file_mapping.get(object_path), {}))
 
             mhandler.SrvOutPutHandler.preupload_success()
             return res
@@ -176,18 +168,18 @@ class UploadClient:
         else:
             SrvErrorHandler.default_handle(str(response.status_code) + ': ' + str(response.content), self.regular_file)
 
-    def stream_upload(self, resumable_id: str, local_path: str, object_path: str, uploaded_chunks: List):
+    def stream_upload(self, file_object: FileObject):
         count = 0
-        parent_path, file_name = dirname(object_path), basename(object_path)
-        total_size, _ = self.generate_meta(local_path)
-        remaining_size = total_size
+        remaining_size = file_object.total_size
         with tqdm(
-            total=total_size,
+            total=file_object.total_size,
             leave=True,
             bar_format='{desc} |{bar:30} {percentage:3.0f}% {remaining}',
         ) as bar:
-            bar.set_description('Uploading {} , resumable_id: {}'.format(file_name, resumable_id))
-            f = open(local_path, 'rb')
+            bar.set_description(
+                'Uploading {} , resumable_id: {}'.format(file_object.file_name, file_object.resumable_id)
+            )
+            f = open(file_object.local_path, 'rb')
             while True:
                 chunk = f.read(self.chunk_size)
                 if not chunk:
@@ -195,11 +187,11 @@ class UploadClient:
                 # if current chunk has been uploaded to object storage
                 # TODO only check the md5 if the file is same. If ture,
                 # skip current chunk, if not, raise the error.
-                elif uploaded_chunks.get(count + 1):
+                elif file_object.uploaded_chunks.get(count + 1):
                     # print(f"the chunk has been uploaded with etag {uploaded_chunks.get(count + 1)}")
                     pass
                 else:
-                    self.upload_chunk(resumable_id, parent_path, file_name, count + 1, chunk)
+                    self.upload_chunk(file_object, count + 1, chunk)
 
                 # update progress bar
                 if self.chunk_size > remaining_size:
@@ -211,14 +203,19 @@ class UploadClient:
             f.close()
 
     @require_valid_token()
-    def upload_chunk(self, resumable_id, parent_path, file_name, chunk_number, chunk):
+    def upload_chunk(self, file_object: FileObject, chunk_number: int, chunk: str):
         # retry three times
         for i in range(AppConfig.Env.resilient_retry):
             if i > 0:
                 SrvErrorHandler.default_handle('retry number %s' % i)
 
             payload = uf.generate_chunk_form(
-                self.project_code, self.operator, resumable_id, parent_path, file_name, chunk_number
+                self.project_code,
+                self.operator,
+                file_object.resumable_id,
+                file_object.parent_path,
+                file_object.file_name,
+                chunk_number,
             )
             headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
             files = {'chunk_data': chunk}
@@ -239,17 +236,17 @@ class UploadClient:
             time.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
 
     @require_valid_token()
-    def on_succeed(self, resumable_id, parent_path, file_name, total_size, total_chunks, tags):
+    def on_succeed(self, file_object: FileObject, tags: List):
         for i in range(AppConfig.Env.resilient_retry):
             url = self.base_url + '/v1/files'
             payload = uf.generate_on_success_form(
                 self.project_code,
                 self.operator,
-                resumable_id,
-                file_name,
-                parent_path,
-                total_size,
-                total_chunks,
+                file_object.resumable_id,
+                file_object.file_name,
+                file_object.parent_path,
+                file_object.total_size,
+                file_object.total_chunks,
                 tags,
                 [],
                 process_pipeline=self.process_pipeline,

@@ -16,6 +16,8 @@
 from os.path import basename, dirname, join
 from typing import List
 
+from app.services.file_manager.file_upload.models import UploadType
+
 
 class FileUploadForm:
     def __init__(self):
@@ -115,7 +117,7 @@ def generate_pre_upload_form(
     local_file_paths: List[str],
     input_path: str,
     zone: str,
-    job_type: str,
+    job_type: UploadType,
     current_folder: str = '',
 ) -> tuple[dict, dict]:
     '''
@@ -129,7 +131,7 @@ def generate_pre_upload_form(
         - input_path: The path specified by user, if it is folder, it will be like
             a/b . If it is a file it will be same as local_file_paths eg. a/b/c.txt.
         - zone(str): The zone of user try to upload to.
-        - job_type(str): the upload type, AS_FOLDER or AS_FILE.
+        - job_type(UploadType): the upload type, AS_FOLDER or AS_FILE.
         - current_folder(str): the folder path on object storage that user specified.
     return:
         - request_payload(dict): the payload for preupload api.
@@ -144,7 +146,7 @@ def generate_pre_upload_form(
         # - if use input as a file then <input_path> is the file user key in eg.
         #   a/b/c/d.txt. the <local_file_paths> will be same as it. The path in
         #   object storage will be <current_folder>/d.txt
-        if job_type == 'AS_FOLDER':
+        if job_type == UploadType.AS_FOLDER:
             file_relative_path = file_local_path.replace(input_path, '')
             object_path = join(current_folder, file_relative_path)
             parent_path, file_name = dirname(object_path), basename(object_path)
@@ -162,7 +164,7 @@ def generate_pre_upload_form(
     request_payload = {
         'project_code': project_code,
         'operator': operator,
-        'job_type': job_type,
+        'job_type': str(job_type),
         'zone': zone,
         'current_folder_node': current_folder,
         'data': data,
