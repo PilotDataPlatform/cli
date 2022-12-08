@@ -24,7 +24,7 @@ class AppConfig(object):
         msg_path = ConfigClass.custom_path
         user_config_file = f'{user_config_path}/config.ini'
         token_warn_need_refresh = 120  # seconds
-        chunk_size = 5  # chunk size mb
+        chunk_size = 1024 * 1024 * 5  # chunk size 5mb
         resilient_retry = 3
         resilient_backoff = 1
         resilient_retry_interval = 1  # seconds

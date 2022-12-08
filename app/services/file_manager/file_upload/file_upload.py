@@ -31,8 +31,7 @@ import app.services.output_manager.message_handler as mhandler
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.models.service_meta_class import MetaService
-from app.services.file_manager.file_manifests import SrvFileManifests
-from app.services.file_manager.file_tag import SrvFileTag
+from app.services.file_manager.file_upload.upload_client import UploadClient
 from app.services.output_manager.error_handler import (
     ECustomizedError,
     SrvErrorHandler,
@@ -41,67 +40,8 @@ from app.services.output_manager.error_handler import (
 from app.services.user_authentication.decorator import require_valid_token
 from app.utils.aggregated import resilient_session, search_item
 
-from .file_lineage import create_lineage
-from ...utils.aggregated import get_file_in_folder
-
-
-class UploadEventValidator:
-    def __init__(self, project_code, zone, upload_message, source, process_pipeline, token, attribute, tag):
-        self.project_code = project_code
-        self.zone = zone
-        self.upload_message = upload_message
-        self.source = source
-        self.process_pipeline = process_pipeline
-        self.token = token
-        self.attribute = attribute
-        self.tag = tag
-
-    def validate_zone(self):
-        source_file_info = {}
-        if not self.upload_message:
-            SrvErrorHandler.customized_handle(
-                ECustomizedError.INVALID_UPLOAD_REQUEST, True, value='upload-message is required'
-            )
-        if self.source:
-            if not self.process_pipeline:
-                SrvErrorHandler.customized_handle(
-                    ECustomizedError.INVALID_UPLOAD_REQUEST, True, value='process pipeline name required'
-                )
-            else:
-                source_file_info = search_item(
-                    self.project_code, AppConfig.Env.green_zone.lower(), self.source, 'file', self.token
-                )
-                source_file_info = source_file_info['result']
-                if not source_file_info:
-                    SrvErrorHandler.customized_handle(ECustomizedError.INVALID_SOURCE_FILE, True, value=self.source)
-        return source_file_info
-
-    def validate_attribute(self):
-        srv_manifest = SrvFileManifests()
-        if not os.path.isfile(self.attribute):
-            raise Exception('Attribute not exist in the given path')
-        try:
-            attribute = srv_manifest.read_manifest_template(self.attribute)
-            attribute = srv_manifest.convert_import(attribute, self.project_code)
-            srv_manifest.validate_manifest(attribute)
-            return attribute
-        except Exception:
-            SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TEMPLATE, True)
-
-    def validate_tag(self):
-        srv_tag = SrvFileTag()
-        srv_tag.validate_taglist(self.tag)
-
-    def validate_upload_event(self):
-        source_file_info, loaded_attribute = {}, {}
-        if self.attribute:
-            loaded_attribute = self.validate_attribute()
-        if self.tag:
-            self.validate_tag()
-        if self.zone == AppConfig.Env.core_zone.lower():
-            source_file_info = self.validate_zone()
-        converted_content = {'source_file': source_file_info, 'attribute': loaded_attribute}
-        return converted_content
+from ..file_lineage import create_lineage
+from ....utils.aggregated import get_file_in_folder
 
 
 class SrvSingleFileUploader(metaclass=MetaService):
@@ -429,8 +369,8 @@ def simple_upload(upload_event, num_of_thread: int = 1, resumable_id: str = None
     project_code = upload_event.get('project_code')
     tags = upload_event.get('tags')
     zone = upload_event.get('zone')
-    process_pipeline = upload_event.get('process_pipeline', None)
-    upload_message = upload_event.get('upload_message')
+    # process_pipeline = upload_event.get('process_pipeline', None)
+    # upload_message = upload_event.get('upload_message')
     target_folder = upload_event.get('current_folder_node', '')
     compress_zip = upload_event.get('compress_zip', False)
     regular_file = upload_event.get('regular_file', True)
@@ -438,7 +378,7 @@ def simple_upload(upload_event, num_of_thread: int = 1, resumable_id: str = None
     attribute = upload_event.get('attribute')
 
     mhandler.SrvOutPutHandler.start_uploading(my_file)
-    base_path = ''
+    # base_path = ''
     # if the input request zip folder then process the path as single file
     # otherwise read throught the folder to get path underneath
     if os.path.isdir(my_file):
@@ -452,7 +392,7 @@ def simple_upload(upload_event, num_of_thread: int = 1, resumable_id: str = None
         else:
             logger.warn('Current version does not support folder tagging, ' 'any selected tags will be ignored')
             upload_file_path = get_file_in_folder(my_file)
-            base_path = my_file.rstrip('/').split('/')[-1]
+            # base_path = my_file.rstrip('/').split('/')[-1]
     else:
         job_type = 'AS_FILE'
         upload_file_path = [my_file]
@@ -461,94 +401,67 @@ def simple_upload(upload_event, num_of_thread: int = 1, resumable_id: str = None
     # here add the batch of 500 per loop, the pre upload api cannot
     # process very large amount of file at same time. otherwise it will timeout
     num_of_batchs = math.ceil(len(upload_file_path) / AppConfig.Env.upload_batch_size)
+    num_of_batchs = 10
     # here is list of pre upload result. We decided to call pre upload api by batch
     # the result will store as (UploaderObject, preupload_id_mapping)
-    # TODO: somehow here can be refactored
-    pre_upload_info = []
+    # pre_upload_info = []
+
+    pre_upload_infos = {}
+    upload_client = UploadClient(
+        input_path=my_file,
+        project_code=project_code,
+        zone=zone,
+        # relative_path=target_folder,
+        job_type=job_type,
+        current_folder_node=target_folder,
+        regular_file=regular_file,
+    )
+
     for batch in range(0, num_of_batchs):
         start_index = batch * AppConfig.Env.upload_batch_size
         end_index = (batch + 1) * AppConfig.Env.upload_batch_size
         file_batchs = upload_file_path[start_index:end_index]
 
-        # prepare for the upload
-        file_uploader = SrvSingleFileUploader(
-            file_path=file_batchs,
-            project_code=project_code,
-            tags=tags,
-            zone=zone,
-            job_type=job_type,
-            upload_message=upload_message,
-            process_pipeline=process_pipeline,
-            relative_path=base_path,
-            current_folder_node=target_folder,
-            regular_file=regular_file,
-        )
-
         # sending the pre upload request to generate
         # the placeholder in object storage
-        file_identities = file_uploader.pre_upload(resumable_id)
-        pre_upload_info.append((file_uploader, file_identities))
+        pre_upload_infos.update(upload_client.pre_upload(file_batchs))
 
     # then do the chunk upload/combine for each bach
-    for (file_uploader, file_identities) in pre_upload_info:
-        pool = ThreadPool(num_of_thread)
+    pool = ThreadPool(num_of_thread)
 
-        def temp_upload_bundle(file_uploader: SrvSingleFileUploader, uploaded_chunks: list):
-            file_uploader.generate_meta()
+    def temp_upload_bundle(file_uploader: SrvSingleFileUploader, uploaded_chunks: list):
+        file_uploader.generate_meta()
 
-            file_uploader.stream_upload(uploaded_chunks)
-            file_uploader.on_succeed()
+        file_uploader.stream_upload(uploaded_chunks)
+        file_uploader.on_succeed()
 
-        # now loop over each file under the folder and start
-        # the chunk upload
-        for path in file_uploader.path:
-            from copy import deepcopy
+    # now loop over each file under the folder and start
+    # the chunk upload
+    for object_path in pre_upload_infos:
+        pre_upload_info = pre_upload_infos.get(object_path)
+        resumable_id = pre_upload_info.get('resumable_id')
+        uploaded_chunks = pre_upload_info.get('uploaded_chunks')
+        local_path = pre_upload_info.get('local_path')
+        file_name = os.path.basename(local_path)
 
-            t = deepcopy(file_uploader)
-            t.user = file_uploader.user
+        upload_client.stream_upload(resumable_id, local_path, object_path, uploaded_chunks)
 
-            t.path = path
-            t.upload_form.resumable_filename = os.path.basename(path)
-            converted_filename, rel_path = convert_filename(path, base_path, job_type, target_folder)
-            if target_folder == '':
-                t.upload_form.resumable_relative_path = rel_path
-            else:
-                t.upload_form.resumable_relative_path = target_folder + '/' + '/'.join(rel_path.split('/')[1:])
-            t.upload_form.resumable_identifier = file_identities.get(converted_filename).get('resumable_id')
-            uploaded_chunks = file_identities.get(converted_filename).get('uploaded_chunks')
+        total_size, total_chunk = upload_client.generate_meta(local_path)
+        parent_path, file_name = os.path.dirname(object_path), os.path.basename(object_path)
+        upload_client.on_succeed(resumable_id, parent_path, file_name, total_size, total_chunk, tags)
 
-            pool.apply_async(
-                temp_upload_bundle,
-                args=(
-                    t,
-                    uploaded_chunks,
-                ),
-            )
+    pool.close()
+    pool.join()
 
-            # file_uploader.generate_meta()
-
-            # upload_start_time = time.time()
-            # file_uploader.stream_upload()
-            # upload_end_time = time.time()
-
-            # file_uploader.on_succeed()
-            # conbime_chunks_time = time.time()
-
-            # logger.info('chunk upload time spend: %.2f' % (upload_end_time - upload_start_time))
-            # logger.info('total time: %.2f' % (conbime_chunks_time - upload_start_time))
-
-        pool.close()
-        pool.join()
-
-        if source_file or attribute:
-            continue_loop = True
-            while continue_loop:
-                succeed = file_uploader.check_status(converted_filename)
-                continue_loop = not succeed
-                time.sleep(0.5)
-            if source_file:
-                file_uploader.create_file_lineage(source_file)
-                os.remove(file_batchs[0]) if os.path.isdir(my_file) and job_type == 'AS_FILE' else None
+    if source_file or attribute:
+        continue_loop = True
+        while continue_loop:
+            succeed = upload_client.check_status(object_path)
+            continue_loop = not succeed
+            time.sleep(0.5)
+        if source_file:
+            upload_client.create_file_lineage(source_file)
+            os.remove(file_batchs[0]) if os.path.isdir(my_file) and job_type == 'AS_FILE' else None
 
     num_of_file = len(upload_file_path)
     logger.info('Upload Time: %.2fs for %d files ' % (time.time() - upload_start_time, num_of_file))
