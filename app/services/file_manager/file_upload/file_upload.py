@@ -162,7 +162,7 @@ def simple_upload(upload_event, num_of_thread: int = 1, resumable_id: str = None
         continue_loop = True
         while continue_loop:
             # the last uploaded file
-            succeed = upload_client.check_status(file_object.object_path)
+            succeed = upload_client.check_status(file_object)
             continue_loop = not succeed
             time.sleep(0.5)
         if source_file:
