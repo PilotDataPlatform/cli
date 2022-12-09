@@ -51,6 +51,7 @@ class FileObject:
     def __init__(self, resumable_id: str, object_path: str, local_path: str, uploaded_chunks: List) -> None:
         # object storage info
         self.resumable_id = resumable_id
+        self.object_path = object_path
         self.parent_path, self.file_name = dirname(object_path), basename(object_path)
 
         # local file info

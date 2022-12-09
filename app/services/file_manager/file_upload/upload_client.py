@@ -35,17 +35,29 @@ from ..file_lineage import create_lineage
 
 
 class UploadClient:
+
+    '''
+    Summary:
+        The upload client is per upload base. it stores some immutable.
+        infomation of particular upload action:
+         - input_path: the path that user inputs. can be a folder or file.
+         - project_code: the unique code of project.
+         - zone: data zone. can be greenroom or core.
+         - upload_message:
+         - job_type: based on the input. can be AS_FILE or AS_FOLDER.
+         - current_folder_node: the target folder in object storage.
+    '''
+
     def __init__(
         self,
-        input_path,
-        project_code,
-        # relative_path,
-        zone=AppConfig.Env.green_zone,
-        upload_message='cli straight upload',
-        job_type=UploadType.AS_FILE,
-        process_pipeline=None,
-        current_folder_node='',
-        regular_file=True,
+        input_path: str,
+        project_code: str,
+        zone: str = AppConfig.Env.green_zone,
+        upload_message: str = 'cli straight upload',
+        job_type: str = UploadType.AS_FILE,
+        process_pipeline: str = None,
+        current_folder_node: str = '',
+        regular_file: str = True,
     ):
         self.user = UserConfig()
         self.operator = self.user.username
@@ -67,13 +79,6 @@ class UploadClient:
         self.job_type = job_type
         self.project_code = project_code
         self.process_pipeline = process_pipeline
-        # self.session_id = UserConfig().session_id
-        # self.relative_path = relative_path
-        # self.upload_form = uf.FileUploadForm()
-        # self.upload_form.tags = tags
-        # self.upload_form.uploader = self.user.username
-        # self.upload_form.resumable_filename = [os.path.basename(self.path[0])] if job_type == 'AS_FILE' else self.path
-        # self.upload_form.resumable_relative_path = relative_path
         self.current_folder_node = current_folder_node
         self.regular_file = regular_file
 
@@ -84,30 +89,37 @@ class UploadClient:
         Parameter:
             - input_path: The path of the local file eg. a/b/c.txt.
         return:
-            - total_size: the size of file
+            - total_size: the size of file.
             - total_chunks: the number of chunks will be uploaded.
         '''
         file_length_in_bytes = os.path.getsize(local_path)
         total_size = file_length_in_bytes
         total_chunks = math.ceil(total_size / self.chunk_size)
-        # mhandler.SrvOutPutHandler.uploading_files(
-        #     self.upload_form.uploader,
-        #     self.project_code,
-        #     self.upload_form.resumable_total_size,
-        #     self.upload_form.resumable_total_chunks,
-        #     self.upload_form.resumable_relative_path.strip('/'),
-        # )
         return total_size, total_chunks
 
     @require_valid_token()
-    def resume_upload(self, resumable_id: str, local_path: str) -> dict:
-        headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
+    def resume_upload(self, resumable_id: str, local_path: str) -> List[FileObject]:
+        '''
+        Summary:
+            The function is to check the uploaded chunks in object storage.
+        Parameter:
+            - resumable_id: The unique id to indicate the multipart upload.
+            - local_path: the local path of interrupted file.
+        return:
+            - list of FileObject: the infomation retrieved from backend.
+                - resumable_id(str): the unique identifier for multipart upload.
+                - object_path(str): the path in the object storage.
+                - local_path(str): the local path of file.
+                - chunk_info(dict): the mapping for chunks that already been uploaded.
+        '''
 
-        url = 'http://localhost:5079/v1/files/resumable'
+        headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
+        url = AppConfig.Connections.url_bff + f'/v1/project/{self.project_code}/files/resumable'
         file_name = os.path.basename(local_path)
         object_path = os.path.join(self.current_folder_node, file_name)
         payload = {
             'bucket': self.bucket,
+            'zone': self.zone,
             'object_infos': [
                 {
                     'object_path': object_path,
@@ -137,8 +149,20 @@ class UploadClient:
 
     @require_valid_token()
     def pre_upload(self, local_file_paths: List[str]) -> List[FileObject]:
-        headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
+        '''
+        Summary:
+            The function is to initiate all the multipart upload.
+        Parameter:
+            - local_file_paths(list of str): the local path of files to be uploaded.
+        return:
+            - list of FileObject: the infomation retrieved from backend.
+                - resumable_id(str): the unique identifier for multipart upload.
+                - object_path(str): the path in the object storage.
+                - local_path(str): the local path of file.
+                - chunk_info(dict): the mapping for chunks that already been uploaded.
+        '''
 
+        headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
         url = AppConfig.Connections.url_bff + '/v1/project/{}/files'.format(self.project_code)
         # the file mapping is a dictionary that present the map from object storage path
         # with local file path. It will be used in chunk upload api.
@@ -177,7 +201,16 @@ class UploadClient:
         else:
             SrvErrorHandler.default_handle(str(response.status_code) + ': ' + str(response.content), self.regular_file)
 
-    def stream_upload(self, file_object: FileObject):
+    def stream_upload(self, file_object: FileObject) -> None:
+        '''
+        Summary:
+            The function is a wrap to display the uploading process.
+        Parameter:
+            - file_object(FileObject): the file object that contains correct
+                information for chunk uploading.
+        return:
+            - None
+        '''
         count = 0
         remaining_size = file_object.total_size
         with tqdm(
@@ -212,7 +245,19 @@ class UploadClient:
             f.close()
 
     @require_valid_token()
-    def upload_chunk(self, file_object: FileObject, chunk_number: int, chunk: str):
+    def upload_chunk(self, file_object: FileObject, chunk_number: int, chunk: str) -> None:
+        '''
+        Summary:
+            The function is to upload a chunk into upload service.
+        Parameter:
+            - file_object(FileObject): the file object that contains correct
+                information for chunk uploading.
+            - chunk_number(int): the number of current chunk.
+            - chunk(str): the chunk data.
+        return:
+            - None
+        '''
+
         # retry three times
         for i in range(AppConfig.Env.resilient_retry):
             if i > 0:
@@ -238,14 +283,24 @@ class UploadClient:
                 if i == 2:
                     SrvErrorHandler.default_handle('retry over 3 times')
                     SrvErrorHandler.default_handle(response.content)
-                    # SrvErrorHandler.default_handle(response.content, True)
 
             # wait certain amount of time and retry
             # the time will be longer for more retry
             time.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
 
     @require_valid_token()
-    def on_succeed(self, file_object: FileObject, tags: List):
+    def on_succeed(self, file_object: FileObject, tags: List[str]):
+        '''
+        Summary:
+            The function is to finalize the upload process.
+        Parameter:
+            - file_object(FileObject): the file object that contains correct
+                information for chunk uploading.
+            - tags(list of str): the tag attached with uploaded object.
+        return:
+            - None
+        '''
+
         for i in range(AppConfig.Env.resilient_retry):
             url = self.base_url + '/v1/files'
             payload = uf.generate_on_success_form(
@@ -283,9 +338,19 @@ class UploadClient:
             time.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
 
     @require_valid_token()
-    def create_file_lineage(self, source_file):
+    def create_file_lineage(self, source_file: dict, new_file_object: FileObject):
+        '''
+        Summary:
+            The function is to create a lineage with source file.
+        Parameter:
+            - source_file(str): the file object that indicate the exist data to link with.
+            - new_file_object(FileObject): the new object just uploaded.
+        return:
+            - bool: if job success or not.
+        '''
+
         if source_file and self.zone == AppConfig.Env.core_zone:
-            child_rel_path = self.upload_form.resumable_relative_path + '/' + self.upload_form.resumable_filename
+            child_rel_path = new_file_object.object_path
             child_item = search_item(self.project_code, self.zone, child_rel_path, 'file', self.user.access_token)
             child_file = child_item['result']
             parent_file_geid = source_file['id']
@@ -303,7 +368,17 @@ class UploadClient:
             create_lineage(lineage_event)
 
     @require_valid_token()
-    def check_status(self, converted_filename):
+    def check_status(self, file_object: FileObject) -> bool:
+        '''
+        Summary:
+            The function is to check the status of upload process.
+        Parameter:
+            - file_object(FileObject): the file object that contains correct.
+                information for chunk uploading.
+        return:
+            - bool: if job success or not
+        '''
+
         url = AppConfig.Connections.url_status
         headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.session_id}
         query = {
@@ -315,15 +390,16 @@ class UploadClient:
 
         response = resilient_session().get(url, headers=headers, params=query)
         mhandler.SrvOutPutHandler.finalize_upload()
+        object_path = file_object.object_path
         if response.status_code == 200:
             result = response.json().get('result')
             for i in result:
-                if i.get('source') == converted_filename and i.get('status') == 'SUCCEED':
+                if i.get('source') == object_path and i.get('status') == 'SUCCEED':
                     mhandler.SrvOutPutHandler.upload_job_done()
                     return True
-                elif i.get('source') == converted_filename and i.get('status') == 'TERMINATED':
+                elif i.get('source') == object_path and i.get('status') == 'TERMINATED':
                     SrvErrorHandler.customized_handle(ECustomizedError.FILE_EXIST, self.regular_file)
-                elif i.get('source') == converted_filename and i.get('status') == 'CHUNK_UPLOADED':
+                elif i.get('source') == object_path and i.get('status') == 'CHUNK_UPLOADED':
                     return False
                 else:
                     SrvErrorHandler.default_handle(response.content)
