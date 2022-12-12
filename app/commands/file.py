@@ -24,11 +24,11 @@ from app.configs.user_config import UserConfig
 from app.services.file_manager.file_download import SrvFileDownload
 from app.services.file_manager.file_list import SrvFileList
 from app.services.file_manager.file_manifests import SrvFileManifests
-from app.services.file_manager.file_upload import (
-    UploadEventValidator,
+from app.services.file_manager.file_upload.file_upload import (
     assemble_path,
     simple_upload,
 )
+from app.services.file_manager.file_upload.upload_validator import UploadEventValidator
 from app.services.output_manager.error_handler import (
     ECustomizedError,
     SrvErrorHandler,
@@ -53,7 +53,7 @@ def cli():
 
 @click.command(name='upload')
 @click.argument('paths', type=click.Path(exists=True), nargs=-1)
-@click.option('-p', '--project-path', help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_P))
+@click.option('-p', '--project-path', required=True, help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_P))
 @click.option(
     '-a',
     '--attribute',
@@ -113,10 +113,18 @@ def cli():
 )
 @click.option(
     '--thread',
-    '-t',
+    '-td',
     default=1,
     required=False,
     help='The number of thread for upload a file',
+    show_default=True,
+)
+@click.option(
+    '--resumable-id',
+    '-rid',
+    default=None,
+    required=False,
+    help='The upload id to resume the failed upload job',
     show_default=True,
 )
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD))
@@ -133,13 +141,10 @@ def file_put(**kwargs):
     zipping = kwargs.get('zip')
     attribute = kwargs.get('attribute')
     thread = kwargs.get('thread')
-
-    # get project code from user's input direcly if specified
-    # else extract from project path
-    project_path = click.prompt('ProjectCode') if not project_path else project_path
-    project_code, target_folder = identify_target_folder(project_path)
+    resumable_id = kwargs.get('resumable_id')
 
     user = UserConfig()
+    project_code, target_folder = identify_target_folder(project_path)
     # Check zone and upload-message
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
 
@@ -187,7 +192,13 @@ def file_put(**kwargs):
     # and process them one by one
     for f in paths:
         current_folder_node, result_file = assemble_path(
-            f, target_folder, project_code, zone, user.access_token, zipping
+            f,
+            target_folder,
+            project_code,
+            zone,
+            user.access_token,
+            resumable_id,
+            zipping,
         )
         upload_event = {
             'project_code': project_code,
@@ -204,7 +215,7 @@ def file_put(**kwargs):
         if source_file:
             upload_event['valid_source'] = src_file_info
 
-        simple_upload(upload_event, num_of_thread=thread)
+        simple_upload(upload_event, num_of_thread=thread, resumable_id=resumable_id)
 
         srv_manifest.attach_manifest(attribute, result_file, zone) if attribute else None
         message_handler.SrvOutPutHandler.all_file_uploaded()
