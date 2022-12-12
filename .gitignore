@@ -148,3 +148,6 @@ build
 ./app/unit_tests
 ./app/bundled_app
 integration_tests
+
+#Pycharm
+.idea
