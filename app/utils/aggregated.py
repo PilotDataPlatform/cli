@@ -48,11 +48,10 @@ def search_item(project_code, zone, folder_relative_path, item_type, token, cont
         'item_type': item_type,
         'container_type': container_type,
     }
-    headers = {
-        'Authorization': 'Bearer ' + token,
-    }
-    __res = requests.get(url, params=params, headers=headers)
-    return __res.json()
+    headers = {'Authorization': 'Bearer ' + token}
+    res = requests.get(url, params=params, headers=headers)
+
+    return res.json()
 
 
 @require_valid_token()

@@ -63,6 +63,10 @@ class Error:
             'Permission denied. Please verify your role in the Project has permission to perform this action.'
         ),
         'UPLOAD_CANCEL': 'Upload task was cancelled.',
+        'UPLOAD_ID_NOT_EXIST': (
+            'The specified multipart upload does not exist. '
+            'The upload ID may be invalid, or the upload may have been aborted or completed.'
+        ),
         'INVALID_INPUT': 'Invalid input. Please try again.',
         'UNSUPPORTED_PROJECT': 'This function is not supported in the given Project %s',
         'CREATE_FOLDER_IF_NOT_EXIST': 'Target folder does not exist. Would you like to create a new folder?',

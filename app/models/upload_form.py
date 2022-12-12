@@ -13,24 +13,25 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
+from os.path import basename, dirname, join
+from typing import List
 
-from app.configs.app_config import AppConfig
+from app.services.file_manager.file_upload.models import UploadType
 
 
 class FileUploadForm:
     def __init__(self):
         self._attribute_map = {
-            "resumable_identifier": "",
-            "resumable_filename": "",
-            "resumable_chunk_number": -1,
-            "resumable_total_chunks": -1,
-            "resumable_total_size": -1,
-            "resumable_relative_path": "",
-            "tags": [],
-            "uploader": "",
-            "metadatas": None,
-            "container_id": "",
+            'resumable_identifier': '',
+            'resumable_filename': '',
+            'resumable_chunk_number': -1,
+            'resumable_total_chunks': -1,
+            'resumable_total_size': -1,
+            'resumable_relative_path': '',
+            'tags': [],
+            'uploader': '',
+            'metadatas': None,
+            'container_id': '',
         }
 
     @property
@@ -111,77 +112,115 @@ class FileUploadForm:
 
 
 def generate_pre_upload_form(
-    project_code,
-    operator,
-    file_upload_form: FileUploadForm,
-    zone,
-    job_type,
-    upload_message,
-    current_folder_node=''
-):
-    data = []
-    for file in file_upload_form.resumable_filename:
-        file_name = os.path.basename(file)
-        relative_file_path = get_relative_path(file, current_folder_node,
-                                               file_upload_form.resumable_relative_path, job_type)
-        data.append(
-            {
-                'resumable_filename': file_name,
-                'resumable_relative_path': relative_file_path
-            })
-    return {
+    project_code: str,
+    operator: str,
+    local_file_paths: List[str],
+    input_path: str,
+    zone: str,
+    job_type: UploadType,
+    current_folder: str = '',
+) -> tuple[dict, dict]:
+    '''
+    Summary:
+        The function is to generate the preupload payload for api. The operation
+        is per batch that it will try to generate one payload for all files.
+    Parameter:
+        - project_code(str): The unique identifier for project.
+        - operator(str): The name of operator.
+        - local_file_paths(list[str]): The list of name for input files.
+        - input_path: The path specified by user, if it is folder, it will be like
+            a/b . If it is a file it will be same as local_file_paths eg. a/b/c.txt.
+        - zone(str): The zone of user try to upload to.
+        - job_type(UploadType): the upload type, AS_FOLDER or AS_FILE.
+        - current_folder(str): the folder path on object storage that user specified.
+    return:
+        - request_payload(dict): the payload for preupload api.
+        - local_file_mapping(dict): the mapping from object path into local paht.
+    '''
+    data, local_file_mapping = [], {}
+    for file_local_path in local_file_paths:
+        # the rule here is:
+        # - if use input as a folder then <input_path> is the folder user key in
+        #   eg. a/b/ . the <local_file_paths> is files under eg a/b/c/d.txt. The
+        #   path in object storage will be <current_folder>/c/d.txt
+        # - if use input as a file then <input_path> is the file user key in eg.
+        #   a/b/c/d.txt. the <local_file_paths> will be same as it. The path in
+        #   object storage will be <current_folder>/d.txt
+        if job_type == UploadType.AS_FOLDER:
+            file_relative_path = file_local_path.replace(input_path, '')
+            object_path = join(current_folder, file_relative_path)
+            parent_path, file_name = dirname(object_path), basename(object_path)
+
+        else:
+            file_name = basename(file_local_path)
+            parent_path = current_folder
+
+        data.append({'resumable_filename': file_name, 'resumable_relative_path': parent_path})
+        # make a mapping as <object_path>: <local_path>. This will be returned
+        # and used in chunk upload api.
+        object_path = join(parent_path, file_name)
+        local_file_mapping.update({object_path: file_local_path})
+
+    request_payload = {
         'project_code': project_code,
         'operator': operator,
-        'upload_message': upload_message,
-        'job_type': job_type,
+        'job_type': str(job_type),
         'zone': zone,
-        'current_folder_node': current_folder_node,
+        'current_folder_node': current_folder,
         'data': data,
-        'filename': file_name
     }
 
-
-def get_relative_path(file, current_folder_node, resumable_relative_path, job_type):
-    relative_file_path = '/'.join(os.path.relpath(file).split('/')[0:-1])
-    relative_file_path = relative_file_path[relative_file_path.index(resumable_relative_path):]
-    if current_folder_node == '':
-        relative_file_path = relative_file_path
-    elif job_type == 'AS_FOLDER':
-        relative_file_path = current_folder_node + '/' + '/'.join(relative_file_path.split('/')[1:])
-    else:
-        relative_file_path = current_folder_node
-    return relative_file_path.rstrip('/')
+    return request_payload, local_file_mapping
 
 
-def generate_chunk_form(project_code, operator, file_upload_form: FileUploadForm, chunk_number: int):
+# # TODO remove it
+# def get_relative_path(file, current_folder_node, resumable_relative_path, job_type):
+#     relative_file_path = '/'.join(os.path.relpath(file).split('/')[0:-1])
+#     relative_file_path = relative_file_path[relative_file_path.index(resumable_relative_path) :]
+#     if current_folder_node == '':
+#         relative_file_path = relative_file_path
+#     elif job_type == 'AS_FOLDER':
+#         relative_file_path = current_folder_node + '/' + '/'.join(relative_file_path.split('/')[1:])
+#     else:
+#         relative_file_path = current_folder_node
+#     return relative_file_path.rstrip('/')
+
+
+def generate_chunk_form(project_code, operator, resumable_id, parent_path, file_name, chunk_number: int):
     my_form = {
-        "project_code": project_code,
-        "operator": operator,
-        "resumable_identifier": file_upload_form.resumable_identifier,
-        "resumable_filename": file_upload_form.resumable_filename,
-        "resumable_relative_path": file_upload_form.resumable_relative_path,
-        "resumable_dataType": "SINGLE_FILE_DATA",
-        "resumable_chunk_number": int(chunk_number),
-        "resumable_chunk_size": AppConfig.Env.chunk_size,
-        "resumable_total_chunks": int(file_upload_form.resumable_total_chunks),
-        "resumable_total_size": int(file_upload_form.resumable_total_size),
-        "tags": file_upload_form.tags
+        'project_code': project_code,
+        'operator': operator,
+        'resumable_identifier': resumable_id,
+        'resumable_filename': file_name,
+        'resumable_relative_path': parent_path,
+        'resumable_chunk_number': int(chunk_number),
     }
     return my_form
 
 
-def generate_on_success_form(project_code, operator, file_upload_form: FileUploadForm,
-                             from_parents=None, process_pipeline=None, upload_message=None):
+def generate_on_success_form(
+    project_code,
+    operator,
+    resumable_id,
+    filename,
+    relative_path,
+    total_size,
+    total_chunks,
+    tags,
+    from_parents=None,
+    process_pipeline=None,
+    upload_message=None,
+):
     my_form = {
-        "project_code": project_code,
-        "operator": operator,
-        "resumable_identifier": file_upload_form.resumable_identifier,
-        "resumable_dataType": "SINGLE_FILE_DATA",
-        "resumable_filename": file_upload_form.resumable_filename,
-        "resumable_total_chunks": file_upload_form.resumable_total_chunks,
-        "resumable_total_size": file_upload_form.resumable_total_size,
-        "resumable_relative_path": file_upload_form.resumable_relative_path,
-        "tags": file_upload_form.tags
+        'project_code': project_code,
+        'operator': operator,
+        'resumable_identifier': resumable_id,
+        'resumable_dataType': 'SINGLE_FILE_DATA',
+        'resumable_filename': filename,
+        'resumable_total_chunks': total_chunks,
+        'resumable_total_size': total_size,
+        'resumable_relative_path': relative_path,
+        'tags': tags,
     }
     if from_parents:
         my_form['from_parents'] = from_parents
