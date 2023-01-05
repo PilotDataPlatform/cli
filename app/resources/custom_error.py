@@ -53,6 +53,7 @@ class Error:
             'may only contain lowercase letters, numbers, and/or special characters of -_, .'
         ),
         'INVALID_PATHS': 'The input path is empty. Please select at least one file or folder to upload',
+        'INVALID_RESUMABLE': 'Both resumable_id and job_id should be specified when doing resumable upload',
         'INVALID_FOLDERNAME': (
             'The input folder name is not valid. Please follow the rule:\n'
             ' - cannot contains special characters.\n'
