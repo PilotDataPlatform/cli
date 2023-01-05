@@ -70,7 +70,7 @@ def assemble_path(f, target_folder, project_code, zone, access_token, resumable_
     return current_folder_node, result_file
 
 
-def simple_upload(upload_event, num_of_thread: int = 1, resumable_id: str = None):
+def simple_upload(upload_event, num_of_thread: int = 1, resumable_id: str = None, job_id: str = None):
     upload_start_time = time.time()
     my_file = upload_event.get('file')
     project_code = upload_event.get('project_code')
@@ -124,8 +124,8 @@ def simple_upload(upload_event, num_of_thread: int = 1, resumable_id: str = None
 
     # TODO later will adapt the folder resumable upload
     # for now it is only for file resumable
-    if resumable_id:
-        pre_upload_infos.extend(upload_client.resume_upload(resumable_id, upload_file_path[0]))
+    if resumable_id and job_id:
+        pre_upload_infos.extend(upload_client.resume_upload(resumable_id, job_id, upload_file_path[0]))
     else:
         for batch in range(0, num_of_batchs):
             start_index = batch * AppConfig.Env.upload_batch_size

@@ -16,7 +16,7 @@
 from os.path import basename, dirname, join
 from typing import List
 
-from app.services.file_manager.file_upload.models import UploadType
+from app.services.file_manager.file_upload.models import FileObject, UploadType
 
 
 class FileUploadForm:
@@ -135,7 +135,7 @@ def generate_pre_upload_form(
         - current_folder(str): the folder path on object storage that user specified.
     return:
         - request_payload(dict): the payload for preupload api.
-        - local_file_mapping(dict): the mapping from object path into local paht.
+        - local_file_mapping(dict): the mapping from object path into local path.
     '''
     data, local_file_mapping = [], {}
     for file_local_path in local_file_paths:
@@ -199,33 +199,46 @@ def generate_chunk_form(project_code, operator, resumable_id, parent_path, file_
 
 
 def generate_on_success_form(
-    project_code,
-    operator,
-    resumable_id,
-    filename,
-    relative_path,
-    total_size,
-    total_chunks,
-    tags,
-    from_parents=None,
-    process_pipeline=None,
-    upload_message=None,
+    project_code: str,
+    operator: str,
+    file_object: FileObject,
+    tags: List[str],
+    from_parents: str = None,
+    process_pipeline: str = None,
+    upload_message: str = None,
 ):
-    my_form = {
+    '''
+    Summary:
+        The function is to generate the payload of combine chunks api. The operation
+        is per file that it will try to generate one payload for each file.
+    Parameter:
+        - project_code(str): The unique identifier for project.
+        - operator(str): The name of operator.
+        - file_object(FileObject): The object that contains the file information.
+        - tags(list[str]): The tags that will be attached with file.
+        - from_parents(str): indicate it is parent node.
+        - process_pipeline(str): the name of pipeline.
+        - upload_message(str): the message for uploading.
+    return:
+        - request_payload(dict): the payload for preupload api.
+    '''
+
+    request_payload = {
         'project_code': project_code,
         'operator': operator,
-        'resumable_identifier': resumable_id,
+        'job_id': file_object.job_id,
+        'resumable_identifier': file_object.resumable_id,
         'resumable_dataType': 'SINGLE_FILE_DATA',
-        'resumable_filename': filename,
-        'resumable_total_chunks': total_chunks,
-        'resumable_total_size': total_size,
-        'resumable_relative_path': relative_path,
+        'resumable_filename': file_object.file_name,
+        'resumable_total_chunks': file_object.total_chunks,
+        'resumable_total_size': file_object.total_size,
+        'resumable_relative_path': file_object.parent_path,
         'tags': tags,
     }
     if from_parents:
-        my_form['from_parents'] = from_parents
+        request_payload['from_parents'] = from_parents
     if process_pipeline:
-        my_form['process_pipeline'] = process_pipeline
+        request_payload['process_pipeline'] = process_pipeline
     if upload_message:
-        my_form['upload_message'] = upload_message
-    return my_form
+        request_payload['upload_message'] = upload_message
+    return request_payload

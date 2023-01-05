@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
+from uuid import uuid4
 
 import requests
 
@@ -36,7 +37,7 @@ def user_login(username, password):
         user_config.refresh_token = res_to_dict['result']['refresh_token']
         user_config.last_active = str(int(time.time()))
         user_config.hpc_token = ''
-        user_config.session_id = 'cli-' + str(int(time.time()))
+        user_config.session_id = 'cli-' + str(uuid4())
         user_config.save()
     elif response.status_code == 401:
         res_to_dict = []

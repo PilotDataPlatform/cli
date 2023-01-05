@@ -127,6 +127,14 @@ def cli():
     help='The upload id to resume the failed upload job',
     show_default=True,
 )
+@click.option(
+    '--job-id',
+    '-jid',
+    default=None,
+    required=False,
+    help='The job id to resume the failed upload job',
+    show_default=True,
+)
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD))
 def file_put(**kwargs):
     """"""
@@ -142,23 +150,23 @@ def file_put(**kwargs):
     attribute = kwargs.get('attribute')
     thread = kwargs.get('thread')
     resumable_id = kwargs.get('resumable_id')
+    job_id = kwargs.get('job_id')
 
     user = UserConfig()
     project_code, target_folder = identify_target_folder(project_path)
     # Check zone and upload-message
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
 
-    # TODO somehow remove it
-    # void_validate_zone('upload', zone, project_code)
-
     toc = customized_error_msg(ECustomizedError.TOU_CONTENT).replace(' ', '...')
-
     if zone.lower() == AppConfig.Env.core_zone.lower() and click.confirm(fit_terminal_width(toc), abort=True):
         pass
 
     # check if user input at least one file/folder
     if len(paths) == 0:
         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_PATHS, True)
+    # check if resumable_id exist then job_id should also be inputed
+    if (resumable_id is None) != (job_id is None):
+        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_RESUMABLE, True)
 
     project_path = click.prompt('ProjectCode') if not project_path else project_path
     project_code, target_folder = identify_target_folder(project_path)
@@ -215,7 +223,7 @@ def file_put(**kwargs):
         if source_file:
             upload_event['valid_source'] = src_file_info
 
-        simple_upload(upload_event, num_of_thread=thread, resumable_id=resumable_id)
+        simple_upload(upload_event, num_of_thread=thread, resumable_id=resumable_id, job_id=job_id)
 
         srv_manifest.attach_manifest(attribute, result_file, zone) if attribute else None
         message_handler.SrvOutPutHandler.all_file_uploaded()
