@@ -37,6 +37,7 @@ class FileObject:
 
     # object storage info
     resumable_id: str
+    job_id: str
     parent_path: str
     file_name: str
 
@@ -48,9 +49,12 @@ class FileObject:
     # resumable info
     uploaded_chunks: List[dict]
 
-    def __init__(self, resumable_id: str, object_path: str, local_path: str, uploaded_chunks: List) -> None:
+    def __init__(
+        self, resumable_id: str, job_id: str, object_path: str, local_path: str, uploaded_chunks: List
+    ) -> None:
         # object storage info
         self.resumable_id = resumable_id
+        self.job_id = job_id
         self.object_path = object_path
         self.parent_path, self.file_name = dirname(object_path), basename(object_path)
 

@@ -98,12 +98,13 @@ class UploadClient:
         return total_size, total_chunks
 
     @require_valid_token()
-    def resume_upload(self, resumable_id: str, local_path: str) -> List[FileObject]:
+    def resume_upload(self, resumable_id: str, job_id: str, local_path: str) -> List[FileObject]:
         '''
         Summary:
             The function is to check the uploaded chunks in object storage.
         Parameter:
-            - resumable_id: The unique id to indicate the multipart upload.
+            - resumable_id(str): The unique id to indicate the multipart upload.
+            - job_id(str): The unique id to indicate the job id.
             - local_path: the local path of interrupted file.
         return:
             - list of FileObject: the infomation retrieved from backend.
@@ -138,6 +139,7 @@ class UploadClient:
             file_objects.append(
                 FileObject(
                     uploaded_info.get('resumable_id'),
+                    job_id,
                     uploaded_info.get('object_path'),
                     local_path,  # TODO change it after folder manifest is setup
                     uploaded_info.get('chunks_info'),
@@ -181,9 +183,10 @@ class UploadClient:
             result = response.json().get('result')
             res = []
             for job in result:
-                object_path = job.get('source')
+                object_path = job.get('target_names')[0]
                 resumable_id = job.get('payload').get('resumable_identifier')
-                res.append(FileObject(resumable_id, object_path, file_mapping.get(object_path), {}))
+                job_id = job.get('job_id')
+                res.append(FileObject(resumable_id, job_id, object_path, file_mapping.get(object_path), {}))
 
             mhandler.SrvOutPutHandler.preupload_success()
             return res
@@ -213,14 +216,18 @@ class UploadClient:
         '''
         count = 0
         remaining_size = file_object.total_size
+        file_name = file_object.file_name
+        rid = file_object.resumable_id
+        jid = file_object.job_id
         with tqdm(
             total=file_object.total_size,
             leave=True,
             bar_format='{desc} |{bar:30} {percentage:3.0f}% {remaining}',
         ) as bar:
-            bar.set_description(
-                'Uploading {} , resumable_id: {}'.format(file_object.file_name, file_object.resumable_id)
-            )
+            # updating the progress bar
+            bar.set_description('Uploading {} , resumable_id: {}, job_id: {}'.format(file_name, rid, jid))
+
+            # process on the file content
             f = open(file_object.local_path, 'rb')
             while True:
                 chunk = f.read(self.chunk_size)
@@ -281,7 +288,7 @@ class UploadClient:
             else:
                 SrvErrorHandler.default_handle('Chunk Error: retry number %s' % i)
                 if i == 2:
-                    SrvErrorHandler.default_handle('retry over 3 times')
+                    SrvErrorHandler.default_handle('retry over 3 times', True)
                     SrvErrorHandler.default_handle(response.content)
 
             # wait certain amount of time and retry
@@ -306,11 +313,7 @@ class UploadClient:
             payload = uf.generate_on_success_form(
                 self.project_code,
                 self.operator,
-                file_object.resumable_id,
-                file_object.file_name,
-                file_object.parent_path,
-                file_object.total_size,
-                file_object.total_chunks,
+                file_object,
                 tags,
                 [],
                 process_pipeline=self.process_pipeline,
