@@ -13,13 +13,16 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import math
 import os
 import time
 from typing import List, Tuple
 
+from common.object_storage_adaptor.boto3_client import get_boto3_client
+
 # import httpx
-import requests
+# import requests
 from tqdm import tqdm
 
 import app.models.upload_form as uf
@@ -255,7 +258,7 @@ class UploadClient:
     def upload_chunk(self, file_object: FileObject, chunk_number: int, chunk: str) -> None:
         '''
         Summary:
-            The function is to upload a chunk into upload service.
+            The function is to upload a chunk directly into minio storage.
         Parameter:
             - file_object(FileObject): the file object that contains correct
                 information for chunk uploading.
@@ -264,36 +267,55 @@ class UploadClient:
         return:
             - None
         '''
+        try:
+            loop = asyncio.new_event_loop()
 
-        # retry three times
-        for i in range(AppConfig.Env.resilient_retry):
-            if i > 0:
-                SrvErrorHandler.default_handle('retry number %s' % i)
-
-            payload = uf.generate_chunk_form(
-                self.project_code,
-                self.operator,
-                file_object.resumable_id,
-                file_object.parent_path,
-                file_object.file_name,
-                chunk_number,
+            boto3_client = loop.run_until_complete(
+                get_boto3_client(
+                    'minio.dev.pilot.indocresearch.org',
+                    token=self.user.access_token,
+                    https=True,
+                )
             )
-            headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
-            files = {'chunk_data': chunk}
-            response = requests.post(self.base_url + '/v1/files/chunks', data=payload, headers=headers, files=files)
 
-            if response.status_code == 200:
-                res_to_dict = response.json()
-                return res_to_dict
-            else:
-                SrvErrorHandler.default_handle('Chunk Error: retry number %s' % i)
-                if i == 2:
-                    SrvErrorHandler.default_handle('retry over 3 times', True)
-                    SrvErrorHandler.default_handle(response.content)
+            loop.run_until_complete(
+                boto3_client.part_upload(
+                    self.bucket, file_object.object_path, file_object.resumable_id, chunk_number, chunk
+                )
+            )
+            loop.close()
+        except Exception:
+            raise
 
-            # wait certain amount of time and retry
-            # the time will be longer for more retry
-            time.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
+        # # retry three times
+        # for i in range(AppConfig.Env.resilient_retry):
+        #     if i > 0:
+        #         SrvErrorHandler.default_handle('retry number %s' % i)
+
+        #     payload = uf.generate_chunk_form(
+        #         self.project_code,
+        #         self.operator,
+        #         file_object.resumable_id,
+        #         file_object.parent_path,
+        #         file_object.file_name,
+        #         chunk_number,
+        #     )
+        #     headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
+        #     files = {'chunk_data': chunk}
+        #     response = requests.post(self.base_url + '/v1/files/chunks', data=payload, headers=headers, files=files)
+
+        #     if response.status_code == 200:
+        #         res_to_dict = response.json()
+        #         return res_to_dict
+        #     else:
+        #         SrvErrorHandler.default_handle('Chunk Error: retry number %s' % i)
+        #         if i == 2:
+        #             SrvErrorHandler.default_handle('retry over 3 times', True)
+        #             SrvErrorHandler.default_handle(response.content)
+
+        #     # wait certain amount of time and retry
+        #     # the time will be longer for more retry
+        #     time.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
 
     @require_valid_token()
     def on_succeed(self, file_object: FileObject, tags: List[str]):
