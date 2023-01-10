@@ -31,9 +31,7 @@ from app.services.output_manager.error_handler import (
     SrvErrorHandler,
     customized_error_msg,
 )
-from app.utils.aggregated import search_item
-
-from ....utils.aggregated import get_file_in_folder
+from app.utils.aggregated import get_file_in_folder, search_item
 
 
 def compress_folder_to_zip(path):
@@ -143,20 +141,21 @@ def simple_upload(upload_event, num_of_thread: int = 1, resumable_id: str = None
         client.stream_upload(file_object)
         client.on_succeed(file_object, tags)
 
-    # now loop over each file under the folder and start
-    # the chunk upload
-    for file_object in pre_upload_infos:
-        pool.apply_async(
-            multithread_upload,
-            args=(
-                upload_client,
-                file_object,
-                tags,
-            ),
-        )
+    # now loop over each file under the folder and start the chunk upload
+    try:
+        for file_object in pre_upload_infos:
+            _ = pool.apply_async(
+                multithread_upload,
+                args=(
+                    upload_client,
+                    file_object,
+                    tags,
+                ),
+            )
 
-    pool.close()
-    pool.join()
+    finally:
+        pool.close()
+        pool.join()
 
     if source_file or attribute:
         continue_loop = True

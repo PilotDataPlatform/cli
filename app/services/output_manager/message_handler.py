@@ -56,7 +56,7 @@ class SrvOutPutHandler(metaclass=MetaService):
 
         Job Done.
         """
-        return logger.succeed('All files uploaded successfully.')
+        return logger.succeed('All uploading jobs have finished.')
 
     @staticmethod
     def all_manifest_fetched():

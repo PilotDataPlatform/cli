@@ -64,9 +64,15 @@ class Error:
             'Permission denied. Please verify your role in the Project has permission to perform this action.'
         ),
         'UPLOAD_CANCEL': 'Upload task was cancelled.',
+        'UPLOAD_FAIL': 'Upload task was failed. Please check the console output.',
         'UPLOAD_ID_NOT_EXIST': (
             'The specified multipart upload does not exist. '
             'The upload ID may be invalid, or the upload may have been aborted or completed.'
+        ),
+        'INVALID_CHUNK_UPLOAD': (
+            '\nThe chunk number %d is not the same with previous etag.\n'
+            'It means the resumable file is not the same with previous one.\n'
+            'Please to double check the file content.'
         ),
         'INVALID_INPUT': 'Invalid input. Please try again.',
         'UNSUPPORTED_PROJECT': 'This function is not supported in the given Project %s',
