@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import hashlib
 import math
 import os
 import time
@@ -31,6 +32,7 @@ from app.services.output_manager.error_handler import ECustomizedError, SrvError
 from app.services.user_authentication.decorator import require_valid_token
 from app.utils.aggregated import resilient_session, search_item
 
+from .exception import INVALID_CHUNK_ETAG
 from ..file_lineage import create_lineage
 
 
@@ -231,14 +233,17 @@ class UploadClient:
             f = open(file_object.local_path, 'rb')
             while True:
                 chunk = f.read(self.chunk_size)
+                chunk_etag = file_object.uploaded_chunks.get(str(count + 1))
                 if not chunk:
                     break
                 # if current chunk has been uploaded to object storage
-                # TODO only check the md5 if the file is same. If ture,
+                # only check the md5 if the file is same. If ture,
                 # skip current chunk, if not, raise the error.
-                elif file_object.uploaded_chunks.get(str(count + 1)):
-                    # print(f"the chunk has been uploaded with etag {uploaded_chunks.get(count + 1)}")
-                    pass
+                elif chunk_etag:
+                    local_chunk_etag = hashlib.md5(chunk).hexdigest()
+                    if chunk_etag != local_chunk_etag:
+                        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_CHUNK_UPLOAD, value=count + 1)
+                        raise INVALID_CHUNK_ETAG(count + 1)
                 else:
                     self.upload_chunk(file_object, count + 1, chunk)
 
@@ -288,7 +293,7 @@ class UploadClient:
             else:
                 SrvErrorHandler.default_handle('Chunk Error: retry number %s' % i)
                 if i == 2:
-                    SrvErrorHandler.default_handle('retry over 3 times', True)
+                    SrvErrorHandler.default_handle('retry over 3 times')
                     SrvErrorHandler.default_handle(response.content)
 
             # wait certain amount of time and retry
@@ -335,8 +340,7 @@ class UploadClient:
                 SrvErrorHandler.default_handle('Combine Error: retry number %s' % i)
                 SrvErrorHandler.default_handle(response.content)
                 if i == 2:
-                    SrvErrorHandler.default_handle('retry over 3 times', True)
-                # SrvErrorHandler.default_handle(response.content, True)
+                    SrvErrorHandler.default_handle('retry over 3 times')
 
             time.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
 
