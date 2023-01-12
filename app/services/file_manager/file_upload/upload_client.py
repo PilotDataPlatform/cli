@@ -13,15 +13,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import math
 import os
 import time
 from typing import List, Tuple
 
-from common.object_storage_adaptor.boto3_client import get_boto3_client
+import httpx
 
-# import httpx
 # import requests
 from tqdm import tqdm
 
@@ -267,55 +265,44 @@ class UploadClient:
         return:
             - None
         '''
-        try:
-            loop = asyncio.new_event_loop()
 
-            boto3_client = loop.run_until_complete(
-                get_boto3_client(
-                    'minio.dev.pilot.indocresearch.org',
-                    token=self.user.access_token,
-                    https=True,
-                )
+        # retry three times
+        for i in range(AppConfig.Env.resilient_retry):
+            if i > 0:
+                SrvErrorHandler.default_handle('retry number %s' % i)
+
+            # request upload service to generate presigned url for the chunk
+            params = {
+                'bucket': self.bucket,
+                'key': file_object.object_path,
+                'upload_id': file_object.resumable_id,
+                'chunk_number': chunk_number,
+            }
+            headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
+            response = httpx.get(
+                AppConfig.Connections.url_bff + '/v1/files/chunks/presigned', params=params, headers=headers
             )
 
-            loop.run_until_complete(
-                boto3_client.part_upload(
-                    self.bucket, file_object.object_path, file_object.resumable_id, chunk_number, chunk
-                )
-            )
-            loop.close()
-        except Exception:
-            raise
+            # then use the presigned url directly uplad to minio
+            if response.status_code == 200:
+                presigned_chunk_url = response.json().get('result')
+                res = httpx.put(presigned_chunk_url, data=chunk, timeout=60)
 
-        # # retry three times
-        # for i in range(AppConfig.Env.resilient_retry):
-        #     if i > 0:
-        #         SrvErrorHandler.default_handle('retry number %s' % i)
+                if res.status_code != 200:
+                    error_msg = 'Fail to upload the chunck %s: %s' % (chunk_number, str(res.text))
+                    self.logger.error(error_msg)
+                    raise Exception(error_msg)
 
-        #     payload = uf.generate_chunk_form(
-        #         self.project_code,
-        #         self.operator,
-        #         file_object.resumable_id,
-        #         file_object.parent_path,
-        #         file_object.file_name,
-        #         chunk_number,
-        #     )
-        #     headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
-        #     files = {'chunk_data': chunk}
-        #     response = requests.post(self.base_url + '/v1/files/chunks', data=payload, headers=headers, files=files)
+                return res
+            else:
+                SrvErrorHandler.default_handle('Chunk Error: retry number %s' % i)
+                if i == 2:
+                    SrvErrorHandler.default_handle('retry over 3 times', True)
+                    SrvErrorHandler.default_handle(response.content)
 
-        #     if response.status_code == 200:
-        #         res_to_dict = response.json()
-        #         return res_to_dict
-        #     else:
-        #         SrvErrorHandler.default_handle('Chunk Error: retry number %s' % i)
-        #         if i == 2:
-        #             SrvErrorHandler.default_handle('retry over 3 times', True)
-        #             SrvErrorHandler.default_handle(response.content)
-
-        #     # wait certain amount of time and retry
-        #     # the time will be longer for more retry
-        #     time.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
+            # wait certain amount of time and retry
+            # the time will be longer for more retry
+            time.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
 
     @require_valid_token()
     def on_succeed(self, file_object: FileObject, tags: List[str]):
