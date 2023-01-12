@@ -186,16 +186,16 @@ def generate_pre_upload_form(
 #     return relative_file_path.rstrip('/')
 
 
-def generate_chunk_form(project_code, operator, resumable_id, parent_path, file_name, chunk_number: int):
-    my_form = {
-        'project_code': project_code,
-        'operator': operator,
-        'resumable_identifier': resumable_id,
-        'resumable_filename': file_name,
-        'resumable_relative_path': parent_path,
-        'resumable_chunk_number': int(chunk_number),
-    }
-    return my_form
+# def generate_chunk_form(project_code, operator, resumable_id, parent_path, file_name, chunk_number: int):
+#     my_form = {
+#         'project_code': project_code,
+#         'operator': operator,
+#         'resumable_identifier': resumable_id,
+#         'resumable_filename': file_name,
+#         'resumable_relative_path': parent_path,
+#         'resumable_chunk_number': int(chunk_number),
+#     }
+#     return my_form
 
 
 def generate_on_success_form(
