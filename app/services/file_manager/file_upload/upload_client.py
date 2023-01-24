@@ -64,10 +64,12 @@ class UploadClient:
         self.input_path = input_path
         self.upload_message = upload_message
         self.chunk_size = AppConfig.Env.chunk_size  # remove
-        self.base_url = {
-            AppConfig.Env.green_zone: AppConfig.Connections.url_upload_greenroom,
-            AppConfig.Env.core_zone: AppConfig.Connections.url_upload_core,
-        }.get(zone.lower())
+        # self.base_url = {
+        #     AppConfig.Env.green_zone: AppConfig.Connections.url_upload_greenroom,
+        #     AppConfig.Env.core_zone: AppConfig.Connections.url_upload_core,
+        # }.get(zone.lower())
+
+        self.base_url = 'http://localhost:5079'
 
         prefix = {
             AppConfig.Env.green_zone: AppConfig.Env.greenroom_bucket_prefix,
