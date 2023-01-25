@@ -24,7 +24,11 @@ class AppConfig(object):
         msg_path = ConfigClass.custom_path
         user_config_file = f'{user_config_path}/config.ini'
         token_warn_need_refresh = 120  # seconds
-        chunk_size = 1024 * 1024 * 5  # chunk size 5mb
+
+        # NOTE: there is a limitation on minio that
+        # the multipart number is 10000. so we set
+        # the chunk_size as 20MB -> total 200GB
+        chunk_size = 1024 * 1024 * 20  # MB
         resilient_retry = 3
         resilient_backoff = 1
         resilient_retry_interval = 1  # seconds

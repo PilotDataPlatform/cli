@@ -17,6 +17,7 @@ import hashlib
 import math
 import os
 import time
+from multiprocessing.pool import ThreadPool
 from typing import List, Tuple
 
 # import httpx
@@ -206,10 +207,12 @@ class UploadClient:
         else:
             SrvErrorHandler.default_handle(str(response.status_code) + ': ' + str(response.content), self.regular_file)
 
-    def stream_upload(self, file_object: FileObject) -> None:
+    def stream_upload(self, file_object: FileObject, pool: ThreadPool) -> None:
         '''
         Summary:
             The function is a wrap to display the uploading process.
+            It will submit the async function job to ThreadPool. Each
+            of chunk upload process will be queued in pool and scheduled.
         Parameter:
             - file_object(FileObject): the file object that contains correct
                 information for chunk uploading.
@@ -217,7 +220,8 @@ class UploadClient:
             - None
         '''
         count = 0
-        remaining_size = file_object.total_size
+        async_result = []
+        # remaining_size = file_object.total_size
         file_name = file_object.file_name
         rid = file_object.resumable_id
         jid = file_object.job_id
@@ -245,15 +249,19 @@ class UploadClient:
                         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_CHUNK_UPLOAD, value=count + 1)
                         raise INVALID_CHUNK_ETAG(count + 1)
                 else:
-                    self.upload_chunk(file_object, count + 1, chunk)
-
-                # update progress bar
-                if self.chunk_size > remaining_size:
-                    bar.update(remaining_size)
-                else:
-                    bar.update(self.chunk_size)
+                    res = pool.apply_async(
+                        self.upload_chunk,
+                        args=(file_object, count + 1, chunk),
+                    )
+                    # print(res, len(chunk))
+                    async_result.append((res, len(chunk)))
                 count += 1  # uploaded successfully
-                remaining_size = remaining_size - self.chunk_size
+
+            for async_res, chunk_size in async_result:
+                # update progress bar
+                result = async_res.get()
+                if result:
+                    bar.update(chunk_size)
             f.close()
 
     @require_valid_token()
