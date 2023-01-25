@@ -21,7 +21,7 @@ import app.services.output_manager.help_page as file_help
 import app.services.output_manager.message_handler as message_handler
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
-from app.services.file_manager.file_download import SrvFileDownload
+from app.services.file_manager.file_download.download_client import SrvFileDownload
 from app.services.file_manager.file_list import SrvFileList
 from app.services.file_manager.file_manifests import SrvFileManifests
 from app.services.file_manager.file_upload.file_upload import (
