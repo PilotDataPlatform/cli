@@ -19,6 +19,7 @@ import time
 
 import click
 import httpx
+import jwt
 from tqdm import tqdm
 
 import app.services.logger_services.log_functions as logger
@@ -29,6 +30,8 @@ from app.models.service_meta_class import MetaService
 from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
 from app.utils.aggregated import resilient_session
+
+from .model import EFileStatus
 
 
 class SrvFileDownload(metaclass=MetaService):
@@ -97,29 +100,31 @@ class SrvFileDownload(metaclass=MetaService):
         }
         url = self.appconfig.Connections.url_v2_download_pre % (self.project_code)
         res = resilient_session().post(url, headers=headers, json=payload)
-        res_json = res.json()
+        res_json = res.json().get('result')
         self.check_point = True
-        if res_json.get('code') == 200:
-            file_path = res_json.get('result').get('source')
-            pre_status = res_json.get('result').get('status')
-        elif res_json.get('code') == 403:
+
+        if res.status_code == 200:
+            # fetch the info from hash token
+            self.hash_code = res_json.get('payload', {}).get('hash_code')
+            download_info = jwt.decode(self.hash_code, options={'verify_signature': False})
+            file_path = download_info.get('file_path')
+            pre_status = EFileStatus(res_json.get('status'))
+        elif res.status_code == 403:
             SrvErrorHandler.customized_handle(ECustomizedError.NO_FILE_PERMMISION, self.interactive)
-        elif res_json.get('code') == 400 and res_json.get('error_msg') == 'Folder is empty':
+        elif res.status_code == 400 and res_json.get('error_msg') == 'Folder is empty':
             SrvErrorHandler.customized_handle(ECustomizedError.FOLDER_EMPTY, self.interactive)
         else:
             SrvErrorHandler.customized_handle(ECustomizedError.DOWNLOAD_FAIL, self.interactive)
-        result = res_json.get('result')
-        h_code = result.get('payload').get('hash_code')
-        self.hash_code = h_code
+
         return pre_status, file_path
 
     @require_valid_token()
     def download_status(self):
         url = self.url + f'v1/download/status/{self.hash_code}'
         res = resilient_session().get(url)
-        res_json = res.json()
-        if res_json.get('code') == 200:
-            status = res_json.get('result').get('status')
+        res_json = res.json().get('result')
+        if res.status_code == 200:
+            status = EFileStatus(res_json.get('status'))
             return status
         else:
             SrvErrorHandler.default_handle(res_json.get('error_msg'), self.interactive)
@@ -148,10 +153,10 @@ class SrvFileDownload(metaclass=MetaService):
         while True:
             time.sleep(1)
             status = self.download_status()
-            if status == 'READY_FOR_DOWNLOADING':
+            if status == EFileStatus.SUCCEED:
                 self.check_point = True
                 break
-            elif status == 'CANCELLED':
+            elif status == EFileStatus.FAILED:
                 self.check_point = True
                 SrvErrorHandler.customized_handle(ECustomizedError.DOWNLOAD_FAIL, self.interactive)
         return status
@@ -269,8 +274,9 @@ class SrvFileDownload(metaclass=MetaService):
         if not filename:
             return
 
+        # genereate download url for presigned or zip download
         pre_status, zip_file_path = self.pre_download()
-        if pre_status == 'ZIPPING' and not presigned_task:
+        if pre_status == EFileStatus.WAITING and not presigned_task:
             filename = zip_file_path.split('/')[-1]
         if presigned_task:
             download_url = zip_file_path
@@ -298,7 +304,7 @@ class SrvFileDownload(metaclass=MetaService):
             if not filename:
                 return
             pre_status, zip_file_path = self.pre_download()
-            if pre_status == 'ZIPPING':
+            if pre_status == EFileStatus.WAITING:
                 filename = zip_file_path.split('/')[-1]
             status = self.check_download_preparing_status()
             mhandler.SrvOutPutHandler.download_status(status)

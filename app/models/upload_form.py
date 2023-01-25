@@ -147,7 +147,7 @@ def generate_pre_upload_form(
         #   a/b/c/d.txt. the <local_file_paths> will be same as it. The path in
         #   object storage will be <current_folder>/d.txt
         if job_type == UploadType.AS_FOLDER:
-            file_relative_path = file_local_path.replace(input_path, '')
+            file_relative_path = file_local_path.replace(input_path + '/', '')
             object_path = join(current_folder, file_relative_path)
             parent_path, file_name = dirname(object_path), basename(object_path)
 
