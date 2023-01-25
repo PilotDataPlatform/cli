@@ -288,7 +288,9 @@ class UploadClient:
             }
             headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
             response = httpx.get(
-                AppConfig.Connections.url_bff + '/v1/files/chunks/presigned', params=params, headers=headers
+                AppConfig.Connections.url_bff + f'/v1/project/{self.project_code}/files/chunks/presigned',
+                params=params,
+                headers=headers,
             )
 
             # then use the presigned url directly uplad to minio
