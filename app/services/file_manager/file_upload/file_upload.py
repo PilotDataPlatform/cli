@@ -31,9 +31,7 @@ from app.services.output_manager.error_handler import (
     SrvErrorHandler,
     customized_error_msg,
 )
-from app.utils.aggregated import search_item
-
-from ....utils.aggregated import get_file_in_folder
+from app.utils.aggregated import get_file_in_folder, search_item
 
 
 def compress_folder_to_zip(path):
