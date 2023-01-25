@@ -24,7 +24,7 @@ import click
 import app.services.logger_services.log_functions as logger
 import app.services.output_manager.message_handler as mhandler
 from app.configs.app_config import AppConfig
-from app.services.file_manager.file_upload.models import FileObject, UploadType
+from app.services.file_manager.file_upload.models import UploadType
 from app.services.file_manager.file_upload.upload_client import UploadClient
 from app.services.output_manager.error_handler import (
     ECustomizedError,
@@ -136,23 +136,16 @@ def simple_upload(upload_event, num_of_thread: int = 1, resumable_id: str = None
             # the placeholder in object storage
             pre_upload_infos.extend(upload_client.pre_upload(file_batchs))
 
-    # then do the chunk upload/combine for each bach
-    pool = ThreadPool(num_of_thread)
-
-    def multithread_upload(client: UploadClient, file_object: FileObject, tags):
-        client.stream_upload(file_object)
-        client.on_succeed(file_object, tags)
-
     # now loop over each file under the folder and start
     # the chunk upload
+    pool = ThreadPool(num_of_thread)
     for file_object in pre_upload_infos:
+        upload_client.stream_upload(file_object, pool)
+        # TODO: if there is some racing error make the combine chunks
+        # out of thread pool.
         pool.apply_async(
-            multithread_upload,
-            args=(
-                upload_client,
-                file_object,
-                tags,
-            ),
+            upload_client.on_succeed,
+            args=(file_object, tags),
         )
 
     pool.close()
