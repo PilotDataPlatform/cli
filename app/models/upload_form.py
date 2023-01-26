@@ -173,31 +173,6 @@ def generate_pre_upload_form(
     return request_payload, local_file_mapping
 
 
-# # TODO remove it
-# def get_relative_path(file, current_folder_node, resumable_relative_path, job_type):
-#     relative_file_path = '/'.join(os.path.relpath(file).split('/')[0:-1])
-#     relative_file_path = relative_file_path[relative_file_path.index(resumable_relative_path) :]
-#     if current_folder_node == '':
-#         relative_file_path = relative_file_path
-#     elif job_type == 'AS_FOLDER':
-#         relative_file_path = current_folder_node + '/' + '/'.join(relative_file_path.split('/')[1:])
-#     else:
-#         relative_file_path = current_folder_node
-#     return relative_file_path.rstrip('/')
-
-
-def generate_chunk_form(project_code, operator, resumable_id, parent_path, file_name, chunk_number: int):
-    my_form = {
-        'project_code': project_code,
-        'operator': operator,
-        'resumable_identifier': resumable_id,
-        'resumable_filename': file_name,
-        'resumable_relative_path': parent_path,
-        'resumable_chunk_number': int(chunk_number),
-    }
-    return my_form
-
-
 def generate_on_success_form(
     project_code: str,
     operator: str,
