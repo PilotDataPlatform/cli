@@ -20,8 +20,9 @@ import time
 from multiprocessing.pool import ThreadPool
 from typing import List, Tuple
 
-# import httpx
-import requests
+import httpx
+
+# import requests
 from tqdm import tqdm
 
 import app.models.upload_form as uf
@@ -268,7 +269,7 @@ class UploadClient:
     def upload_chunk(self, file_object: FileObject, chunk_number: int, chunk: str) -> None:
         '''
         Summary:
-            The function is to upload a chunk into upload service.
+            The function is to upload a chunk directly into minio storage.
         Parameter:
             - file_object(FileObject): the file object that contains correct
                 information for chunk uploading.
@@ -283,21 +284,31 @@ class UploadClient:
             if i > 0:
                 SrvErrorHandler.default_handle('retry number %s' % i)
 
-            payload = uf.generate_chunk_form(
-                self.project_code,
-                self.operator,
-                file_object.resumable_id,
-                file_object.parent_path,
-                file_object.file_name,
-                chunk_number,
-            )
+            # request upload service to generate presigned url for the chunk
+            params = {
+                'bucket': self.bucket,
+                'key': file_object.object_path,
+                'upload_id': file_object.resumable_id,
+                'chunk_number': chunk_number,
+            }
             headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
-            files = {'chunk_data': chunk}
-            response = requests.post(self.base_url + '/v1/files/chunks', data=payload, headers=headers, files=files)
+            response = httpx.get(
+                AppConfig.Connections.url_bff + f'/v1/project/{self.project_code}/files/chunks/presigned',
+                params=params,
+                headers=headers,
+            )
 
+            # then use the presigned url directly uplad to minio
             if response.status_code == 200:
-                res_to_dict = response.json()
-                return res_to_dict
+                presigned_chunk_url = response.json().get('result')
+                res = httpx.put(presigned_chunk_url, data=chunk, timeout=60)
+
+                if res.status_code != 200:
+                    error_msg = 'Fail to upload the chunck %s: %s' % (chunk_number, str(res.text))
+                    self.logger.error(error_msg)
+                    raise Exception(error_msg)
+
+                return res
             else:
                 SrvErrorHandler.default_handle('Chunk Error: retry number %s' % i)
                 if i == 2:
