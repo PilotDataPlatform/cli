@@ -27,7 +27,6 @@ flake8 = "^4.0.1"
 pytest-mock = "^3.7.0"
 pytest-cov = "^3.0.0"
 
-
 [tool.poetry.scripts]
 pilotcli = "app.pilotcli:cli"
 
