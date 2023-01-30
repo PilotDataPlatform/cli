@@ -13,10 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import hashlib
 import math
 import os
-import time
 from multiprocessing.pool import ThreadPool
 from typing import List, Tuple
 
@@ -222,10 +222,15 @@ class UploadClient:
         '''
         count = 0
         async_result = []
+        # the window_size is to limit the async job creation
+        # the program will be killed if async jobs are too many
+        # in the queue
+        thread_window_size = 30
         # remaining_size = file_object.total_size
         file_name = file_object.file_name
         rid = file_object.resumable_id
         jid = file_object.job_id
+
         with tqdm(
             total=file_object.total_size,
             leave=True,
@@ -258,11 +263,24 @@ class UploadClient:
                     async_result.append((res, len(chunk)))
                 count += 1  # uploaded successfully
 
+                # if the async queue reaches window size we wait
+                # all job finished and queue again
+                if len(async_result) == thread_window_size:
+                    for async_res, chunk_size in async_result:
+                        # update progress bar
+                        result = async_res.get()
+                        if result:
+                            bar.update(chunk_size)
+                    # then clear up the queue
+                    async_result = []
+
+            # finish up rest of async job in the queue
             for async_res, chunk_size in async_result:
                 # update progress bar
                 result = async_res.get()
                 if result:
                     bar.update(chunk_size)
+
             f.close()
 
     @require_valid_token()
@@ -296,12 +314,13 @@ class UploadClient:
                 AppConfig.Connections.url_bff + f'/v1/project/{self.project_code}/files/chunks/presigned',
                 params=params,
                 headers=headers,
+                timeout=None,
             )
 
             # then use the presigned url directly uplad to minio
             if response.status_code == 200:
                 presigned_chunk_url = response.json().get('result')
-                res = httpx.put(presigned_chunk_url, data=chunk, timeout=60)
+                res = httpx.put(presigned_chunk_url, data=chunk, timeout=None)
 
                 if res.status_code != 200:
                     error_msg = 'Fail to upload the chunck %s: %s' % (chunk_number, str(res.text))
@@ -317,7 +336,7 @@ class UploadClient:
 
             # wait certain amount of time and retry
             # the time will be longer for more retry
-            time.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
+            asyncio.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
 
     @require_valid_token()
     def on_succeed(self, file_object: FileObject, tags: List[str]):
@@ -361,7 +380,7 @@ class UploadClient:
                 if i == 2:
                     SrvErrorHandler.default_handle('retry over 3 times')
 
-            time.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
+            asyncio.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
 
     @require_valid_token()
     def create_file_lineage(self, source_file: dict, new_file_object: FileObject):
