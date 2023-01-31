@@ -45,9 +45,7 @@ class UploadEventValidator:
                     ECustomizedError.INVALID_UPLOAD_REQUEST, True, value='process pipeline name required'
                 )
             else:
-                source_file_info = search_item(
-                    self.project_code, AppConfig.Env.green_zone.lower(), self.source, 'file', self.token
-                )
+                source_file_info = search_item(self.project_code, AppConfig.Env.green_zone.lower(), self.source, 'file')
                 source_file_info = source_file_info['result']
                 if not source_file_info:
                     SrvErrorHandler.customized_handle(ECustomizedError.INVALID_SOURCE_FILE, True, value=self.source)

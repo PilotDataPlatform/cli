@@ -45,11 +45,11 @@ def compress_folder_to_zip(path):
     zipf.close()
 
 
-def assemble_path(f, target_folder, project_code, zone, access_token, resumable_id, zipping=False):
+def assemble_path(f, target_folder, project_code, zone, resumable_id, zipping=False):
     current_folder_node = target_folder + '/' + f.rstrip('/').split('/')[-1]
     result_file = current_folder_node
     name_folder = current_folder_node.split('/')[0].lower()
-    name_folder_res = search_item(project_code, zone, name_folder, 'name_folder', access_token)
+    name_folder_res = search_item(project_code, zone, name_folder, 'name_folder')
     name_folder_code = name_folder_res['code']
     name_folder_result = name_folder_res['result']
     if name_folder_code == 403:
@@ -58,7 +58,7 @@ def assemble_path(f, target_folder, project_code, zone, access_token, resumable_
         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_NAMEFOLDER, True)
     if len(current_folder_node.split('/')) > 2:
         parent_path = name_folder + '/' + '/'.join(current_folder_node.split('/')[1:-1])
-        res = search_item(project_code, zone, parent_path, 'folder', access_token)
+        res = search_item(project_code, zone, parent_path, 'folder')
         if not res['result'] and not resumable_id:
             click.confirm(customized_error_msg(ECustomizedError.CREATE_FOLDER_IF_NOT_EXIST), abort=True)
         elif resumable_id:
