@@ -396,7 +396,7 @@ class UploadClient:
 
         if source_file and self.zone == AppConfig.Env.core_zone:
             child_rel_path = new_file_object.object_path
-            child_item = search_item(self.project_code, self.zone, child_rel_path, 'file', self.user.access_token)
+            child_item = search_item(self.project_code, self.zone, child_rel_path, 'file')
             child_file = child_item['result']
             parent_file_geid = source_file['id']
             child_file_geid = child_file['id']
