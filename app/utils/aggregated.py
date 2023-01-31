@@ -22,6 +22,7 @@ import httpx
 import requests
 
 from app.configs.app_config import AppConfig
+from app.configs.user_config import UserConfig
 from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
 from env import ConfigClass
@@ -39,7 +40,8 @@ def resilient_session():
 
 
 @require_valid_token()
-def search_item(project_code, zone, folder_relative_path, item_type, token, container_type='project'):
+def search_item(project_code, zone, folder_relative_path, item_type, container_type='project'):
+    token = UserConfig().access_token
     url = AppConfig.Connections.url_bff + '/v1/project/{}/search'.format(project_code)
     params = {
         'zone': zone,

@@ -204,7 +204,6 @@ def file_put(**kwargs):
             target_folder,
             project_code,
             zone,
-            user.access_token,
             resumable_id,
             zipping,
         )
@@ -376,7 +375,7 @@ def file_download(**kwargs):
         for path in paths:
             project_code = path.strip('/').split('/')[0]
             target_path = '/'.join(path.split('/')[1::])
-            item = search_item(project_code, zone, target_path, '', user.access_token)
+            item = search_item(project_code, zone, target_path, '')
             if item.get('code') == 200 and item.get('result'):
                 item_status = 'success'
                 item_result = item.get('result')
