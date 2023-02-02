@@ -3,7 +3,7 @@
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
-# License, or any later version.
+# License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -24,25 +24,19 @@ from app.configs.user_config import UserConfig
 from app.services.file_manager.file_download.download_client import SrvFileDownload
 from app.services.file_manager.file_list import SrvFileList
 from app.services.file_manager.file_manifests import SrvFileManifests
-from app.services.file_manager.file_upload.file_upload import (
-    assemble_path,
-    simple_upload,
-)
+from app.services.file_manager.file_upload.file_upload import assemble_path
+from app.services.file_manager.file_upload.file_upload import simple_upload
 from app.services.file_manager.file_upload.upload_validator import UploadEventValidator
-from app.services.output_manager.error_handler import (
-    ECustomizedError,
-    SrvErrorHandler,
-    customized_error_msg,
-)
+from app.services.output_manager.error_handler import ECustomizedError
+from app.services.output_manager.error_handler import SrvErrorHandler
+from app.services.output_manager.error_handler import customized_error_msg
 from app.services.user_authentication.decorator import require_valid_token
-from app.utils.aggregated import (
-    doc,
-    fit_terminal_width,
-    get_file_info_by_geid,
-    get_zone,
-    identify_target_folder,
-    search_item,
-)
+from app.utils.aggregated import doc
+from app.utils.aggregated import fit_terminal_width
+from app.utils.aggregated import get_file_info_by_geid
+from app.utils.aggregated import get_zone
+from app.utils.aggregated import identify_target_folder
+from app.utils.aggregated import search_item
 
 
 @click.command()
@@ -136,7 +130,7 @@ def cli():
     show_default=True,
 )
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD))
-def file_put(**kwargs):
+def file_put(**kwargs):  # noqa: C901
     """"""
 
     paths = kwargs.get('paths')

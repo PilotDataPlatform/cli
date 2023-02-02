@@ -3,7 +3,7 @@
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
-# License, or any later version.
+# License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -15,8 +15,11 @@
 
 import math
 from enum import Enum
-from os.path import basename, dirname, getsize
-from typing import List, Tuple
+from os.path import basename
+from os.path import dirname
+from os.path import getsize
+from typing import List
+from typing import Tuple
 
 from app.configs.app_config import AppConfig
 
@@ -30,10 +33,10 @@ class UploadType(Enum):
 
 
 class FileObject:
-    '''
+    """
     Summary:
         The class contains file infomation
-    '''
+    """
 
     # object storage info
     resumable_id: str
@@ -66,7 +69,7 @@ class FileObject:
         self.uploaded_chunks = uploaded_chunks
 
     def generate_meta(self, local_path: str) -> Tuple[int, int]:
-        '''
+        """
         Summary:
             The function is to generate chunk upload meatedata for a file.
         Parameter:
@@ -74,7 +77,7 @@ class FileObject:
         return:
             - total_size: the size of file
             - total_chunks: the number of chunks will be uploaded.
-        '''
+        """
         file_length_in_bytes = getsize(local_path)
         total_size = file_length_in_bytes
         total_chunks = math.ceil(total_size / AppConfig.Env.chunk_size)

@@ -3,7 +3,7 @@
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
-# License, or any later version.
+# License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -115,7 +115,7 @@ class SrvErrorHandler(metaclass=MetaService):
     @staticmethod
     def customized_handle(customized_error: ECustomizedError, if_exit=False, value=None):
         if value:
-            logger.error(customized_error_msg(customized_error) % value)
+            logger.error(customized_error_msg(customized_error) % value)  # noqa: G002
         else:
             logger.error(customized_error_msg(customized_error))
         if if_exit:

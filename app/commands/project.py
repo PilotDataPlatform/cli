@@ -3,7 +3,7 @@
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
-# License, or any later version.
+# License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -24,39 +24,38 @@ from app.utils.aggregated import doc
 
 @click.command()
 def cli():
-    """Project Actions"""
+    """Project Actions."""
     pass
 
 
-@click.command(name="list")
-@click.option('--page',
-              default=0,
-              required=False,
-              help=' The page to be listed',
-              show_default=True)
-@click.option('--page-size',
-              default=10,
-              required=False,
-              help='number of objects per page',
-              show_default=True)
-@click.option('--order',
-              default='desc',
-              required=False,
-              type=click.Choice(['asc', 'desc']),
-              help='sorting order',
-              show_default=True)
-@click.option('--order-by',
-              default='created_at',
-              required=False,
-              type=click.Choice(['created_at', 'name', 'code']),
-              help='sorting column',
-              show_default=True)
-@click.option('-d', '--detached',
-              default=None,
-              required=False,
-              is_flag=True,
-              help='whether run in detached mode',
-              show_default=True)
+@click.command(name='list')
+@click.option('--page', default=0, required=False, help=' The page to be listed', show_default=True)
+@click.option('--page-size', default=10, required=False, help='number of objects per page', show_default=True)
+@click.option(
+    '--order',
+    default='desc',
+    required=False,
+    type=click.Choice(['asc', 'desc']),
+    help='sorting order',
+    show_default=True,
+)
+@click.option(
+    '--order-by',
+    default='created_at',
+    required=False,
+    type=click.Choice(['created_at', 'name', 'code']),
+    help='sorting column',
+    show_default=True,
+)
+@click.option(
+    '-d',
+    '--detached',
+    default=None,
+    required=False,
+    is_flag=True,
+    help='whether run in detached mode',
+    show_default=True,
+)
 @doc(project_help.project_help_page(project_help.ProjectHELP.PROJECT_LIST))
 def project_list_all(page, page_size, order, order_by, detached):
     if detached:
@@ -74,10 +73,7 @@ def project_list_all(page, page_size, order, order_by, detached):
                 choice = ['next page', 'exit']
             else:
                 choice = ['previous page', 'next page', 'exit']
-            val = questionary.select(
-                "\nWhat do you want?",
-                qmark="",
-                choices=choice).ask()
+            val = questionary.select('\nWhat do you want?', qmark='', choices=choice).ask()
             if val == 'exit':
                 mhandler.SrvOutPutHandler.list_success('Project')
                 break

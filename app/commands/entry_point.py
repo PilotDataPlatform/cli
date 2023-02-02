@@ -3,7 +3,7 @@
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
-# License, or any later version.
+# License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -17,41 +17,36 @@ import os
 
 import click
 
-from app.services.user_authentication.decorator import (
-    require_config,
-    require_login_session,
-)
+from app.services.user_authentication.decorator import require_config
+from app.services.user_authentication.decorator import require_login_session
 
-from .container_registry import (
-    create_project,
-    get_secret,
-    invite_member,
-    list_projects,
-    list_repositories,
-)
-from .dataset import dataset_download, dataset_list, dataset_show_detail
-from .file import (
-    file_check_manifest,
-    file_download,
-    file_export_manifest,
-    file_list,
-    file_put,
-)
+from .container_registry import create_project
+from .container_registry import get_secret
+from .container_registry import invite_member
+from .container_registry import list_projects
+from .container_registry import list_repositories
+from .dataset import dataset_download
+from .dataset import dataset_list
+from .dataset import dataset_show_detail
+from .file import file_check_manifest
+from .file import file_download
+from .file import file_export_manifest
+from .file import file_list
+from .file import file_put
 
 # Import custom commands
-from .hpc import (
-    hpc_auth,
-    hpc_get_node,
-    hpc_get_partition,
-    hpc_job_info,
-    hpc_job_submit,
-    hpc_list_nodes,
-    hpc_list_partitions,
-)
+from .hpc import hpc_auth
+from .hpc import hpc_get_node
+from .hpc import hpc_get_partition
+from .hpc import hpc_job_info
+from .hpc import hpc_job_submit
+from .hpc import hpc_list_nodes
+from .hpc import hpc_list_partitions
 from .kg_resource import kg_resource
 from .project import project_list_all
 from .use_config import set_env
-from .user import login, logout
+from .user import login
+from .user import logout
 
 hpc_enabled = os.environ.get('PILOT_CLI_HPC_ENABLED', 'false') == 'true'
 kg_enabled = os.environ.get('PILOT_CLI_KG_ENABLED', 'false') == 'true'

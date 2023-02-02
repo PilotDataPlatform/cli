@@ -3,7 +3,7 @@
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
-# License, or any later version.
+# License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,21 +16,21 @@
 import click
 
 
-def warn(*msgs):
-    message = " ".join([str(msg) for msg in msgs])
-    click.secho(str(message), fg="yellow")
+def warning(*msgs):
+    message = ' '.join([str(msg) for msg in msgs])
+    click.secho(str(message), fg='yellow')
 
 
 def error(*msgs):
-    message = " ".join([str(msg) for msg in msgs])
-    click.secho(str(message), fg="red")
+    message = ' '.join([str(msg) for msg in msgs])
+    click.secho(str(message), fg='red')
 
 
 def succeed(*msgs):
-    message = " ".join([str(msg) for msg in msgs])
-    click.secho(str(message), fg="green")
+    message = ' '.join([str(msg) for msg in msgs])
+    click.secho(str(message), fg='green')
 
 
 def info(*msgs):
-    message = " ".join([str(msg) for msg in msgs])
-    click.secho(str(message), fg="white")
+    message = ' '.join([str(msg) for msg in msgs])
+    click.secho(str(message), fg='white')

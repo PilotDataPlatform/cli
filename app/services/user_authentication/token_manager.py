@@ -3,7 +3,7 @@
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
-# License, or any later version.
+# License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -53,12 +53,12 @@ class SrvTokenManager(metaclass=MetaService):
         return jwt.decode(tokens[1], verify=False)
 
     def check_valid(self, required_azp):
-        '''
+        """
         check token validation
         0: valid
         1: need refresh
         2: need login again
-        '''
+        """
         decoded_access_token = self.decode_access_token()
         expiry_at = int(decoded_access_token['exp'])
         now = time.time()

@@ -3,7 +3,7 @@
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
-# License, or any later version.
+# License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -17,36 +17,33 @@ from app.services.project_manager.project import SrvProjectManager
 
 
 def test_list_project(requests_mock, mocker, capsys):
-    mocker.patch(
-        'app.services.user_authentication.token_manager.SrvTokenManager.check_valid',
-        return_value=0
-    )
+    mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
     requests_mock.get(
         'http://bff_cli' + '/v1/projects',
         json={
-            "code": 200,
-            "error_msg": "",
-            "result": [
+            'code': 200,
+            'error_msg': '',
+            'result': [
                 {
-                    "name": "PROJECT-1",
-                    "code": "project1",
-                    "id": 10,
-                    "geid": "b38c26d0-1d51-44f1-9ab6-3175bd41ccc9-1620668865"
+                    'name': 'PROJECT-1',
+                    'code': 'project1',
+                    'id': 10,
+                    'geid': 'b38c26d0-1d51-44f1-9ab6-3175bd41ccc9-1620668865',
                 },
                 {
-                    "name": "PROJECT-2",
-                    "code": "project2",
-                    "id": 20,
-                    "geid": "a6f350f4-e8ee-46eb-b346-96cfaf3853cc-1620668943"
+                    'name': 'PROJECT-2',
+                    'code': 'project2',
+                    'id': 20,
+                    'geid': 'a6f350f4-e8ee-46eb-b346-96cfaf3853cc-1620668943',
                 },
                 {
-                    "name": "PROJECT-3",
-                    "code": "project3",
-                    "id": 30,
-                    "geid": "e66000d6-1fd6-4386-805e-5bc8268c65b3-1620669498"
-                }
-            ]
-        }
+                    'name': 'PROJECT-3',
+                    'code': 'project3',
+                    'id': 30,
+                    'geid': 'e66000d6-1fd6-4386-805e-5bc8268c65b3-1620669498',
+                },
+            ],
+        },
     )
     project_mgr = SrvProjectManager()
     project_mgr.list_projects(page=0, page_size=10, order='created_at', order_by='desc')
@@ -62,18 +59,8 @@ def test_list_project(requests_mock, mocker, capsys):
 
 
 def test_list_project_no_project(requests_mock, mocker, capsys):
-    mocker.patch(
-        'app.services.user_authentication.token_manager.SrvTokenManager.check_valid',
-        return_value=0
-    )
-    requests_mock.get(
-        'http://bff_cli' + '/v1/projects',
-        json={
-            "code": 200,
-            "error_msg": "",
-            "result": []
-        }
-    )
+    mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
+    requests_mock.get('http://bff_cli' + '/v1/projects', json={'code': 200, 'error_msg': '', 'result': []})
     project_mgr = SrvProjectManager()
     project_mgr.list_projects(page=0, page_size=10, order='created_at', order_by='desc')
     out, err = capsys.readouterr()
@@ -85,16 +72,13 @@ def test_list_project_no_project(requests_mock, mocker, capsys):
 
 
 def test_list_project_desc_by_code(requests_mock, mocker, capsys):
-    mocker.patch(
-        'app.services.user_authentication.token_manager.SrvTokenManager.check_valid',
-        return_value=0
-    )
+    mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
     requests_mock.get(
         'http://bff_cli' + '/v1/projects',
         json={
-            "code": 200,
-            "error_msg": "",
-            "result": [
+            'code': 200,
+            'error_msg': '',
+            'result': [
                 {'name': 'project1', 'code': 'zproject', 'geid': 'fake-geid1'},
                 {'name': 'project2', 'code': 'xproject', 'geid': 'fake-geid2'},
                 {'name': 'project3', 'code': 'wproject', 'geid': 'fake-geid3'},
@@ -105,8 +89,8 @@ def test_list_project_desc_by_code(requests_mock, mocker, capsys):
                 {'name': 'project8', 'code': 'cproject', 'geid': 'fake-geid8'},
                 {'name': 'project9', 'code': 'bproject', 'geid': 'fake-geid9'},
                 {'name': 'project10', 'code': 'aproject', 'geid': 'fake-geid10'},
-            ]
-        }
+            ],
+        },
     )
     project_mgr = SrvProjectManager()
     project_mgr.list_projects(page=0, page_size=10, order='code', order_by='desc')
@@ -129,16 +113,13 @@ def test_list_project_desc_by_code(requests_mock, mocker, capsys):
 
 
 def test_list_project_desc_by_name(requests_mock, mocker, capsys):
-    mocker.patch(
-        'app.services.user_authentication.token_manager.SrvTokenManager.check_valid',
-        return_value=0
-    )
+    mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
     requests_mock.get(
         'http://bff_cli' + '/v1/projects',
         json={
-            "code": 200,
-            "error_msg": "",
-            "result": [
+            'code': 200,
+            'error_msg': '',
+            'result': [
                 {'name': 'zproject1', 'code': 'project1', 'geid': 'fake-geid1'},
                 {'name': 'xproject2', 'code': 'project2', 'geid': 'fake-geid2'},
                 {'name': 'wproject3', 'code': 'project3', 'geid': 'fake-geid3'},
@@ -149,8 +130,8 @@ def test_list_project_desc_by_name(requests_mock, mocker, capsys):
                 {'name': 'gproject8', 'code': 'project8', 'geid': 'fake-geid8'},
                 {'name': 'bproject9', 'code': 'project9', 'geid': 'fake-geid9'},
                 {'name': 'aproject10', 'code': 'project10', 'geid': 'fake-geid10'},
-            ]
-        }
+            ],
+        },
     )
     project_mgr = SrvProjectManager()
     project_mgr.list_projects(page=0, page_size=10, order='code', order_by='desc')
@@ -173,21 +154,18 @@ def test_list_project_desc_by_name(requests_mock, mocker, capsys):
 
 
 def test_list_project_desc_by_name_with_page_size(requests_mock, mocker, capsys):
-    mocker.patch(
-        'app.services.user_authentication.token_manager.SrvTokenManager.check_valid',
-        return_value=0
-    )
+    mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
     requests_mock.get(
         'http://bff_cli' + '/v1/projects',
         json={
-            "code": 200,
-            "error_msg": "",
-            "result": [
+            'code': 200,
+            'error_msg': '',
+            'result': [
                 {'name': 'zproject1', 'code': 'project1', 'geid': 'fake-geid1'},
                 {'name': 'xproject2', 'code': 'project2', 'geid': 'fake-geid2'},
                 {'name': 'wproject3', 'code': 'project3', 'geid': 'fake-geid3'},
-            ]
-        }
+            ],
+        },
     )
     project_mgr = SrvProjectManager()
     project_mgr.list_projects(page=0, page_size=3, order='code', order_by='desc')
@@ -203,21 +181,18 @@ def test_list_project_desc_by_name_with_page_size(requests_mock, mocker, capsys)
 
 
 def test_list_project_desc_by_name_with_page_size_and_page(requests_mock, mocker, capsys):
-    mocker.patch(
-        'app.services.user_authentication.token_manager.SrvTokenManager.check_valid',
-        return_value=0
-    )
+    mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
     requests_mock.get(
         'http://bff_cli' + '/v1/projects',
         json={
-            "code": 200,
-            "error_msg": "",
-            "result": [
+            'code': 200,
+            'error_msg': '',
+            'result': [
                 {'name': 'dproject1', 'code': 'project4', 'geid': 'fake-geid1'},
                 {'name': 'cproject2', 'code': 'project5', 'geid': 'fake-geid2'},
                 {'name': 'bproject3', 'code': 'project6', 'geid': 'fake-geid3'},
-            ]
-        }
+            ],
+        },
     )
     project_mgr = SrvProjectManager()
     project_mgr.list_projects(page=1, page_size=3, order='code', order_by='desc')

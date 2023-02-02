@@ -3,7 +3,7 @@
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
-# License, or any later version.
+# License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,10 +13,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from os.path import basename, dirname, join
+from os.path import basename
+from os.path import dirname
+from os.path import join
 from typing import List
 
-from app.services.file_manager.file_upload.models import FileObject, UploadType
+from app.services.file_manager.file_upload.models import FileObject
+from app.services.file_manager.file_upload.models import UploadType
 
 
 class FileUploadForm:
@@ -120,7 +123,7 @@ def generate_pre_upload_form(
     job_type: UploadType,
     current_folder: str = '',
 ) -> tuple[dict, dict]:
-    '''
+    """
     Summary:
         The function is to generate the preupload payload for api. The operation
         is per batch that it will try to generate one payload for all files.
@@ -136,7 +139,7 @@ def generate_pre_upload_form(
     return:
         - request_payload(dict): the payload for preupload api.
         - local_file_mapping(dict): the mapping from object path into local path.
-    '''
+    """
     data, local_file_mapping = [], {}
     for file_local_path in local_file_paths:
         # the rule here is:
@@ -182,7 +185,7 @@ def generate_on_success_form(
     process_pipeline: str = None,
     upload_message: str = None,
 ):
-    '''
+    """
     Summary:
         The function is to generate the payload of combine chunks api. The operation
         is per file that it will try to generate one payload for each file.
@@ -196,7 +199,7 @@ def generate_on_success_form(
         - upload_message(str): the message for uploading.
     return:
         - request_payload(dict): the payload for preupload api.
-    '''
+    """
 
     request_payload = {
         'project_code': project_code,

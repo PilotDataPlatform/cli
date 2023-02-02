@@ -3,7 +3,7 @@
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
-# License, or any later version.
+# License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -17,10 +17,8 @@ import pytest
 
 from app.resources.custom_error import Error
 from app.services.output_manager.error_handler import ECustomizedError
-from app.services.user_authentication.user_login_logout import (
-    check_is_login,
-    user_login,
-)
+from app.services.user_authentication.user_login_logout import check_is_login
+from app.services.user_authentication.user_login_logout import user_login
 
 
 def test_user_login_success(requests_mock):
