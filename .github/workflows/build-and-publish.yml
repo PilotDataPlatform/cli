@@ -20,7 +20,7 @@ jobs:
         run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
   push-binary:
     needs: [ extract-branch-name ]
-    if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop' }}
+#    if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop' }}
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout repository
@@ -59,8 +59,7 @@ jobs:
         run: poetry run pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --paths=./.venv/lib/python3.9/site-packages ./app/pilotcli.py -n ${{ github.sha }}
 
       - name: Set version in env
-        run: |
-          poetry run echo "TAG_VERSION=`poetry version --short`" >> $GITHUB_ENV
+        run: poetry run echo "TAG_VERSION=`poetry version --short`" >> $GITHUB_ENV
 
       - name: Result
         run: ls -la ./app/bundled_app/linux
