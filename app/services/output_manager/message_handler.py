@@ -3,7 +3,7 @@
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
-# License, or any later version.
+# License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,7 +27,7 @@ class SrvOutPutHandler(metaclass=MetaService):
     def abort_if_false(ctx, param, value):
         """e.g. Logout cancelled!"""
         if not value:
-            logger.warn('Logout cancelled.')
+            logger.warning('Logout cancelled.')
             ctx.exit()
 
     @staticmethod
@@ -66,7 +66,7 @@ class SrvOutPutHandler(metaclass=MetaService):
     @staticmethod
     def project_has_no_manifest(project_code):
         """e.g. Project 0212 does not have any attribute yet."""
-        return logger.warn(
+        return logger.warning(
             f'No attributes exist in Project {project_code} yet, or you may need to check your project list'
         )
 
@@ -113,7 +113,7 @@ class SrvOutPutHandler(metaclass=MetaService):
     @staticmethod
     def resume_warning(resumable_id: str):
         """e.g. notify the user if they comfirm the resumable upload."""
-        return logger.warn(f'Resume the upload for {resumable_id}.')
+        return logger.warning(f'Resume the upload for {resumable_id}.')
 
     @staticmethod
     def start_finalizing():
@@ -133,7 +133,7 @@ class SrvOutPutHandler(metaclass=MetaService):
     @staticmethod
     def start_uploading(filename):
         """e.g. Start Uploading: ./test_file."""
-        logger.info('Starting upload of: {}'.format(filename))
+        logger.info(f'Starting upload of: {filename}')
 
     @staticmethod
     def start_requests():

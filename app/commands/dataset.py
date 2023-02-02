@@ -3,7 +3,7 @@
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
-# License, or any later version.
+# License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -26,27 +26,22 @@ from app.utils.aggregated import doc
 
 @click.command()
 def cli():
-    """Dataset Actions"""
+    """Dataset Actions."""
     pass
 
 
-@click.command(name="list")
-@click.option('--page',
-              default=0,
-              required=False,
-              help=' The page to be listed',
-              show_default=True)
-@click.option('--page-size',
-              default=10,
-              required=False,
-              help='number of objects per page',
-              show_default=True)
-@click.option('-d', '--detached',
-              default=None,
-              required=False,
-              is_flag=True,
-              help='whether run in detached mode',
-              show_default=True)
+@click.command(name='list')
+@click.option('--page', default=0, required=False, help=' The page to be listed', show_default=True)
+@click.option('--page-size', default=10, required=False, help='number of objects per page', show_default=True)
+@click.option(
+    '-d',
+    '--detached',
+    default=None,
+    required=False,
+    is_flag=True,
+    help='whether run in detached mode',
+    show_default=True,
+)
 @doc(dataset_help.dataset_help_page(dataset_help.DatasetHELP.DATASET_LIST))
 def dataset_list(page, page_size, detached):
     if detached:
@@ -64,10 +59,7 @@ def dataset_list(page, page_size, detached):
                 choice = ['next page', 'exit']
             else:
                 choice = ['previous page', 'next page', 'exit']
-            val = questionary.select(
-                "\nWhat do you want?",
-                qmark="",
-                choices=choice).ask()
+            val = questionary.select('\nWhat do you want?', qmark='', choices=choice).ask()
             if val == 'exit':
                 message_handler.SrvOutPutHandler.list_success('Dataset')
                 break
@@ -79,26 +71,19 @@ def dataset_list(page, page_size, detached):
                 page -= 1
 
 
-@click.command(name="show-detail")
-@click.argument("code",
-                type=click.STRING,
-                nargs=1)
-@click.option('--page',
-              default=0,
-              required=False,
-              help=' The page to be listed',
-              show_default=True)
-@click.option('--page-size',
-              default=10,
-              required=False,
-              help='number of objects per page',
-              show_default=True)
-@click.option('-d', '--detached',
-              default=None,
-              required=False,
-              is_flag=True,
-              help='whether run in detached mode',
-              show_default=True)
+@click.command(name='show-detail')
+@click.argument('code', type=click.STRING, nargs=1)
+@click.option('--page', default=0, required=False, help=' The page to be listed', show_default=True)
+@click.option('--page-size', default=10, required=False, help='number of objects per page', show_default=True)
+@click.option(
+    '-d',
+    '--detached',
+    default=None,
+    required=False,
+    is_flag=True,
+    help='whether run in detached mode',
+    show_default=True,
+)
 @doc(dataset_help.dataset_help_page(dataset_help.DatasetHELP.DATASET_SHOW_DETAIL))
 def dataset_show_detail(code, page, page_size, detached):
     if detached:
@@ -117,10 +102,7 @@ def dataset_show_detail(code, page, page_size, detached):
                 choice = ['next page', 'exit']
             else:
                 choice = ['previous page', 'next page', 'exit']
-            val = questionary.select(
-                "\nWhat do you want?",
-                qmark="",
-                choices=choice).ask()
+            val = questionary.select('\nWhat do you want?', qmark='', choices=choice).ask()
             if val == 'exit':
                 message_handler.SrvOutPutHandler.list_success('Dataset')
                 break
@@ -132,18 +114,17 @@ def dataset_show_detail(code, page, page_size, detached):
                 page -= 1
 
 
-@click.command(name="download")
-@click.argument("code",
-                type=click.STRING,
-                nargs=-1)
-@click.argument("output_path",
-                type=click.Path(exists=True),
-                nargs=1)
-@click.option('-v', '--version',
-              default=None,
-              required=False,
-              help=dataset_help.dataset_help_page(dataset_help.DatasetHELP.DATASET_VERSION),
-              show_default=True)
+@click.command(name='download')
+@click.argument('code', type=click.STRING, nargs=-1)
+@click.argument('output_path', type=click.Path(exists=True), nargs=1)
+@click.option(
+    '-v',
+    '--version',
+    default=None,
+    required=False,
+    help=dataset_help.dataset_help_page(dataset_help.DatasetHELP.DATASET_VERSION),
+    show_default=True,
+)
 @doc(dataset_help.dataset_help_page(dataset_help.DatasetHELP.DATASET_DOWNLOAD))
 def dataset_download(code, output_path, version):
     srv_detail = SrvDatasetDetailManager(interactive=False)

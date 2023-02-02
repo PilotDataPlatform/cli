@@ -3,7 +3,7 @@
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
-# License, or any later version.
+# License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -18,7 +18,8 @@ import hashlib
 import math
 import os
 from multiprocessing.pool import ThreadPool
-from typing import List, Tuple
+from typing import List
+from typing import Tuple
 
 import httpx
 
@@ -29,18 +30,20 @@ import app.models.upload_form as uf
 import app.services.output_manager.message_handler as mhandler
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
-from app.services.file_manager.file_upload.models import FileObject, UploadType
-from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler
+from app.services.file_manager.file_upload.models import FileObject
+from app.services.file_manager.file_upload.models import UploadType
+from app.services.output_manager.error_handler import ECustomizedError
+from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
-from app.utils.aggregated import resilient_session, search_item
+from app.utils.aggregated import resilient_session
+from app.utils.aggregated import search_item
 
 from .exception import INVALID_CHUNK_ETAG
 from ..file_lineage import create_lineage
 
 
 class UploadClient:
-
-    '''
+    """
     Summary:
         The upload client is per upload base. it stores some immutable.
         infomation of particular upload action:
@@ -50,7 +53,7 @@ class UploadClient:
          - upload_message:
          - job_type: based on the input. can be AS_FILE or AS_FOLDER.
          - current_folder_node: the target folder in object storage.
-    '''
+    """
 
     def __init__(
         self,
@@ -87,7 +90,7 @@ class UploadClient:
         self.regular_file = regular_file
 
     def generate_meta(self, local_path: str) -> Tuple[int, int]:
-        '''
+        """
         Summary:
             The function is to generate chunk upload meatedata for a file.
         Parameter:
@@ -95,7 +98,7 @@ class UploadClient:
         return:
             - total_size: the size of file.
             - total_chunks: the number of chunks will be uploaded.
-        '''
+        """
         file_length_in_bytes = os.path.getsize(local_path)
         total_size = file_length_in_bytes
         total_chunks = math.ceil(total_size / self.chunk_size)
@@ -103,7 +106,7 @@ class UploadClient:
 
     @require_valid_token()
     def resume_upload(self, resumable_id: str, job_id: str, local_path: str) -> List[FileObject]:
-        '''
+        """
         Summary:
             The function is to check the uploaded chunks in object storage.
         Parameter:
@@ -116,7 +119,7 @@ class UploadClient:
                 - object_path(str): the path in the object storage.
                 - local_path(str): the local path of file.
                 - chunk_info(dict): the mapping for chunks that already been uploaded.
-        '''
+        """
 
         headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
         url = AppConfig.Connections.url_bff + f'/v1/project/{self.project_code}/files/resumable'
@@ -155,7 +158,7 @@ class UploadClient:
 
     @require_valid_token()
     def pre_upload(self, local_file_paths: List[str]) -> List[FileObject]:
-        '''
+        """
         Summary:
             The function is to initiate all the multipart upload.
         Parameter:
@@ -166,7 +169,7 @@ class UploadClient:
                 - object_path(str): the path in the object storage.
                 - local_path(str): the local path of file.
                 - chunk_info(dict): the mapping for chunks that already been uploaded.
-        '''
+        """
 
         headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
         url = AppConfig.Connections.url_bff + '/v1/project/{}/files'.format(self.project_code)
@@ -209,7 +212,7 @@ class UploadClient:
             SrvErrorHandler.default_handle(str(response.status_code) + ': ' + str(response.content), self.regular_file)
 
     def stream_upload(self, file_object: FileObject, pool: ThreadPool) -> None:
-        '''
+        """
         Summary:
             The function is a wrap to display the uploading process.
             It will submit the async function job to ThreadPool. Each
@@ -219,7 +222,7 @@ class UploadClient:
                 information for chunk uploading.
         return:
             - None
-        '''
+        """
         count = 0
         async_result = []
         # the window_size is to limit the async job creation
@@ -285,7 +288,7 @@ class UploadClient:
 
     @require_valid_token()
     def upload_chunk(self, file_object: FileObject, chunk_number: int, chunk: str) -> None:
-        '''
+        """
         Summary:
             The function is to upload a chunk directly into minio storage.
         Parameter:
@@ -295,7 +298,7 @@ class UploadClient:
             - chunk(str): the chunk data.
         return:
             - None
-        '''
+        """
 
         # retry three times
         for i in range(AppConfig.Env.resilient_retry):
@@ -340,7 +343,7 @@ class UploadClient:
 
     @require_valid_token()
     def on_succeed(self, file_object: FileObject, tags: List[str]):
-        '''
+        """
         Summary:
             The function is to finalize the upload process.
         Parameter:
@@ -349,7 +352,7 @@ class UploadClient:
             - tags(list of str): the tag attached with uploaded object.
         return:
             - None
-        '''
+        """
 
         for i in range(AppConfig.Env.resilient_retry):
             url = self.base_url + '/v1/files'
@@ -384,7 +387,7 @@ class UploadClient:
 
     @require_valid_token()
     def create_file_lineage(self, source_file: dict, new_file_object: FileObject):
-        '''
+        """
         Summary:
             The function is to create a lineage with source file.
         Parameter:
@@ -392,7 +395,7 @@ class UploadClient:
             - new_file_object(FileObject): the new object just uploaded.
         return:
             - bool: if job success or not.
-        '''
+        """
 
         if source_file and self.zone == AppConfig.Env.core_zone:
             child_rel_path = new_file_object.object_path
@@ -414,7 +417,7 @@ class UploadClient:
 
     @require_valid_token()
     def check_status(self, file_object: FileObject) -> bool:
-        '''
+        """
         Summary:
             The function is to check the status of upload process.
         Parameter:
@@ -422,7 +425,7 @@ class UploadClient:
                 information for chunk uploading.
         return:
             - bool: if job success or not
-        '''
+        """
 
         url = AppConfig.Connections.url_status
         headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.session_id}

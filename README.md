@@ -1,9 +1,9 @@
 # command_line_tool_ctl
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg?style=for-the-badge)](https://www.gnu.org/licenses/agpl-3.0)
-[![Python 3.7](https://img.shields.io/badge/python-3.7-green?style=for-the-badge)](https://www.python.org/)
-[![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/PilotDataPlatform/cli/CI/develop?style=for-the-badge)](https://github.com/PilotDataPlatform/cli/actions/workflows/main.yml)
 
-[![codecov](https://img.shields.io/codecov/c/github/PilotDataPlatform/cli/develop?style=for-the-badge)](https://codecov.io/gh/PilotDataPlatform/cli)
+[![Run Tests](https://github.com/PilotDataPlatform/cli/actions/workflows/run-tests.yml/badge.svg?branch=develop)](https://github.com/PilotDataPlatform/cli/actions/workflows/run-tests.yml)
+[![Python](https://img.shields.io/badge/python-3.7-brightgreen.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+
 ## About
 Command line tool that allows the user to execute data operations on the platform.
 ### Built With
@@ -39,4 +39,3 @@ Command line tool that allows the user to execute data operations on the platfor
         pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --paths=./.venv/lib/python3.8/site-packages ./app/pilotcli.py -n <app-name>
 
     Note: Building for ARM Mac may require a newer version of `pyinstaller`.
-

@@ -3,7 +3,7 @@
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
-# License, or any later version.
+# License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -19,13 +19,12 @@ import app.services.logger_services.log_functions as logger
 import app.services.output_manager.help_page as hpc_help
 from app.configs.user_config import UserConfig
 from app.services.hpc_manager.hpc_auth import HPCTokenManager
-from app.services.hpc_manager.hpc_cluster import HPCNodeManager, HPCPartitionManager
+from app.services.hpc_manager.hpc_cluster import HPCNodeManager
+from app.services.hpc_manager.hpc_cluster import HPCPartitionManager
 from app.services.hpc_manager.hpc_jobs import HPCJobManager
-from app.services.user_authentication.user_login_logout import (
-    check_is_active,
-    check_is_login,
-    get_tokens,
-)
+from app.services.user_authentication.user_login_logout import check_is_active
+from app.services.user_authentication.user_login_logout import check_is_login
+from app.services.user_authentication.user_login_logout import get_tokens
 from app.utils.aggregated import doc
 
 

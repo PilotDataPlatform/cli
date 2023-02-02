@@ -3,7 +3,7 @@
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
-# License, or any later version.
+# License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -18,7 +18,9 @@ import os
 import time
 
 from app.models.singleton import Singleton
-from app.services.crypto.crypto import decryption, encryption, generate_secret
+from app.services.crypto.crypto import decryption
+from app.services.crypto.crypto import encryption
+from app.services.crypto.crypto import generate_secret
 
 from .app_config import AppConfig
 

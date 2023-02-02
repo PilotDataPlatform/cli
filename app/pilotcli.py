@@ -3,7 +3,7 @@
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
-# License, or any later version.
+# License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -17,7 +17,8 @@ import click
 import requests
 
 import app.services.output_manager.error_handler as error_handler
-from app.commands.entry_point import command_groups, entry_point
+from app.commands.entry_point import command_groups
+from app.commands.entry_point import entry_point
 from app.services.output_manager.help_page import update_message
 from app.utils.aggregated import doc
 
