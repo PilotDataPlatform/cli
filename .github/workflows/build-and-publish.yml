@@ -1,14 +1,5 @@
 name: Build and Publish
 
-on:
-  workflow_run:
-    workflows: [ "Run Tests" ]
-#    branches: [ develop ]
-    types:
-      - completed
-#  push:
-#    branches: [ main ]
-
 jobs:
   extract-branch-name:
     runs-on: ubuntu-20.04
