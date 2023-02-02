@@ -33,10 +33,10 @@ class UploadType(Enum):
 
 
 class FileObject:
-    '''
+    """
     Summary:
         The class contains file infomation
-    '''
+    """
 
     # object storage info
     resumable_id: str
@@ -69,7 +69,7 @@ class FileObject:
         self.uploaded_chunks = uploaded_chunks
 
     def generate_meta(self, local_path: str) -> Tuple[int, int]:
-        '''
+        """
         Summary:
             The function is to generate chunk upload meatedata for a file.
         Parameter:
@@ -77,7 +77,7 @@ class FileObject:
         return:
             - total_size: the size of file
             - total_chunks: the number of chunks will be uploaded.
-        '''
+        """
         file_length_in_bytes = getsize(local_path)
         total_size = file_length_in_bytes
         total_chunks = math.ceil(total_size / AppConfig.Env.chunk_size)

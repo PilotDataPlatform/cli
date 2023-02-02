@@ -146,7 +146,7 @@ class SrvFileDownload(metaclass=MetaService):
                 if filename == original_filename:
                     break
                 else:
-                    logger.warn(f'{original_filename} already exist, file will be saved as {filename}')
+                    logger.warning(f'{original_filename} already exist, file will be saved as {filename}')
                     break
         return filename
 

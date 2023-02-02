@@ -130,7 +130,7 @@ def cli():
     show_default=True,
 )
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD))
-def file_put(**kwargs):
+def file_put(**kwargs):  # noqa: C901
     """"""
 
     paths = kwargs.get('paths')

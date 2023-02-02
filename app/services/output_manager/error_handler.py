@@ -115,7 +115,7 @@ class SrvErrorHandler(metaclass=MetaService):
     @staticmethod
     def customized_handle(customized_error: ECustomizedError, if_exit=False, value=None):
         if value:
-            logger.error(customized_error_msg(customized_error) % value)
+            logger.error(customized_error_msg(customized_error) % value)  # noqa: G002
         else:
             logger.error(customized_error_msg(customized_error))
         if if_exit:

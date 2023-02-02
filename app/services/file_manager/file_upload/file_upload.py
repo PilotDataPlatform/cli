@@ -94,7 +94,7 @@ def simple_upload(upload_event, num_of_thread: int = 1, resumable_id: str = None
         elif job_type == UploadType.AS_FOLDER and resumable_id:
             SrvErrorHandler.customized_handle(ECustomizedError.UNSUPPORTED_PROJECT, True, project_code)
         else:
-            logger.warn('Current version does not support folder tagging, ' 'any selected tags will be ignored')
+            logger.warning('Current version does not support folder tagging, ' 'any selected tags will be ignored')
             upload_file_path = get_file_in_folder(my_file)
             # base_path = my_file.rstrip('/').split('/')[-1]
     else:
@@ -160,4 +160,4 @@ def simple_upload(upload_event, num_of_thread: int = 1, resumable_id: str = None
             os.remove(file_batchs[0]) if os.path.isdir(my_file) and job_type == UploadType.AS_FILE else None
 
     num_of_file = len(upload_file_path)
-    logger.info('Upload Time: %.2fs for %d files ' % (time.time() - upload_start_time, num_of_file))
+    logger.info(f'Upload Time: {time.time() - upload_start_time:.2f}s for {num_of_file:d} files')

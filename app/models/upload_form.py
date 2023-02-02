@@ -123,7 +123,7 @@ def generate_pre_upload_form(
     job_type: UploadType,
     current_folder: str = '',
 ) -> tuple[dict, dict]:
-    '''
+    """
     Summary:
         The function is to generate the preupload payload for api. The operation
         is per batch that it will try to generate one payload for all files.
@@ -139,7 +139,7 @@ def generate_pre_upload_form(
     return:
         - request_payload(dict): the payload for preupload api.
         - local_file_mapping(dict): the mapping from object path into local path.
-    '''
+    """
     data, local_file_mapping = [], {}
     for file_local_path in local_file_paths:
         # the rule here is:
@@ -185,7 +185,7 @@ def generate_on_success_form(
     process_pipeline: str = None,
     upload_message: str = None,
 ):
-    '''
+    """
     Summary:
         The function is to generate the payload of combine chunks api. The operation
         is per file that it will try to generate one payload for each file.
@@ -199,7 +199,7 @@ def generate_on_success_form(
         - upload_message(str): the message for uploading.
     return:
         - request_payload(dict): the payload for preupload api.
-    '''
+    """
 
     request_payload = {
         'project_code': project_code,

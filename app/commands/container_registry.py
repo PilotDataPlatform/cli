@@ -23,7 +23,7 @@ from app.utils.aggregated import doc
 
 @click.command()
 def cli():
-    """Container Registry Actions"""
+    """Container Registry Actions."""
     pass
 
 

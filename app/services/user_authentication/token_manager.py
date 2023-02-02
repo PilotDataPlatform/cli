@@ -53,12 +53,12 @@ class SrvTokenManager(metaclass=MetaService):
         return jwt.decode(tokens[1], verify=False)
 
     def check_valid(self, required_azp):
-        '''
+        """
         check token validation
         0: valid
         1: need refresh
         2: need login again
-        '''
+        """
         decoded_access_token = self.decode_access_token()
         expiry_at = int(decoded_access_token['exp'])
         now = time.time()

@@ -74,7 +74,7 @@ class SrvKGResourceMgr(metaclass=MetaService):
             duplicate_file_list = [f for f, count in collections.Counter(file_to_process).items() if count > 1]
             if duplicate_file_list:
                 duplicate_files = ', \n'.join(duplicate_file_list)
-                logger.warn(f'Following files have multiple input, it will process one time: \n{duplicate_files}')
+                logger.warning(f'Following files have multiple input, it will process one time: \n{duplicate_files}')
             json_data = self.pre_load_data(file_to_process)
             if not json_data:
                 return
@@ -90,7 +90,7 @@ class SrvKGResourceMgr(metaclass=MetaService):
                 processed = result.get('processing')
                 if ignored:
                     ignored_files = ', \n'.join(list(ignored.keys()))
-                    logger.warn(f'File skipped: \n{ignored_files}')
+                    logger.warning(f'File skipped: \n{ignored_files}')
                 if processed:
                     processed_files = ', \n'.join(list(processed.keys()))
                     logger.succeed(f'File imported: \n{processed_files}')

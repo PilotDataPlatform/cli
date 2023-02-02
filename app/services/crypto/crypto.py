@@ -48,7 +48,8 @@ def encryption(message_to_encrypt, secret):
         length=32,
         salt=base64.b64decode(secret),  # input binary string secret key
         iterations=100000,
-        backend=default_backend())
+        backend=default_backend(),
+    )
     # generate key to involve current device information
     key = base64.urlsafe_b64encode(kdf.derive('SECRETKEYPASSWORD'.encode()))
     message_encode = message_to_encrypt.encode()
@@ -73,7 +74,7 @@ def decryption(encrypted_message, secret, interactive=True):
                 length=32,
                 salt=base64.b64decode(secret),
                 iterations=100000,
-                backend=default_backend()
+                backend=default_backend(),
             )
             # use the key from current device information
             key = base64.urlsafe_b64encode(kdf.derive('SECRETKEYPASSWORD'.encode()))
@@ -82,11 +83,8 @@ def decryption(encrypted_message, secret, interactive=True):
             return decrypted.decode()
         except Exception as ex:
             if interactive:
-                ehandler.SrvErrorHandler.default_handle(str(ex) + ", please try login as a valid user.")
+                ehandler.SrvErrorHandler.default_handle(str(ex) + ', please try login as a valid user.')
             else:
                 raise ex
     else:
-        ehandler.SrvErrorHandler.customized_handle(
-            ehandler.ECustomizedError.LOGIN_SESSION_INVALID,
-            True
-        )
+        ehandler.SrvErrorHandler.customized_handle(ehandler.ECustomizedError.LOGIN_SESSION_INVALID, True)

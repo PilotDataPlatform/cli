@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
 class MetaService(type):
     def __new__(cls, name: str, bases, namespace, **kwargs):
         if not name.startswith('Srv'):
