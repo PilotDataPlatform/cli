@@ -3,7 +3,7 @@
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
-# License, or any later version.
+# License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,9 +16,7 @@
 import click
 
 import app.services.output_manager.help_page as help_page
-from app.services.container_registry_manager.container_registry_manager import (
-    SrvContainerRegistryMgr,
-)
+from app.services.container_registry_manager.container_registry_manager import SrvContainerRegistryMgr
 from app.services.output_manager.message_handler import SrvOutPutHandler
 from app.utils.aggregated import doc
 

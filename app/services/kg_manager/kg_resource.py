@@ -3,7 +3,7 @@
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
-# License, or any later version.
+# License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -21,14 +21,13 @@ import app.services.logger_services.log_functions as logger
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.models.service_meta_class import MetaService
-from app.services.output_manager.error_handler import (
-    ECustomizedError,
-    OverSizeError,
-    SrvErrorHandler,
-    customized_error_msg,
-)
+from app.services.output_manager.error_handler import ECustomizedError
+from app.services.output_manager.error_handler import OverSizeError
+from app.services.output_manager.error_handler import SrvErrorHandler
+from app.services.output_manager.error_handler import customized_error_msg
 from app.services.user_authentication.decorator import require_valid_token
-from app.utils.aggregated import get_file_in_folder, resilient_session
+from app.utils.aggregated import get_file_in_folder
+from app.utils.aggregated import resilient_session
 
 
 class SrvKGResourceMgr(metaclass=MetaService):

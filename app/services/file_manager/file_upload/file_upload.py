@@ -3,7 +3,7 @@
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
-# License, or any later version.
+# License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -26,12 +26,11 @@ import app.services.output_manager.message_handler as mhandler
 from app.configs.app_config import AppConfig
 from app.services.file_manager.file_upload.models import UploadType
 from app.services.file_manager.file_upload.upload_client import UploadClient
-from app.services.output_manager.error_handler import (
-    ECustomizedError,
-    SrvErrorHandler,
-    customized_error_msg,
-)
-from app.utils.aggregated import get_file_in_folder, search_item
+from app.services.output_manager.error_handler import ECustomizedError
+from app.services.output_manager.error_handler import SrvErrorHandler
+from app.services.output_manager.error_handler import customized_error_msg
+from app.utils.aggregated import get_file_in_folder
+from app.utils.aggregated import search_item
 
 
 def compress_folder_to_zip(path):

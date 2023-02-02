@@ -3,7 +3,7 @@
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
-# License, or any later version.
+# License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -18,7 +18,9 @@ from functools import wraps
 from app.configs.user_config import UserConfig
 
 from .token_manager import SrvTokenManager
-from .user_login_logout import check_is_active, check_is_login, user_login
+from .user_login_logout import check_is_active
+from .user_login_logout import check_is_login
+from .user_login_logout import user_login
 from .user_set_config import check_config
 
 

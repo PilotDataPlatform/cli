@@ -3,7 +3,7 @@
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
-# License, or any later version.
+# License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -18,7 +18,8 @@ import hashlib
 import math
 import os
 from multiprocessing.pool import ThreadPool
-from typing import List, Tuple
+from typing import List
+from typing import Tuple
 
 import httpx
 
@@ -29,10 +30,13 @@ import app.models.upload_form as uf
 import app.services.output_manager.message_handler as mhandler
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
-from app.services.file_manager.file_upload.models import FileObject, UploadType
-from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler
+from app.services.file_manager.file_upload.models import FileObject
+from app.services.file_manager.file_upload.models import UploadType
+from app.services.output_manager.error_handler import ECustomizedError
+from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
-from app.utils.aggregated import resilient_session, search_item
+from app.utils.aggregated import resilient_session
+from app.utils.aggregated import search_item
 
 from .exception import INVALID_CHUNK_ETAG
 from ..file_lineage import create_lineage
