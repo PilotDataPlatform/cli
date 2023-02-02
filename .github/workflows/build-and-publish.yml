@@ -1,12 +1,15 @@
 name: Build and Publish
 
 on:
+  workflow_run:
+    workflows: [ "Run Tests" ]
+    branches:
+      - develop
+    types:
+      - completed
   push:
     branches:
-      - develop
-  pull_request:
-    branches:
-      - develop
+      - main
 
 jobs:
   extract-branch-name:
@@ -20,7 +23,7 @@ jobs:
         run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
   push-binary:
     needs: [ extract-branch-name ]
-#    if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop' }}
+    if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop' }}
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout repository
@@ -61,31 +64,25 @@ jobs:
       - name: Set version in env
         run: poetry run echo "TAG_VERSION=`poetry version --short`" >> $GITHUB_ENV
 
-      - name: Result 1
-        run: ls -la ./app/bundled_app/linux/**
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        with:
+          tag_name: ${{ env.TAG_VERSION }}
+          release_name: Release ${{ env.TAG_VERSION }}
+          body: ${{ github.event.head_commit.message }}
+          draft: false
+          prerelease: false
 
-      - name: Result 2
-        run: echo ${{ env.TAG_VERSION }}
-
-#      - name: Create Release
-#        id: create_release
-#        uses: actions/create-release@v1
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
-#        with:
-#          tag_name: ${{env.TAG_VERSION}}
-#          release_name: Release ${{env.TAG_VERSION}}
-#          body: ${{ github.event.head_commit.message }}
-#          draft: false
-#          prerelease: false
-#
-#      - name: Upload Release Binary
-#        id: upload-release-binary
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-#          asset_path: ./app/bundled_app/linux/${{ github.sha }}
-#          asset_name: pilotcli
-#          asset_content_type: application/octet-stream
+      - name: Upload Release Binary
+        id: upload-release-binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+          asset_path: ./app/bundled_app/linux/${{ github.sha }}
+          asset_name: pilotcli
+          asset_content_type: application/octet-stream
