@@ -61,8 +61,11 @@ jobs:
       - name: Set version in env
         run: poetry run echo "TAG_VERSION=`poetry version --short`" >> $GITHUB_ENV
 
-      - name: Result
-        run: ls -la ./app/bundled_app/linux
+      - name: Result 1
+        run: ls -la ./app/bundled_app/linux/**
+
+      - name: Result 2
+        run: echo ${{ env.TAG_VERSION }}
 
 #      - name: Create Release
 #        id: create_release
