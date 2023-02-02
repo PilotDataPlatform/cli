@@ -1,5 +1,13 @@
 name: Build and Publish
 
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - develop
+
 jobs:
   extract-branch-name:
     runs-on: ubuntu-20.04
