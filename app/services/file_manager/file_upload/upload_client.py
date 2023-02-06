@@ -13,10 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import hashlib
 import math
 import os
+import time
 from multiprocessing.pool import ThreadPool
 from typing import List
 from typing import Tuple
@@ -339,7 +339,7 @@ class UploadClient:
 
             # wait certain amount of time and retry
             # the time will be longer for more retry
-            asyncio.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
+            time.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
 
     @require_valid_token()
     def on_succeed(self, file_object: FileObject, tags: List[str]):
@@ -383,7 +383,7 @@ class UploadClient:
                 if i == 2:
                     SrvErrorHandler.default_handle('retry over 3 times')
 
-            asyncio.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
+            time.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
 
     @require_valid_token()
     def create_file_lineage(self, source_file: dict, new_file_object: FileObject):
