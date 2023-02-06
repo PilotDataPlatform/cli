@@ -25,6 +25,7 @@ import app.services.logger_services.log_functions as logger
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.models.service_meta_class import MetaService
+from app.services.dataset_manager.model import EFileStatus
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.output_manager.message_handler import SrvOutPutHandler
@@ -91,7 +92,7 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
         res = requests.get(download_url, headers=headers)
         res_json = res.json()
         if self.version:
-            self.download_url = res.json().get('url')
+            self.download_url = self.hash_code
             default_filename = self.download_url.split('/')[-1].split('?')[0]
             self.default_filename = unquote(default_filename)
         else:
@@ -99,21 +100,21 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
             self.default_filename = res_json.get('error_msg').split('/')[-1].rstrip('.')
 
     @require_valid_token()
-    def download_status(self):
+    def download_status(self) -> EFileStatus:
         url = AppConfig.Connections.url_download_core + f'v1/download/status/{self.hash_code}'
         res = requests.get(url)
         res_json = res.json()
         if res_json.get('code') == 200:
             status = res_json.get('result').get('status')
-            return status
+            return EFileStatus(status)
         else:
             SrvErrorHandler.default_handle(res_json.get('error_msg'), True)
 
-    def check_download_preparing_status(self):
+    def check_download_preparing_status(self) -> EFileStatus:
         while True:
             time.sleep(1)
             status = self.download_status()
-            if status == 'READY_FOR_DOWNLOADING':
+            if status not in [EFileStatus.RUNNING, EFileStatus.WAITING]:
                 break
         return status
 
@@ -175,7 +176,7 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
     def download_dataset_version(self, version):
         self.version = version
         pre_result = self.pre_dataset_version_download()
-        self.hash_code = pre_result.get('result').get('download_hash')
+        self.hash_code = pre_result.get('result').get('source')
         self.generate_download_url()
         saved_filename = self.send_download_request()
         if os.path.isfile(saved_filename):
