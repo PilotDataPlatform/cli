@@ -66,7 +66,8 @@ class SrvTokenManager(metaclass=MetaService):
 
         # TODO: check why here will need enforce the token refresh when
         # azp is not `kong``
-        azp_token_condition = decoded_access_token['azp'] != required_azp
+        # ``kong`` is hardcoded in the decorator definition as default value.
+        azp_token_condition = decoded_access_token['azp'] not in [required_azp, 'cli_test2']
 
         if azp_token_condition:
             return 3
@@ -90,7 +91,7 @@ class SrvTokenManager(metaclass=MetaService):
         return response.json()
 
     def request_harbor_tokens(self):
-        url = AppConfig.Connections.url_keycloak
+        url = AppConfig.Connections.url_keycloak_token
         payload = {
             'grant_type': 'refresh_token',
             'refresh_token': self.config.refresh_token,

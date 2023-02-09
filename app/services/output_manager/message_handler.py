@@ -13,11 +13,45 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import io
+
+import qrcode
+
 import app.services.logger_services.log_functions as logger
 from app.models.service_meta_class import MetaService
 
 
 class SrvOutPutHandler(metaclass=MetaService):
+    @staticmethod
+    def login_device_code_qrcode(url: str):
+        """Print QRCode with login url!"""
+        qr = qrcode.QRCode(version=1, border=1)
+        qr.add_data(url)
+        f = io.StringIO()
+        qr.print_ascii(out=f)
+        f.seek(0)
+        return logger.info(f.read())
+
+    @staticmethod
+    def login_input_device_code(url: str):
+        """Access the url and input the device code!"""
+        return logger.succeed(f'Please, access {url} to proceed')
+
+    @staticmethod
+    def login_input_device_error():
+        """Error to get device code!"""
+        return logger.error('Error to get device code!')
+
+    @staticmethod
+    def validation_login_input_device_error():
+        """Error to validate the device code login!"""
+        return logger.error('Error to validate the device code login, please try again!')
+
+    @staticmethod
+    def check_login_device_validation():
+        """Waiting validation finish."""
+        return logger.info('Waiting validation finish...')
+
     @staticmethod
     def login_success():
         """Login succeed!"""
@@ -83,7 +117,7 @@ class SrvOutPutHandler(metaclass=MetaService):
     @staticmethod
     def file_manifest_validation(post_result):
         """e.g. File attribute validated: True."""
-        return logger.info('File attribute validation passed: ' + str(post_result == 'valid'))
+        return logger.info(f'File attribute validation passed: {post_result == "valid"}')
 
     @staticmethod
     def uploading_files(uploader, project_code, resumable_total_size, resumable_total_chunks, resumable_relative_path):
@@ -143,12 +177,12 @@ class SrvOutPutHandler(metaclass=MetaService):
     @staticmethod
     def print_list_header(col1, col2):
         """e.g. NAME                              CODE."""
-        logger.info(col1.center(40, ' ') + col2.center(40, ' '))
+        logger.info(col1.center(40, ' ') + col2.center(40, ' '))  # noqa: G003
         logger.info('-' * 75)
 
     @staticmethod
     def print_list_parallel(item_name, item_code):
-        logger.info(str(item_name).center(40, ' ') + ' |' + str(item_code).center(37, ' '))
+        logger.info(str(item_name).center(40, ' ') + ' |' + str(item_code).center(37, ' '))  # noqa: G003
 
     @staticmethod
     def count_item(current_page, category, project_api_response_dict):
@@ -188,18 +222,18 @@ class SrvOutPutHandler(metaclass=MetaService):
             manifest_list = [manifest_list]
         for m in manifest_list:
             manifest_name = str(m.get('name'))
-            logger.info('\n' + manifest_name)
+            logger.info('\n' + manifest_name)  # noqa: G003
             logger.info('-'.ljust(col_width, '-'))
-            logger.info(
-                '|'
-                + 'Attribute Name'.center(attribute_name_width, ' ')
-                + '|'
-                + 'Type'.center(type_width, ' ')
-                + '|'
-                + 'Value'.center(value_width, ' ')
-                + '|'
-                + 'Optional'.center(optional_width, ' ')
-                + '|'
+            logger.info(  # noqa: G003
+                '|'  # noqa: G003
+                + 'Attribute Name'.center(attribute_name_width, ' ')  # noqa: G003
+                + '|'  # noqa: G003
+                + 'Type'.center(type_width, ' ')  # noqa: G003
+                + '|'  # noqa: G003
+                + 'Value'.center(value_width, ' ')  # noqa: G003
+                + '|'  # noqa: G003
+                + 'Optional'.center(optional_width, ' ')  # noqa: G003
+                + '|'  # noqa: G003
             )
             attributes = m.get('attributes')
             if not attributes:
@@ -215,15 +249,15 @@ class SrvOutPutHandler(metaclass=MetaService):
                 attr_value = options[0:17] + '...' if len(options) > 17 else options
                 logger.info('-'.ljust(col_width, '-'))
                 logger.info(
-                    '|'
-                    + attr_name.center(attribute_name_width, ' ')
-                    + '|'
-                    + attr_type.center(type_width, ' ')
-                    + '|'
-                    + attr_value.center(value_width, ' ')
-                    + '|'
-                    + attr_option.center(optional_width, ' ')
-                    + '|'
+                    '|'  # noqa: G003
+                    + attr_name.center(attribute_name_width, ' ')  # noqa: G003
+                    + '|'  # noqa: G003
+                    + attr_type.center(type_width, ' ')  # noqa: G003
+                    + '|'  # noqa: G003
+                    + attr_value.center(value_width, ' ')  # noqa: G003
+                    + '|'  # noqa: G003
+                    + attr_option.center(optional_width, ' ')  # noqa: G003
+                    + '|'  # noqa: G003
                 )
             logger.info('-'.ljust(col_width, '-'))
 

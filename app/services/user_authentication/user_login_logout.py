@@ -14,14 +14,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
+from typing import Any
+from typing import Dict
 from uuid import uuid4
 
+import jwt
 import requests
 
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
+from app.services.output_manager.message_handler import SrvOutPutHandler
 
 
 def user_login(username, password):
@@ -51,11 +55,70 @@ def user_login(username, password):
     return res_to_dict
 
 
-def check_is_login(if_print=True):
+def user_device_id_login() -> Dict[str, Any]:
+    """Get device code URL for user login."""
+
+    url = f'{AppConfig.Connections.url_keycloak}/auth/device'
+    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+    data = {'client_id': AppConfig.Env.keycloak_device_client_id}
+    resp = requests.post(url, headers=headers, data=data)
+    if resp.status_code == 200:
+        device_data = resp.json()
+        return {
+            'expires': device_data['expires_in'],
+            'interval': device_data['interval'],
+            'device_code': device_data['device_code'],
+            'verification_uri_complete': device_data['verification_uri_complete'],
+        }
+    return {}
+
+
+def validate_user_device_login(device_code: str, exipres: int, interval: int) -> bool:
+    """Validate user device authentication."""
+
+    time.sleep(interval)
+    url = AppConfig.Connections.url_keycloak_token
+    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+    data = {
+        'device_code': device_code,
+        'client_id': AppConfig.Env.keycloak_device_client_id,
+        'grant_type': 'urn:ietf:params:oauth:grant-type:device_code',
+    }
+    waiting_result = True
+    start = time.time()
+    SrvOutPutHandler.check_login_device_validation()
+    while waiting_result:
+        time.sleep(0.1)
+        resp = requests.post(url, headers=headers, data=data)
+        end = time.time()
+        if resp.status_code == 200:
+            waiting_result = False
+        if end - start >= exipres:
+            waiting_result = False
+
+    if resp.status_code != 200:
+        return False
+
+    resp_dict = resp.json()
+    decode_token = jwt.decode(resp_dict['access_token'], verify=False)
+    user_config = UserConfig()
+    user_config.access_token = resp_dict['access_token']
+    user_config.refresh_token = resp_dict['refresh_token']
+    user_config.username = decode_token['preferred_username']
+    user_config.last_active = str(int(time.time()))
+    user_config.hpc_token = ''
+    user_config.session_id = 'cli-' + str(uuid4())
+    user_config.save()
+
+    return resp_dict
+
+
+def check_is_login(if_print: bool = True) -> bool:
     user_config = UserConfig()
     has_username = user_config.config.has_option('USER', 'username')
-    has_password = user_config.config.has_option('USER', 'password')
-    if has_username and has_password and user_config.username != '':
+    has_access_token = user_config.config.has_option('USER', 'access_token')
+    has_refresh_token = user_config.config.has_option('USER', 'refresh_token')
+    if has_username and has_access_token and has_refresh_token and user_config.username != '':
         return True
     else:
         SrvErrorHandler.customized_handle(ECustomizedError.LOGIN_SESSION_INVALID, if_print) if if_print else None
@@ -97,7 +160,7 @@ def request_default_tokens(username, password):
 
 
 def request_harbor_tokens(username, password):
-    url = AppConfig.Connections.url_keycloak
+    url = AppConfig.Connections.url_keycloak_token
     payload = {
         'grant_type': 'password',
         'username': username,
