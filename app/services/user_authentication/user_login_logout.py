@@ -91,9 +91,9 @@ def validate_user_device_login(device_code: str, exipres: int, interval: int) ->
         time.sleep(0.1)
         resp = requests.post(url, headers=headers, data=data)
         end = time.time()
-        if resp.status_code == 200:
-            waiting_result = False
         if end - start >= exipres:
+            waiting_result = False
+        elif resp.status_code == 200:
             waiting_result = False
 
     if resp.status_code != 200:
@@ -110,7 +110,7 @@ def validate_user_device_login(device_code: str, exipres: int, interval: int) ->
     user_config.session_id = 'cli-' + str(uuid4())
     user_config.save()
 
-    return resp_dict
+    return True
 
 
 def check_is_login(if_print: bool = True) -> bool:
