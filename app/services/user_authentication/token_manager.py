@@ -66,7 +66,7 @@ class SrvTokenManager(metaclass=MetaService):
         # TODO: check why here will need enforce the token refresh when
         # azp is not `kong``
         # ``kong`` is hardcoded in the decorator definition as default value.
-        azp_token_condition = decoded_access_token['azp'] not in [required_azp, 'cli_test2']
+        azp_token_condition = decoded_access_token['azp'] not in [required_azp, AppConfig.Env.keycloak_device_client_id]
 
         if azp_token_condition or expiry_at <= now:
             return 2
