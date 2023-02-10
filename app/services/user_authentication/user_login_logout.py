@@ -73,7 +73,7 @@ def user_device_id_login() -> Dict[str, Any]:
     return {}
 
 
-def validate_user_device_login(device_code: str, exipres: int, interval: int) -> bool:
+def validate_user_device_login(device_code: str, expires: int, interval: int) -> bool:
     """Validate user device authentication."""
 
     time.sleep(interval)
@@ -91,7 +91,7 @@ def validate_user_device_login(device_code: str, exipres: int, interval: int) ->
         time.sleep(0.1)
         resp = requests.post(url, headers=headers, data=data)
         end = time.time()
-        if end - start >= exipres:
+        if end - start >= expires:
             waiting_result = False
         elif resp.status_code == 200:
             waiting_result = False
