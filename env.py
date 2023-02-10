@@ -35,6 +35,8 @@ class Settings(BaseSettings):
     url_bff: str = ''
     url_keycloak: str = ''
 
+    keycloak_device_client_id: str = 'cli_test2'
+
     VM_INFO: str = ''
 
     def modify_values(self, settings):

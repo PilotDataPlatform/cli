@@ -85,7 +85,7 @@ class SrvDatasetDetailManager(metaclass=MetaService):
                     else:
                         row_value = '| ' + ''.center(20, ' ') + '| ' + i.center(value_width, ' ')
                     location += 1
-                    logger.info(row_value + '|')
+                    logger.info(row_value + '|')  # noqa: G003
             elif len(v) > value_width and k in same_line_display_fields:
                 name_location = round(len(v) / (2 * value_width)) - 1
                 location = 0
@@ -94,12 +94,12 @@ class SrvDatasetDetailManager(metaclass=MetaService):
                     if len(current_value + i + ', ') > value_width:
                         field_name = k if location == name_location else ''
                         row_value = '| ' + field_name.center(20, ' ') + '| ' + current_value.center(value_width, ' ')
-                        logger.info(row_value + '|')
+                        logger.info(row_value + '|')  # noqa: G003
                         current_value = i if i == v.split(',')[-1] else i + ', '
                         location += 1
                     else:
                         current_value = current_value + i if i == v.split(',')[-1] else current_value + i + ', '
             else:
                 row_value = '| ' + k.center(20, ' ') + '| ' + v.replace(',', ', ').center(value_width, ' ')
-                logger.info(row_value + '|')
+                logger.info(row_value + '|')  # noqa: G003
         logger.info('-'.ljust(col_width, '-'))

@@ -43,6 +43,8 @@ class AppConfig(object):
         core_bucket_prefix = 'core'
         greenroom_bucket_prefix = 'gr'
 
+        keycloak_device_client_id = ConfigClass.keycloak_device_client_id
+
     class Connections(object):
         section = 'connections'
         url_harbor = ConfigClass.url_harbor
@@ -60,6 +62,7 @@ class AppConfig(object):
         url_dataset = ConfigClass.url_dataset
         url_validation = ConfigClass.url_validation
         url_keycloak = ConfigClass.url_keycloak
+        url_keycloak_token = f'{ConfigClass.url_keycloak}/token'
         url_bff = ConfigClass.url_bff
         # add url_base to check if value exist
         url_base = ConfigClass.base_url
