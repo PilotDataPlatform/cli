@@ -22,7 +22,6 @@ from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.models.service_meta_class import MetaService
 from app.services.output_manager.error_handler import SrvErrorHandler
-from app.services.user_authentication.user_login_logout import get_tokens
 
 
 class SrvTokenManager(metaclass=MetaService):
@@ -66,11 +65,10 @@ class SrvTokenManager(metaclass=MetaService):
 
         # TODO: check why here will need enforce the token refresh when
         # azp is not `kong``
-        azp_token_condition = decoded_access_token['azp'] != required_azp
+        # ``kong`` is hardcoded in the decorator definition as default value.
+        azp_token_condition = decoded_access_token['azp'] not in [required_azp, AppConfig.Env.keycloak_device_client_id]
 
-        if azp_token_condition:
-            return 3
-        if expiry_at <= now:
+        if azp_token_condition or expiry_at <= now:
             return 2
         # print(expiry_at, now)
         # print(diff, AppConfig.Env.token_warn_need_refresh)
@@ -90,7 +88,7 @@ class SrvTokenManager(metaclass=MetaService):
         return response.json()
 
     def request_harbor_tokens(self):
-        url = AppConfig.Connections.url_keycloak
+        url = AppConfig.Connections.url_keycloak_token
         payload = {
             'grant_type': 'refresh_token',
             'refresh_token': self.config.refresh_token,
@@ -110,7 +108,3 @@ class SrvTokenManager(metaclass=MetaService):
             self.request_default_tokens()
         if azp == 'harbor':
             self.request_harbor_tokens()
-
-    def change_token(self, required_azp):
-        tokens = get_tokens(self.config.username, self.config.password, required_azp)
-        self.update_token(tokens[0], tokens[1])
