@@ -184,6 +184,7 @@ class UploadClient:
             job_type=self.job_type,
             current_folder=self.current_folder_node,
         )
+        payload.update({'parent_folder_id': '5258c920-9652-48c4-81e8-c317dea88513'})
         response = resilient_session().post(url, json=payload, headers=headers, timeout=None)
 
         if response.status_code == 200:
@@ -192,8 +193,9 @@ class UploadClient:
             for job in result:
                 object_path = job.get('target_names')[0]
                 resumable_id = job.get('payload').get('resumable_identifier')
+                item_id = job.get('payload').get('item_id')
                 job_id = job.get('job_id')
-                res.append(FileObject(resumable_id, job_id, object_path, file_mapping.get(object_path), {}))
+                res.append(FileObject(resumable_id, job_id, item_id, object_path, file_mapping.get(object_path), {}))
 
             mhandler.SrvOutPutHandler.preupload_success()
             return res

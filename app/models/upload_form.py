@@ -205,6 +205,7 @@ def generate_on_success_form(
         'project_code': project_code,
         'operator': operator,
         'job_id': file_object.job_id,
+        'item_id': file_object.item_id,
         'resumable_identifier': file_object.resumable_id,
         'resumable_dataType': 'SINGLE_FILE_DATA',
         'resumable_filename': file_object.file_name,
