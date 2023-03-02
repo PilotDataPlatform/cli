@@ -15,6 +15,7 @@
 
 from functools import wraps
 
+from app.configs.app_config import AppConfig
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 
@@ -24,7 +25,7 @@ from .user_login_logout import check_is_login
 from .user_set_config import check_config
 
 
-def require_valid_token(azp='kong'):
+def require_valid_token(azp=AppConfig.Env.keycloak_device_client_id):
     def decorate(func):
         @wraps(func)
         def decorated(*args, **kwargs):

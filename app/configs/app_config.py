@@ -44,6 +44,7 @@ class AppConfig(object):
         greenroom_bucket_prefix = 'gr'
 
         keycloak_device_client_id = ConfigClass.keycloak_device_client_id
+        keycloack_client_secret = ConfigClass.keycloack_client_secret
 
     class Connections(object):
         section = 'connections'
