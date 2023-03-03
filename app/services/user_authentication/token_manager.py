@@ -65,25 +65,17 @@ class SrvTokenManager(metaclass=MetaService):
             return 1
         return 0
 
-    def request_default_tokens(self):
-        url = AppConfig.Connections.url_refresh_token
-        payload = {'refreshtoken': self.config.refresh_token}
-        headers = {'Authorization': 'Bearer ' + self.config.access_token, 'Content-Type': 'application/json'}
-        response = requests.post(url, json=payload, headers=headers)
-        if response.status_code == 200:
-            self.update_token(response.json()['result']['access_token'], response.json()['result']['refresh_token'])
-        else:
-            SrvErrorHandler.default_handle(response.content)
-        return response.json()
-
-    def request_harbor_tokens(self):
+    def refresh(self, azp: str):
         url = AppConfig.Connections.url_keycloak_token
         payload = {
             'grant_type': 'refresh_token',
             'refresh_token': self.config.refresh_token,
-            'client_id': 'harbor',
-            'client_secret': AppConfig.Env.harbor_client_secret,
+            'client_id': azp,
         }
+
+        if azp == 'harbor':
+            payload.update({'client_id': AppConfig.Env.harbor_client_secret})
+
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         response = requests.post(url, data=payload, headers=headers, verify=False)
         if response.status_code == 200:
@@ -91,9 +83,3 @@ class SrvTokenManager(metaclass=MetaService):
         else:
             SrvErrorHandler.default_handle(response.content)
         return response.json()
-
-    def refresh(self, azp):
-        if not azp or azp == 'kong':
-            self.request_default_tokens()
-        if azp == 'harbor':
-            self.request_harbor_tokens()
