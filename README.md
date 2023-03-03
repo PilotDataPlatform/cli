@@ -2,7 +2,6 @@
 
 [![Run Tests](https://github.com/PilotDataPlatform/cli/actions/workflows/run-tests.yml/badge.svg?branch=develop)](https://github.com/PilotDataPlatform/cli/actions/workflows/run-tests.yml)
 [![Python](https://img.shields.io/badge/python-3.7-brightgreen.svg)](https://www.python.org/)
-[![License](https://img.shields.io/badge/license-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
 ## About
 Command line tool that allows the user to execute data operations on the platform.
