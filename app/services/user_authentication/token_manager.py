@@ -78,20 +78,15 @@ class SrvTokenManager(metaclass=MetaService):
 
     def refresh(self, azp: str):
         url = AppConfig.Connections.url_keycloak_token
-
-        if azp == 'harbor':
-            client_secret = AppConfig.Env.harbor_client_secret
-        elif azp == AppConfig.Env.keycloak_device_client_id:
-            client_secret = AppConfig.Env.keycloack_client_secret
-        else:
-            raise ValueError('invalid client_id')
-
         payload = {
             'grant_type': 'refresh_token',
             'refresh_token': self.config.refresh_token,
             'client_id': azp,
-            'client_secret': client_secret,
         }
+
+        if azp == 'harbor':
+            payload.update({'client_id': AppConfig.Env.harbor_client_secret})
+
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         response = requests.post(url, data=payload, headers=headers, verify=False)
         if response.status_code == 200:

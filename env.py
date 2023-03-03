@@ -36,7 +36,6 @@ class Settings(BaseSettings):
     url_keycloak: str = ''
 
     keycloak_device_client_id: str = 'cli_test2'
-    keycloack_client_secret: str = ''
 
     VM_INFO: str = ''
 
