@@ -193,7 +193,7 @@ def file_put(**kwargs):  # noqa: C901
     # the loop will read all input path(folder or files)
     # and process them one by one
     for f in paths:
-        current_folder_node, result_file = assemble_path(
+        current_folder_node, parent_folder, create_folder_flag, result_file = assemble_path(
             f,
             target_folder,
             project_code,
@@ -208,6 +208,8 @@ def file_put(**kwargs):  # noqa: C901
             'zone': zone,
             'upload_message': upload_message,
             'current_folder_node': current_folder_node,
+            'parent_folder_id': parent_folder.get('id'),
+            'create_folder_flag': create_folder_flag,
             'compress_zip': zipping,
             'attribute': attribute,
         }
