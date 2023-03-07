@@ -59,6 +59,7 @@ class UploadClient:
         self,
         input_path: str,
         project_code: str,
+        parent_folder_id: str,
         zone: str = AppConfig.Env.green_zone,
         upload_message: str = 'cli straight upload',
         job_type: str = UploadType.AS_FILE,
@@ -87,6 +88,7 @@ class UploadClient:
         self.project_code = project_code
         self.process_pipeline = process_pipeline
         self.current_folder_node = current_folder_node
+        self.parent_folder_id = parent_folder_id
         self.regular_file = regular_file
 
     def generate_meta(self, local_path: str) -> Tuple[int, int]:
@@ -184,9 +186,8 @@ class UploadClient:
             job_type=self.job_type,
             current_folder=self.current_folder_node,
         )
-        payload.update({'parent_folder_id': '5258c920-9652-48c4-81e8-c317dea88513'})
+        payload.update({'parent_folder_id': self.parent_folder_id})
         response = resilient_session().post(url, json=payload, headers=headers, timeout=None)
-
         if response.status_code == 200:
             result = response.json().get('result')
             res = []
@@ -316,7 +317,7 @@ class UploadClient:
             }
             headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
             response = httpx.get(
-                AppConfig.Connections.url_bff + f'/v1/project/{self.project_code}/files/chunks/presigned',
+                self.base_url + '/v1/files/chunks/presigned',
                 params=params,
                 headers=headers,
                 timeout=None,
