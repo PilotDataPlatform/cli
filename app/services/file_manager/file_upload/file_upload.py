@@ -65,7 +65,13 @@ def assemble_path(f, target_folder, project_code, zone, resumable_id, zipping=Fa
     return current_file_path, parent_folder, create_folder_flag, result_file
 
 
-def simple_upload(upload_event, num_of_thread: int = 1, resumable_id: str = None, job_id: str = None):
+def simple_upload(  # noqa: C901
+    upload_event,
+    num_of_thread: int = 1,
+    resumable_id: str = None,
+    job_id: str = None,
+    item_id: str = None,
+):
     upload_start_time = time.time()
     my_file = upload_event.get('file')
     project_code = upload_event.get('project_code')
@@ -97,9 +103,14 @@ def simple_upload(upload_event, num_of_thread: int = 1, resumable_id: str = None
             logger.warning('Current version does not support folder tagging, ' 'any selected tags will be ignored')
             upload_file_path = get_file_in_folder(my_file)
     else:
-        job_type = UploadType.AS_FOLDER if create_folder_flag else UploadType.AS_FILE
         upload_file_path = [my_file]
         target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
+
+        if create_folder_flag:
+            job_type = UploadType.AS_FOLDER
+            my_file = os.path.dirname(my_file)  # update the path as folder
+        else:
+            job_type = UploadType.AS_FILE
 
     upload_client = UploadClient(
         input_path=my_file,
@@ -121,7 +132,7 @@ def simple_upload(upload_event, num_of_thread: int = 1, resumable_id: str = None
     # TODO later will adapt the folder resumable upload
     # for now it is only for file resumable
     if resumable_id and job_id:
-        pre_upload_infos.extend(upload_client.resume_upload(resumable_id, job_id, upload_file_path[0]))
+        pre_upload_infos.extend(upload_client.resume_upload(resumable_id, job_id, item_id, upload_file_path[0]))
     else:
         for batch in range(0, num_of_batchs):
             start_index = batch * AppConfig.Env.upload_batch_size

@@ -118,6 +118,14 @@ def cli():
     help='The job id to resume the failed upload job',
     show_default=True,
 )
+@click.option(
+    '--item-id',
+    '-iid',
+    default=None,
+    required=False,
+    help='The item id to resume the failed upload job',
+    show_default=True,
+)
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD))
 def file_put(**kwargs):  # noqa: C901
     """"""
@@ -134,6 +142,7 @@ def file_put(**kwargs):  # noqa: C901
     thread = kwargs.get('thread')
     resumable_id = kwargs.get('resumable_id')
     job_id = kwargs.get('job_id')
+    item_id = kwargs.get('item_id')
 
     user = UserConfig()
     project_code, target_folder = identify_target_folder(project_path)
@@ -207,7 +216,7 @@ def file_put(**kwargs):  # noqa: C901
         if source_file:
             upload_event['valid_source'] = src_file_info
 
-        simple_upload(upload_event, num_of_thread=thread, resumable_id=resumable_id, job_id=job_id)
+        simple_upload(upload_event, num_of_thread=thread, resumable_id=resumable_id, job_id=job_id, item_id=item_id)
 
         srv_manifest.attach_manifest(attribute, result_file, zone) if attribute else None
         message_handler.SrvOutPutHandler.all_file_uploaded()
