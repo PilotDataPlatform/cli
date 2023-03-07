@@ -1,20 +1,10 @@
-# Copyright (C) 2022 Indoc Research
+# Copyright (C) 2022-2023 Indoc Research
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as
-# published by the Free Software Foundation, either version 3 of the
-# License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# Contact Indoc Research for any questions regarding the use of this source code.
 
 from functools import wraps
 
+from app.configs.app_config import AppConfig
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 
@@ -24,7 +14,7 @@ from .user_login_logout import check_is_login
 from .user_set_config import check_config
 
 
-def require_valid_token(azp='kong'):
+def require_valid_token(azp=AppConfig.Env.keycloak_device_client_id):
     def decorate(func):
         @wraps(func)
         def decorated(*args, **kwargs):
