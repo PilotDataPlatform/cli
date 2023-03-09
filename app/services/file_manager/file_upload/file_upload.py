@@ -146,8 +146,6 @@ def simple_upload(  # noqa: C901
     # now loop over each file under the folder and start
     # the chunk upload
     pool = ThreadPool(num_of_thread)
-    # print(pre_upload_infos)
-    # raise Exception()
     for file_object in pre_upload_infos:
         upload_client.stream_upload(file_object, pool)
         # TODO: if there is some racing error make the combine chunks
