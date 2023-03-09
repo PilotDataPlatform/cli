@@ -145,7 +145,6 @@ def file_put(**kwargs):  # noqa: C901
     item_id = kwargs.get('item_id')
 
     user = UserConfig()
-    project_code, target_folder = identify_target_folder(project_path)
     # Check zone and upload-message
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
 
