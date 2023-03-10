@@ -7,6 +7,8 @@ import os
 import time
 import zipfile
 from multiprocessing.pool import ThreadPool
+from typing import Dict
+from typing import Tuple
 
 import click
 
@@ -33,30 +35,73 @@ def compress_folder_to_zip(path):
     zipf.close()
 
 
-def assemble_path(f, target_folder, project_code, zone, resumable_id, zipping=False):
-    current_folder_node = target_folder + '/' + f.rstrip('/').split('/')[-1]
-    result_file = current_folder_node
-    name_folder = current_folder_node.split('/')[0].lower()
-    name_folder_res = search_item(project_code, zone, name_folder, 'name_folder')
-    name_folder_code = name_folder_res['code']
-    name_folder_result = name_folder_res['result']
-    if name_folder_code == 403:
-        SrvErrorHandler.customized_handle(ECustomizedError.PERMISSION_DENIED, True)
-    elif not name_folder_result:
-        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_NAMEFOLDER, True)
-    if len(current_folder_node.split('/')) > 2:
-        parent_path = name_folder + '/' + '/'.join(current_folder_node.split('/')[1:-1])
-        res = search_item(project_code, zone, parent_path, 'folder')
-        if not res['result'] and not resumable_id:
-            click.confirm(customized_error_msg(ECustomizedError.CREATE_FOLDER_IF_NOT_EXIST), abort=True)
-        elif resumable_id:
-            mhandler.SrvOutPutHandler.resume_warning(resumable_id)
+def assemble_path(
+    f: str, target_folder: str, project_code: str, zone: str, resumable_id: str, zipping: bool = False
+) -> Tuple[str, Dict, bool, str]:
+    '''
+    Summary:
+        the function is to find the longest parent folder that exists
+        in the backend. Since cli will allow user to specify the folder
+        that is not exist yet. and let upload process to create them.
+        By default, the parent folder will be name folder.
+
+        also the function will format the local path with the target path.
+        eg. path is folder1/file1(local) and target folder is admin/target1(on platform)
+        the final path will be admin/target1/folder1/file1
+
+    Parameter:
+         - f(str): the local path of a file
+         - target_folder(str): the folder on the platform
+         - project_code(str): the unique identifier of project
+         - zone(str): the zone label eg.greenroom/core
+         - resumable_id(str): the unique identifier of a upload process
+         - zipping(bool): default False. The flag to indicate if upload as a zip
+    Return:
+         - current_file_path: the format file path on platform
+         - parent_folder: the item information of longest parent folder
+         - create_folder_flag: the flag to indicate if need to create new folder
+         - result_file: the result file if zipping
+
+    '''
+
+    current_file_path = target_folder + '/' + f.rstrip('/').split('/')[-1]
+    result_file = current_file_path
+
+    # set name folder as first parent folder
+    name_folder = current_file_path.split('/')[0]
+    parent_folder = search_item(project_code, zone, name_folder, 'name_folder')
+    parent_folder = parent_folder.get('result')
+    create_folder_flag = False
+
+    if len(current_file_path.split('/')) > 2 and not resumable_id:
+        sub_path = target_folder.split('/')
+        for index in range(len(sub_path) - 1):
+            folder_path = '/'.join(sub_path[0 : 2 + index])
+            res = search_item(project_code, zone, folder_path, 'folder')
+
+            # find the longest existing folder as parent folder
+            # if user input a path that need to create some folders
+            if not res.get('result'):
+                click.confirm(customized_error_msg(ECustomizedError.CREATE_FOLDER_IF_NOT_EXIST), abort=True)
+                create_folder_flag = True
+                break
+            else:
+                parent_folder = res.get('result')
+    elif resumable_id:
+        mhandler.SrvOutPutHandler.resume_warning(resumable_id)
+
     if zipping:
         result_file = result_file + '.zip'
-    return current_folder_node, result_file
+    return current_file_path, parent_folder, create_folder_flag, result_file
 
 
-def simple_upload(upload_event, num_of_thread: int = 1, resumable_id: str = None, job_id: str = None):
+def simple_upload(  # noqa: C901
+    upload_event,
+    num_of_thread: int = 1,
+    resumable_id: str = None,
+    job_id: str = None,
+    item_id: str = None,
+):
     upload_start_time = time.time()
     my_file = upload_event.get('file')
     project_code = upload_event.get('project_code')
@@ -65,13 +110,15 @@ def simple_upload(upload_event, num_of_thread: int = 1, resumable_id: str = None
     # process_pipeline = upload_event.get('process_pipeline', None)
     # upload_message = upload_event.get('upload_message')
     target_folder = upload_event.get('current_folder_node', '')
+    parent_folder_id = upload_event.get('parent_folder_id', '')
+    create_folder_flag = upload_event.get('create_folder_flag', False)
     compress_zip = upload_event.get('compress_zip', False)
     regular_file = upload_event.get('regular_file', True)
     source_file = upload_event.get('valid_source')
     attribute = upload_event.get('attribute')
 
     mhandler.SrvOutPutHandler.start_uploading(my_file)
-    # base_path = ''
+    # TODO: PILOT-2392 simplify the logic under
     # if the input request zip folder then process the path as single file
     # otherwise read throught the folder to get path underneath
     if os.path.isdir(my_file):
@@ -85,19 +132,23 @@ def simple_upload(upload_event, num_of_thread: int = 1, resumable_id: str = None
         else:
             logger.warning('Current version does not support folder tagging, ' 'any selected tags will be ignored')
             upload_file_path = get_file_in_folder(my_file)
-            # base_path = my_file.rstrip('/').split('/')[-1]
     else:
-        job_type = UploadType.AS_FILE
         upload_file_path = [my_file]
         target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
+
+        if create_folder_flag:
+            job_type = UploadType.AS_FOLDER
+            my_file = os.path.dirname(my_file)  # update the path as folder
+        else:
+            job_type = UploadType.AS_FILE
 
     upload_client = UploadClient(
         input_path=my_file,
         project_code=project_code,
         zone=zone,
-        # relative_path=target_folder,
         job_type=job_type,
         current_folder_node=target_folder,
+        parent_folder_id=parent_folder_id,
         regular_file=regular_file,
     )
 
@@ -111,7 +162,7 @@ def simple_upload(upload_event, num_of_thread: int = 1, resumable_id: str = None
     # TODO later will adapt the folder resumable upload
     # for now it is only for file resumable
     if resumable_id and job_id:
-        pre_upload_infos.extend(upload_client.resume_upload(resumable_id, job_id, upload_file_path[0]))
+        pre_upload_infos.extend(upload_client.resume_upload(resumable_id, job_id, item_id, upload_file_path[0]))
     else:
         for batch in range(0, num_of_batchs):
             start_index = batch * AppConfig.Env.upload_batch_size

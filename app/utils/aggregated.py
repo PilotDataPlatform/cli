@@ -42,6 +42,8 @@ def search_item(project_code, zone, folder_relative_path, item_type, container_t
     }
     headers = {'Authorization': 'Bearer ' + token}
     res = requests.get(url, params=params, headers=headers)
+    if res.status_code == 403:
+        SrvErrorHandler.customized_handle(ECustomizedError.PERMISSION_DENIED, project_code)
 
     return res.json()
 
