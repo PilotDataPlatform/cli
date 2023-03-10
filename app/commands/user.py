@@ -21,7 +21,7 @@ def cli():
     pass
 
 
-# # COMMENT user password login temporally.
+# COMMENT user password login temporally.
 # @click.command()
 # @click.option(
 #     '-U', '--username', prompt='Username', help=(user_help.user_help_page(user_help.UserHELP.USER_LOGIN_USERNAME))

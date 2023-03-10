@@ -7,6 +7,8 @@ import os
 import time
 import zipfile
 from multiprocessing.pool import ThreadPool
+from typing import Dict
+from typing import Tuple
 
 import click
 
@@ -33,10 +35,38 @@ def compress_folder_to_zip(path):
     zipf.close()
 
 
-def assemble_path(f, target_folder, project_code, zone, resumable_id, zipping=False):
+def assemble_path(
+    f: str, target_folder: str, project_code: str, zone: str, resumable_id: str, zipping: bool = False
+) -> Tuple(str, Dict, bool, str):
+    '''
+    Summary:
+        the function is to find the longest parent folder that exists
+        in the backend. Since cli will allow user to specify the folder
+        that is not exist yet. and let upload process to create them.
+        By default, the parent folder will be name folder.
+
+        also the function will format the local path with the target path.
+        eg. path is folder1/file1(local) and target folder is admin/target1(on platform)
+        the final path will be admin/target1/folder1/file1
+
+    Parameter:
+         - f(str): the local path of a file
+         - target_folder(str): the folder on the platform
+         - project_code(str): the unique identifier of project
+         - zone(str): the zone label eg.greenroom/core
+         - resumable_id(str): the unique identifier of a upload process
+         - zipping(bool): default False. The flag to indicate if upload as a zip
+    Return:
+         - current_file_path: the format file path on platform
+         - parent_folder: the item information of longest parent folder
+         - create_folder_flag: the flag to indicate if need to create new folder
+         - result_file: the result file if zipping
+
+    '''
+
     current_file_path = target_folder + '/' + f.rstrip('/').split('/')[-1]
     result_file = current_file_path
-    # TODO somehow optimize the folder search logic
+
     # set name folder as first parent folder
     name_folder = current_file_path.split('/')[0]
     parent_folder = search_item(project_code, zone, name_folder, 'name_folder')
