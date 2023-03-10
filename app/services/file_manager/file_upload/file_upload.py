@@ -37,7 +37,7 @@ def compress_folder_to_zip(path):
 
 def assemble_path(
     f: str, target_folder: str, project_code: str, zone: str, resumable_id: str, zipping: bool = False
-) -> Tuple(str, Dict, bool, str):
+) -> Tuple[str, Dict, bool, str]:
     '''
     Summary:
         the function is to find the longest parent folder that exists
@@ -118,7 +118,7 @@ def simple_upload(  # noqa: C901
     attribute = upload_event.get('attribute')
 
     mhandler.SrvOutPutHandler.start_uploading(my_file)
-    # TODO simplify the logic under
+    # TODO: PILOT-2392 simplify the logic under
     # if the input request zip folder then process the path as single file
     # otherwise read throught the folder to get path underneath
     if os.path.isdir(my_file):
