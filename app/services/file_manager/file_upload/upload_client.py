@@ -179,7 +179,7 @@ class UploadClient:
             job_type=self.job_type,
             current_folder=self.current_folder_node,
         )
-        # print(payload)
+
         payload.update({'parent_folder_id': self.parent_folder_id})
         response = resilient_session().post(url, json=payload, headers=headers, timeout=None)
         if response.status_code == 200:
@@ -263,7 +263,6 @@ class UploadClient:
                         self.upload_chunk,
                         args=(file_object, count + 1, chunk),
                     )
-                    # print(res, len(chunk))
                     async_result.append((res, len(chunk)))
                 count += 1  # uploaded successfully
 
@@ -313,7 +312,6 @@ class UploadClient:
                 'upload_id': file_object.resumable_id,
                 'chunk_number': chunk_number,
             }
-            # print(params)
             headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
             response = httpx.get(
                 self.base_url + '/v1/files/chunks/presigned',
@@ -321,8 +319,6 @@ class UploadClient:
                 headers=headers,
                 timeout=None,
             )
-
-            # print(response.__dict__)
 
             # then use the presigned url directly uplad to minio
             if response.status_code == 200:

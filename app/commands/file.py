@@ -120,10 +120,10 @@ def cli():
 )
 @click.option(
     '--item-id',
-    '-iid',
+    '-item',
     default=None,
     required=False,
-    help='The item id to resume the failed upload job',
+    help='The item id is required when resume an upload job',
     show_default=True,
 )
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD))
