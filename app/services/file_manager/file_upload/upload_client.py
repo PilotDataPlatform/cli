@@ -48,6 +48,7 @@ class UploadClient:
         self,
         input_path: str,
         project_code: str,
+        parent_folder_id: str,
         zone: str = AppConfig.Env.green_zone,
         upload_message: str = 'cli straight upload',
         job_type: str = UploadType.AS_FILE,
@@ -76,6 +77,7 @@ class UploadClient:
         self.project_code = project_code
         self.process_pipeline = process_pipeline
         self.current_folder_node = current_folder_node
+        self.parent_folder_id = parent_folder_id
         self.regular_file = regular_file
 
     def generate_meta(self, local_path: str) -> Tuple[int, int]:
@@ -94,13 +96,14 @@ class UploadClient:
         return total_size, total_chunks
 
     @require_valid_token()
-    def resume_upload(self, resumable_id: str, job_id: str, local_path: str) -> List[FileObject]:
+    def resume_upload(self, resumable_id: str, job_id: str, item_id: str, local_path: str) -> List[FileObject]:
         """
         Summary:
             The function is to check the uploaded chunks in object storage.
         Parameter:
             - resumable_id(str): The unique id to indicate the multipart upload.
             - job_id(str): The unique id to indicate the job id.
+            - item_id(str): The unique id for the item.
             - local_path: the local path of interrupted file.
         return:
             - list of FileObject: the infomation retrieved from backend.
@@ -120,10 +123,12 @@ class UploadClient:
             'object_infos': [
                 {
                     'object_path': object_path,
+                    'item_id': item_id,
                     'resumable_id': resumable_id,
                 }
             ],
         }
+
         response = resilient_session().post(url, json=payload, headers=headers, timeout=None)
         if response.status_code == 404:
             SrvErrorHandler.customized_handle(ECustomizedError.UPLOAD_ID_NOT_EXIST, True)
@@ -136,6 +141,7 @@ class UploadClient:
                 FileObject(
                     uploaded_info.get('resumable_id'),
                     job_id,
+                    item_id,
                     uploaded_info.get('object_path'),
                     local_path,  # TODO change it after folder manifest is setup
                     uploaded_info.get('chunks_info'),
@@ -173,16 +179,18 @@ class UploadClient:
             job_type=self.job_type,
             current_folder=self.current_folder_node,
         )
-        response = resilient_session().post(url, json=payload, headers=headers, timeout=None)
 
+        payload.update({'parent_folder_id': self.parent_folder_id})
+        response = resilient_session().post(url, json=payload, headers=headers, timeout=None)
         if response.status_code == 200:
             result = response.json().get('result')
             res = []
             for job in result:
                 object_path = job.get('target_names')[0]
                 resumable_id = job.get('payload').get('resumable_identifier')
+                item_id = job.get('payload').get('item_id')
                 job_id = job.get('job_id')
-                res.append(FileObject(resumable_id, job_id, object_path, file_mapping.get(object_path), {}))
+                res.append(FileObject(resumable_id, job_id, item_id, object_path, file_mapping.get(object_path), {}))
 
             mhandler.SrvOutPutHandler.preupload_success()
             return res
@@ -222,6 +230,7 @@ class UploadClient:
         file_name = file_object.file_name
         rid = file_object.resumable_id
         jid = file_object.job_id
+        iid = file_object.item_id
 
         with tqdm(
             total=file_object.total_size,
@@ -229,7 +238,9 @@ class UploadClient:
             bar_format='{desc} |{bar:30} {percentage:3.0f}% {remaining}',
         ) as bar:
             # updating the progress bar
-            bar.set_description('Uploading {} , resumable_id: {}, job_id: {}'.format(file_name, rid, jid))
+            bar.set_description(
+                'Uploading {} , resumable_id: {}, job_id: {}, item_id: {}'.format(file_name, rid, jid, iid)
+            )
 
             # process on the file content
             f = open(file_object.local_path, 'rb')
@@ -246,12 +257,12 @@ class UploadClient:
                     if chunk_etag != local_chunk_etag:
                         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_CHUNK_UPLOAD, value=count + 1)
                         raise INVALID_CHUNK_ETAG(count + 1)
+                    bar.update(self.chunk_size)
                 else:
                     res = pool.apply_async(
                         self.upload_chunk,
                         args=(file_object, count + 1, chunk),
                     )
-                    # print(res, len(chunk))
                     async_result.append((res, len(chunk)))
                 count += 1  # uploaded successfully
 
@@ -303,7 +314,7 @@ class UploadClient:
             }
             headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
             response = httpx.get(
-                AppConfig.Connections.url_bff + f'/v1/project/{self.project_code}/files/chunks/presigned',
+                self.base_url + '/v1/files/chunks/presigned',
                 params=params,
                 headers=headers,
                 timeout=None,
@@ -316,7 +327,6 @@ class UploadClient:
 
                 if res.status_code != 200:
                     error_msg = 'Fail to upload the chunck %s: %s' % (chunk_number, str(res.text))
-                    self.logger.error(error_msg)
                     raise Exception(error_msg)
 
                 return res

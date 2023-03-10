@@ -118,6 +118,14 @@ def cli():
     help='The job id to resume the failed upload job',
     show_default=True,
 )
+@click.option(
+    '--item-id',
+    '-item',
+    default=None,
+    required=False,
+    help='The item id is required when resume an upload job',
+    show_default=True,
+)
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD))
 def file_put(**kwargs):  # noqa: C901
     """"""
@@ -134,9 +142,9 @@ def file_put(**kwargs):  # noqa: C901
     thread = kwargs.get('thread')
     resumable_id = kwargs.get('resumable_id')
     job_id = kwargs.get('job_id')
+    item_id = kwargs.get('item_id')
 
     user = UserConfig()
-    project_code, target_folder = identify_target_folder(project_path)
     # Check zone and upload-message
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
 
@@ -182,7 +190,7 @@ def file_put(**kwargs):  # noqa: C901
     # the loop will read all input path(folder or files)
     # and process them one by one
     for f in paths:
-        current_folder_node, result_file = assemble_path(
+        current_folder_node, parent_folder, create_folder_flag, result_file = assemble_path(
             f,
             target_folder,
             project_code,
@@ -197,6 +205,8 @@ def file_put(**kwargs):  # noqa: C901
             'zone': zone,
             'upload_message': upload_message,
             'current_folder_node': current_folder_node,
+            'parent_folder_id': parent_folder.get('id'),
+            'create_folder_flag': create_folder_flag,
             'compress_zip': zipping,
             'attribute': attribute,
         }
@@ -205,7 +215,7 @@ def file_put(**kwargs):  # noqa: C901
         if source_file:
             upload_event['valid_source'] = src_file_info
 
-        simple_upload(upload_event, num_of_thread=thread, resumable_id=resumable_id, job_id=job_id)
+        simple_upload(upload_event, num_of_thread=thread, resumable_id=resumable_id, job_id=job_id, item_id=item_id)
 
         srv_manifest.attach_manifest(attribute, result_file, zone) if attribute else None
         message_handler.SrvOutPutHandler.all_file_uploaded()
