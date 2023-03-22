@@ -90,6 +90,11 @@ def assemble_path(
     elif resumable_id:
         mhandler.SrvOutPutHandler.resume_warning(resumable_id)
 
+    # error check if the user dont have permission to see the folder
+    # because the name folder will always be there if user has correct permission
+    if not parent_folder:
+        SrvErrorHandler.customized_handle(ECustomizedError.PERMISSION_DENIED, True)
+
     if zipping:
         result_file = result_file + '.zip'
     return current_file_path, parent_folder, create_folder_flag, result_file
