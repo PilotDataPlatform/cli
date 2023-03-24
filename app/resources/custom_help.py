@@ -6,10 +6,9 @@
 class HelpPage:
     page = {
         'update': {
-            'version': '2.0.0',
+            'version': '2.2.0',
             '1': 'CLI supports to perform multi-threading upload for file/folders',
             '2': 'CLI supports to perform resumable upload for single file',
-            '3': 'CLI supports new pre-registration workflow',
         },
         'dataset': {
             'DATASET_DOWNLOAD': 'Download a dataset or a particular version of a dataset.',
