@@ -1,27 +1,32 @@
+# Copyright (C) 2022-2023 Indoc Research
+#
+# Contact Indoc Research for any questions regarding the use of this source code.
+
 import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
+
 from app.configs.app_config import AppConfig
-import app.services.output_manager.error_handler as ehandler
+from app.services.output_manager.error_handler import ECustomizedError
+from app.services.output_manager.error_handler import SrvErrorHandler
 
 
-def create_lineage(child_file_geid, parent_file_geid, token: str,
-                   project_code, pipeline_name, operator):
-    url = AppConfig.Connections.url_bff + "/v1/lineage"
+def create_lineage(lineage_event):
+    url = AppConfig.Connections.url_lineage
     payload = {
-        "input_geid": parent_file_geid,
-        "output_geid": child_file_geid,
-        "project_code": project_code,
-        "pipeline_name": pipeline_name,
-        "description": "straight upload by " + operator
+        'input_id': lineage_event['input_id'],
+        'output_id': lineage_event['output_id'],
+        'project_code': lineage_event['project_code'],
+        'action_type': lineage_event['action_type'],
+        'input_path': lineage_event['input_path'],
+        'output_path': lineage_event['output_path'],
+        'description': 'straight upload by ' + lineage_event['operator'],
     }
     headers = {
-        'Authorization': "Bearer " + token,
+        'Authorization': 'Bearer ' + lineage_event['token'],
     }
     __res = requests.post(url, json=payload, headers=headers)
     if __res.status_code == 200:
         return __res.json()['result']
     else:
-        ehandler.SrvErrorHandler.customized_handle(
-            ehandler.ECustomizedError.INVALID_LINEAGE,
-            True, value=str(__res.status_code) + str(__res.text))
+        SrvErrorHandler.customized_handle(
+            ECustomizedError.INVALID_LINEAGE, True, value=str(__res.status_code) + str(__res.text)
+        )

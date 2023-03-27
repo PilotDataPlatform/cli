@@ -1,10 +1,16 @@
+# Copyright (C) 2022-2023 Indoc Research
+#
+# Contact Indoc Research for any questions regarding the use of this source code.
+
 import click
 import requests
+
 import app.services.output_manager.error_handler as error_handler
-from app.commands.entry_point import entry_point
-from app.utils.aggregated import doc
-from app.services.output_manager.help_page import update_message
 from app.commands.entry_point import command_groups
+from app.commands.entry_point import entry_point
+from app.services.output_manager.help_page import update_message
+from app.utils.aggregated import doc
+
 
 class ComplexCLI(click.MultiCommand):
     def list_commands(self, ctx):
@@ -14,7 +20,7 @@ class ComplexCLI(click.MultiCommand):
 
     def get_command(self, ctx, name):
         try:
-            mod = __import__(f"app.commands.{name}", None, None, ['cli'])
+            mod = __import__(f'app.commands.{name}', None, None, ['cli'])
         except ImportError:
             return
         return mod.cli

@@ -1,13 +1,13 @@
-from os import access
-from app.services.user_authentication.decorator import require_valid_token
-from app.models.service_meta_class import HPCMetaService
+# Copyright (C) 2022-2023 Indoc Research
+#
+# Contact Indoc Research for any questions regarding the use of this source code.
+
 from app.configs.app_config import AppConfig
-from app.configs.user_config import UserConfig
-import requests
-import app.services.logger_services.log_functions as logger
-from app.services.output_manager.error_handler import SrvErrorHandler, ECustomizedError, customized_error_msg
-from app.services.user_authentication.user_login_logout import user_login, check_is_login, check_is_active
-from app.services.output_manager.message_handler import SrvOutPutHandler
+from app.models.service_meta_class import HPCMetaService
+from app.services.output_manager.error_handler import ECustomizedError
+from app.services.output_manager.error_handler import SrvErrorHandler
+from app.services.user_authentication.decorator import require_valid_token
+from app.utils.aggregated import resilient_session
 
 
 class HPCTokenManager(metaclass=HPCMetaService):
@@ -17,13 +17,9 @@ class HPCTokenManager(metaclass=HPCMetaService):
     @require_valid_token()
     def auth_user(self, host, username, password):
         url = AppConfig.Connections.url_bff + '/v1/hpc/auth'
-        payload = {
-            "token_issuer": host,
-            "username": username,
-            "password": password
-        }
+        payload = {'token_issuer': host, 'username': username, 'password': password}
         headers = {'Authorization': 'Bearer ' + self.token}
-        res = requests.post(url, headers=headers, json=payload)
+        res = resilient_session().post(url, headers=headers, json=payload)
         _res = res.json()
         code = _res.get('code')
         if code == 200:
