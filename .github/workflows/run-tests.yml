@@ -1,0 +1,56 @@
+name: Run Tests
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  tests:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9.16
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.3.2
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+
+      - name: Set up cache
+        id: cached-poetry-dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: venv-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Ensure cache is healthy
+        if: steps.cached-poetry-dependencies.outputs.cache-hit == 'true'
+        run: timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Install dependencies
+        run: poetry install --no-interaction --no-root
+
+      - name: Run pre-commit hooks
+        uses: pre-commit/action@v3.0.0
+
+      - name: Run tests
+        run: poetry run pytest -vvv --exitfirst --cov=app --cov-report=term --cov-report=xml --cov-fail-under=23
+
+      - name: Coverage report comment
+        uses: mishakav/pytest-coverage-comment@v1.1.42
+        with:
+          pytest-xml-coverage-path: ./coverage.xml
+          coverage-path-prefix: app/

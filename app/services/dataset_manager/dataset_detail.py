@@ -1,11 +1,17 @@
-from app.models.service_meta_class import MetaService
+# Copyright (C) 2022-2023 Indoc Research
+#
+# Contact Indoc Research for any questions regarding the use of this source code.
+
+import requests
+
+import app.services.logger_services.log_functions as logger
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
-from ..user_authentication.decorator import require_valid_token
-import requests
-import app.services.logger_services.log_functions as logger
-from app.services.output_manager.error_handler import SrvErrorHandler, ECustomizedError
+from app.models.service_meta_class import MetaService
+from app.services.output_manager.error_handler import ECustomizedError
+from app.services.output_manager.error_handler import SrvErrorHandler
 
+from ..user_authentication.decorator import require_valid_token
 
 
 class SrvDatasetDetailManager(metaclass=MetaService):
@@ -14,13 +20,14 @@ class SrvDatasetDetailManager(metaclass=MetaService):
         self.interactive = interactive
 
     @require_valid_token()
-    def dataset_detail(self, code):
+    def dataset_detail(self, code, page=0, page_size=10):
         url = AppConfig.Connections.url_bff + f'/v1/dataset/{code}'
         headers = {
-            'Authorization': "Bearer " + self.user.access_token,
+            'Authorization': 'Bearer ' + self.user.access_token,
         }
+        params = {'page': page, 'page_size': page_size}
         try:
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, params=params)
             res = response.json()
             status_code = res.get('code')
             if status_code == 200:
@@ -33,7 +40,7 @@ class SrvDatasetDetailManager(metaclass=MetaService):
                 SrvErrorHandler.customized_handle(ECustomizedError.DATASET_PERMISSION, self.interactive)
             else:
                 SrvErrorHandler.default_handle(response.content, self.interactive)
-        except Exception as e:
+        except Exception:
             SrvErrorHandler.default_handle(response.content, self.interactive)
 
     @staticmethod
@@ -58,31 +65,30 @@ class SrvDatasetDetailManager(metaclass=MetaService):
         for k, v in dataset_details.items():
             logger.info('-'.ljust(col_width, '-'))
             if len(v) > value_width and k not in same_line_display_fields:
-                name_location = round(len(v.split(','))/2) - 1
+                name_location = round(len(v.split(',')) / 2) - 1
                 location = 0
                 for i in v.split(','):
                     i = i if i == v.split(',')[-1] else i + ', '
                     if location == name_location:
-                        row_value = '| ' + k.center(20,' ') + '| ' + i.center(value_width, ' ')
+                        row_value = '| ' + k.center(20, ' ') + '| ' + i.center(value_width, ' ')
                     else:
-                        row_value = '| ' + ''.center(20,' ') + '| ' + i.center(value_width, ' ')
+                        row_value = '| ' + ''.center(20, ' ') + '| ' + i.center(value_width, ' ')
                     location += 1
-                    logger.info(row_value + '|')
+                    logger.info(row_value + '|')  # noqa: G003
             elif len(v) > value_width and k in same_line_display_fields:
-                name_location = round(len(v)/(2*value_width)) - 1
+                name_location = round(len(v) / (2 * value_width)) - 1
                 location = 0
                 current_value = ''
                 for i in v.split(',') + [' ' * 100000]:
                     if len(current_value + i + ', ') > value_width:
                         field_name = k if location == name_location else ''
-                        row_value = '| ' + field_name.center(20,' ') + '| ' + current_value.center(value_width, ' ')
-                        logger.info(row_value + '|')
+                        row_value = '| ' + field_name.center(20, ' ') + '| ' + current_value.center(value_width, ' ')
+                        logger.info(row_value + '|')  # noqa: G003
                         current_value = i if i == v.split(',')[-1] else i + ', '
                         location += 1
                     else:
-                        current_value = current_value + i  if i == v.split(',')[-1] else current_value + i + ', '
+                        current_value = current_value + i if i == v.split(',')[-1] else current_value + i + ', '
             else:
-                row_value = '| ' + k.center(20,' ') + '| ' + v.replace(',', ', ').center(value_width, ' ')
-                logger.info(row_value + '|')
+                row_value = '| ' + k.center(20, ' ') + '| ' + v.replace(',', ', ').center(value_width, ' ')
+                logger.info(row_value + '|')  # noqa: G003
         logger.info('-'.ljust(col_width, '-'))
-

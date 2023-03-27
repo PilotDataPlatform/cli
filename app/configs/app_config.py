@@ -1,42 +1,57 @@
-from env import ENVAR
-class AppConfig(object):
+# Copyright (C) 2022-2023 Indoc Research
+#
+# Contact Indoc Research for any questions regarding the use of this source code.
 
+from env import ConfigClass
+
+
+class AppConfig(object):
     class Env(object):
-        section = "environment"
-        project = ENVAR.project
-        dicom_project = ENVAR.dicom_project
-        user_config_path = ENVAR.config_path
-        msg_path = ENVAR.custom_path
-        user_config_file = f"{user_config_path}/config.ini"
-        token_warn_need_refresh = 300 # seconds
-        chunk_size = 2 # chunk size mb
+        section = 'environment'
+        project = ConfigClass.project
+        user_config_path = ConfigClass.config_path
+        msg_path = ConfigClass.custom_path
+        user_config_file = f'{user_config_path}/config.ini'
+        token_warn_need_refresh = 30  # seconds
+
+        # NOTE: there is a limitation on minio that
+        # the multipart number is 10000. so we set
+        # the chunk_size as 20MB -> total 200GB
+        chunk_size = 1024 * 1024 * 20  # MB
         resilient_retry = 3
         resilient_backoff = 1
+        resilient_retry_interval = 1  # seconds
         resilient_retry_code = [502, 503, 504, 404, 401]
-        pipeline_straight_upload = f"{project}cli_upload"
-        default_upload_message = f"{project}cli straight uploaded"
+        pipeline_straight_upload = f'{project}cli_upload'
+        default_upload_message = f'{project}cli straight uploaded'
         session_duration = 3600.0
-        harbor_client_secret = '99066450-087f-4340-9d0b-f2f2bcc71fc9'
+        upload_batch_size = 100
+        harbor_client_secret = ConfigClass.harbor_client_secret
         core_zone = 'core'
         green_zone = 'greenroom'
+        core_bucket_prefix = 'core'
+        greenroom_bucket_prefix = 'gr'
+
+        keycloak_device_client_id = ConfigClass.keycloak_device_client_id
 
     class Connections(object):
-        section = "connections"
-        base_url = ENVAR.base_url
-        service_url = ENVAR.service_url
-        url_harbor = ENVAR.url_harbor
-        project = ENVAR.project
-        app_name = ENVAR.app_name
-        url_authn = base_url + "portal/users/auth"
-        url_refresh_token = base_url + "portal/users/refresh"
-        url_file_tag = base_url + "portal/dataops/v2/containers/"
-        url_upload_greenroom = base_url + "upload/gr"
-        url_upload_core = base_url + f"upload/{project}"
-        url_download_greenroom = base_url + "portal/download/gr/v1"
-        url_download_core = base_url + "portal/download/core/v1"
-        url_v2_download_pre = base_url + "portal/v2/download/pre"
-        url_dataset = base_url + "portal/v1/dataset"
-        url_dataset_v2download = base_url + f"portal/download/{project}/v2/dataset"
-        url_validation = base_url + "portal/v1/files/validation"
-        url_bff = service_url + f"api/{app_name}"
-        url_keycloak = service_url + f"auth/realms/{project}/protocol/openid-connect/token"
+        section = 'connections'
+        url_harbor = ConfigClass.url_harbor
+        url_authn = ConfigClass.url_authn
+        url_refresh_token = ConfigClass.url_refresh_token
+        url_file_tag = ConfigClass.url_file_tag
+        url_upload_greenroom = ConfigClass.url_upload_greenroom
+        url_upload_core = ConfigClass.url_upload_core
+        url_status = ConfigClass.url_status
+        url_lineage = ConfigClass.url_lineage
+        url_download_greenroom = ConfigClass.url_download_greenroom
+        url_download_core = ConfigClass.url_download_core
+        url_v2_download_pre = ConfigClass.url_v2_download_pre
+        url_dataset_v2download = ConfigClass.url_dataset_v2download
+        url_dataset = ConfigClass.url_dataset
+        url_validation = ConfigClass.url_validation
+        url_keycloak = ConfigClass.url_keycloak
+        url_keycloak_token = f'{ConfigClass.url_keycloak}/token'
+        url_bff = ConfigClass.url_bff
+        # add url_base to check if value exist
+        url_base = ConfigClass.base_url
