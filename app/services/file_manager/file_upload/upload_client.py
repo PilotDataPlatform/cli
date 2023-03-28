@@ -225,6 +225,7 @@ class UploadClient:
         # the window_size is to limit the async job creation
         # the program will be killed if async jobs are too many
         # in the queue
+        # thread_window_size = 30
         file_name = file_object.file_name
         rid = file_object.resumable_id
         jid = file_object.job_id
