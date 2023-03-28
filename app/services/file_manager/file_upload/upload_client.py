@@ -100,7 +100,7 @@ class UploadClient:
         total_chunks = math.ceil(total_size / self.chunk_size)
         return total_size, total_chunks
 
-    # @require_valid_token()
+    @require_valid_token()
     def resume_upload(self, resumable_id: str, job_id: str, item_id: str, local_path: str) -> List[FileObject]:
         """
         Summary:
@@ -156,7 +156,7 @@ class UploadClient:
 
         return file_objects
 
-    # @require_valid_token()
+    @require_valid_token()
     def pre_upload(self, local_file_paths: List[str]) -> List[FileObject]:
         """
         Summary:
@@ -291,7 +291,6 @@ class UploadClient:
 
             f.close()
 
-    # @require_valid_token()
     def upload_chunk(self, file_object: FileObject, chunk_number: int, chunk: str) -> None:
         """
         Summary:
@@ -345,7 +344,6 @@ class UploadClient:
             # the time will be longer for more retry
             time.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
 
-    # @require_valid_token()
     def on_succeed(self, file_object: FileObject, tags: List[str]):
         """
         Summary:
@@ -419,7 +417,6 @@ class UploadClient:
             }
             create_lineage(lineage_event)
 
-    # @require_valid_token()
     def check_status(self, file_object: FileObject) -> bool:
         """
         Summary:
@@ -465,4 +462,4 @@ class UploadClient:
         token_manager = SrvTokenManager()
         while self.finish_upload is not True:
             token_manager.refresh(azp)
-            time.sleep(250)
+            time.sleep(AppConfig.Env.token_refresh_interval)
