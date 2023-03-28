@@ -225,8 +225,6 @@ class UploadClient:
         # the window_size is to limit the async job creation
         # the program will be killed if async jobs are too many
         # in the queue
-        thread_window_size = 30
-        # remaining_size = file_object.total_size
         file_name = file_object.file_name
         rid = file_object.resumable_id
         jid = file_object.job_id
@@ -265,21 +263,8 @@ class UploadClient:
                 async_result.append((res, len(chunk)))
             count += 1  # uploaded successfully
 
-            # if the async queue reaches window size we wait
-            # all job finished and queue again
-            if len(async_result) == thread_window_size:
-                pass
-
-        # # finish up rest of async job in the queue
-        # for async_res, chunk_size in async_result:
-        #     # update progress bar
-        #     result = async_res.get()
-        #     if result:
-        #         bar.update(chunk_size)
-
         f.close()
 
-    @require_valid_token()
     def upload_chunk(self, file_object: FileObject, chunk_number: int, chunk: str, bar: tqdm) -> None:
         """
         Summary:
