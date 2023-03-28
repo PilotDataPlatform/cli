@@ -221,7 +221,6 @@ class UploadClient:
             - None
         """
         count = 0
-        async_result = []
         # the window_size is to limit the async job creation
         # the program will be killed if async jobs are too many
         # in the queue
@@ -257,11 +256,11 @@ class UploadClient:
                     raise INVALID_CHUNK_ETAG(count + 1)
                 bar.update(self.chunk_size)
             else:
-                res = pool.apply_async(
+                _ = pool.apply_async(
                     self.upload_chunk,
                     args=(file_object, count + 1, chunk, bar),
                 )
-                async_result.append((res, len(chunk)))
+
             count += 1  # uploaded successfully
 
         f.close()
