@@ -229,72 +229,51 @@ class UploadClient:
             - None
         """
         count = 0
-        async_result = []
         # the window_size is to limit the async job creation
         # the program will be killed if async jobs are too many
         # in the queue
-        thread_window_size = 30
-        # remaining_size = file_object.total_size
+        # thread_window_size = 30
         file_name = file_object.file_name
         rid = file_object.resumable_id
         jid = file_object.job_id
         iid = file_object.item_id
 
-        with tqdm(
+        bar = tqdm(
             total=file_object.total_size,
             leave=True,
             bar_format='{desc} |{bar:30} {percentage:3.0f}% {remaining}',
-        ) as bar:
-            # updating the progress bar
-            bar.set_description(
-                'Uploading {} , resumable_id: {}, job_id: {}, item_id: {}'.format(file_name, rid, jid, iid)
-            )
+        )
 
-            # process on the file content
-            f = open(file_object.local_path, 'rb')
-            while True:
-                chunk = f.read(self.chunk_size)
-                chunk_etag = file_object.uploaded_chunks.get(str(count + 1))
-                if not chunk:
-                    break
-                # if current chunk has been uploaded to object storage
-                # only check the md5 if the file is same. If ture,
-                # skip current chunk, if not, raise the error.
-                elif chunk_etag:
-                    local_chunk_etag = hashlib.md5(chunk).hexdigest()
-                    if chunk_etag != local_chunk_etag:
-                        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_CHUNK_UPLOAD, value=count + 1)
-                        raise INVALID_CHUNK_ETAG(count + 1)
-                    bar.update(self.chunk_size)
-                else:
-                    res = pool.apply_async(
-                        self.upload_chunk,
-                        args=(file_object, count + 1, chunk),
-                    )
-                    async_result.append((res, len(chunk)))
-                count += 1  # uploaded successfully
+        # updating the progress bar
+        bar.set_description(f'Uploading {file_name}, resumable_id: {rid}, job_id: {jid}, item_id: {iid}')
 
-                # if the async queue reaches window size we wait
-                # all job finished and queue again
-                if len(async_result) == thread_window_size:
-                    for async_res, chunk_size in async_result:
-                        # update progress bar
-                        result = async_res.get()
-                        if result:
-                            bar.update(chunk_size)
-                    # then clear up the queue
-                    async_result = []
+        # process on the file content
+        f = open(file_object.local_path, 'rb')
+        while True:
+            chunk = f.read(self.chunk_size)
+            chunk_etag = file_object.uploaded_chunks.get(str(count + 1))
+            if not chunk:
+                break
+            # if current chunk has been uploaded to object storage
+            # only check the md5 if the file is same. If ture,
+            # skip current chunk, if not, raise the error.
+            elif chunk_etag:
+                local_chunk_etag = hashlib.md5(chunk).hexdigest()
+                if chunk_etag != local_chunk_etag:
+                    SrvErrorHandler.customized_handle(ECustomizedError.INVALID_CHUNK_UPLOAD, value=count + 1)
+                    raise INVALID_CHUNK_ETAG(count + 1)
+                bar.update(self.chunk_size)
+            else:
+                pool.apply_async(
+                    self.upload_chunk,
+                    args=(file_object, count + 1, chunk, bar),
+                )
 
-            # finish up rest of async job in the queue
-            for async_res, chunk_size in async_result:
-                # update progress bar
-                result = async_res.get()
-                if result:
-                    bar.update(chunk_size)
+            count += 1  # uploaded successfully
 
-            f.close()
+        f.close()
 
-    def upload_chunk(self, file_object: FileObject, chunk_number: int, chunk: str) -> None:
+    def upload_chunk(self, file_object: FileObject, chunk_number: int, chunk: str, bar: tqdm) -> None:
         """
         Summary:
             The function is to upload a chunk directly into minio storage.
@@ -335,6 +314,10 @@ class UploadClient:
                 if res.status_code != 200:
                     error_msg = 'Fail to upload the chunck %s: %s' % (chunk_number, str(res.text))
                     raise Exception(error_msg)
+
+                # update the progress bar
+                bar.update(len(chunk))
+                bar.refresh()
 
                 return res
             else:
