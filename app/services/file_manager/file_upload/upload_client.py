@@ -237,7 +237,7 @@ class UploadClient:
         )
 
         # updating the progress bar
-        bar.set_description('Uploading {} , resumable_id: {}, job_id: {}, item_id: {}'.format(file_name, rid, jid, iid))
+        bar.set_description(f'Uploading {file_name}, resumable_id: {rid}, job_id: {jid}, item_id: {iid}')
 
         # process on the file content
         f = open(file_object.local_path, 'rb')
@@ -256,7 +256,7 @@ class UploadClient:
                     raise INVALID_CHUNK_ETAG(count + 1)
                 bar.update(self.chunk_size)
             else:
-                _ = pool.apply_async(
+                pool.apply_async(
                     self.upload_chunk,
                     args=(file_object, count + 1, chunk, bar),
                 )
