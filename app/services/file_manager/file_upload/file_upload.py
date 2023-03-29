@@ -155,6 +155,7 @@ def simple_upload(  # noqa: C901
         current_folder_node=target_folder,
         parent_folder_id=parent_folder_id,
         regular_file=regular_file,
+        tags=tags,
     )
 
     # here add the batch of 500 per loop, the pre upload api cannot
