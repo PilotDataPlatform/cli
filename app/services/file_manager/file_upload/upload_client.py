@@ -24,6 +24,7 @@ from app.services.file_manager.file_upload.models import UploadType
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
+from app.services.user_authentication.token_manager import SrvTokenManager
 from app.utils.aggregated import resilient_session
 from app.utils.aggregated import search_item
 
@@ -81,6 +82,10 @@ class UploadClient:
         self.parent_folder_id = parent_folder_id
         self.regular_file = regular_file
         self.tags = tags
+
+        # the flag to indicate if all upload process finished
+        # then the token refresh loop will end
+        self.finish_upload = False
 
     def generate_meta(self, local_path: str) -> Tuple[int, int]:
         """
@@ -325,7 +330,6 @@ class UploadClient:
             # the time will be longer for more retry
             time.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
 
-    @require_valid_token()
     def on_succeed(self, file_object: FileObject, tags: List[str]):
         """
         Summary:
@@ -399,7 +403,6 @@ class UploadClient:
             }
             create_lineage(lineage_event)
 
-    @require_valid_token()
     def check_status(self, file_object: FileObject) -> bool:
         """
         Summary:
@@ -437,3 +440,12 @@ class UploadClient:
                     SrvErrorHandler.default_handle(response.content)
         else:
             return False
+
+    def set_finish_upload(self):
+        self.finish_upload = True
+
+    def upload_token_refresh(self, azp: str = AppConfig.Env.keycloak_device_client_id):
+        token_manager = SrvTokenManager()
+        while self.finish_upload is not True:
+            token_manager.refresh(azp)
+            time.sleep(AppConfig.Env.token_refresh_interval)

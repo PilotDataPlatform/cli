@@ -77,7 +77,7 @@ class SrvTokenManager(metaclass=MetaService):
             payload.update({'client_id': AppConfig.Env.harbor_client_secret})
 
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        response = requests.post(url, data=payload, headers=headers, verify=False)
+        response = requests.post(url, data=payload, headers=headers)
         if response.status_code == 200:
             self.update_token(response.json()['access_token'], response.json()['refresh_token'])
         else:
