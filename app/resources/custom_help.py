@@ -6,11 +6,9 @@
 class HelpPage:
     page = {
         'update': {
-            'version': '1.8.0',
-            '1': 'Harbor container authentication',
-            '2': 'Harbor create project and list project',
-            '3': 'Harbor list repositories',
-            '4': 'Harbor invite member to a project',
+            'version': '2.2.0',
+            '1': 'CLI supports to perform multi-threading upload for file/folders',
+            '2': 'CLI supports to perform resumable upload for single file',
         },
         'dataset': {
             'DATASET_DOWNLOAD': 'Download a dataset or a particular version of a dataset.',

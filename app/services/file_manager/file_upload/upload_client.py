@@ -56,6 +56,7 @@ class UploadClient:
         process_pipeline: str = None,
         current_folder_node: str = '',
         regular_file: str = True,
+        tags: list = None,
     ):
         self.user = UserConfig()
         self.operator = self.user.username
@@ -80,6 +81,7 @@ class UploadClient:
         self.current_folder_node = current_folder_node
         self.parent_folder_id = parent_folder_id
         self.regular_file = regular_file
+        self.tags = tags
 
         # the flag to indicate if all upload process finished
         # then the token refresh loop will end
@@ -186,6 +188,7 @@ class UploadClient:
         )
 
         payload.update({'parent_folder_id': self.parent_folder_id})
+        payload.update({'folder_tags': self.tags})
         response = resilient_session().post(url, json=payload, headers=headers, timeout=None)
         if response.status_code == 200:
             result = response.json().get('result')
