@@ -20,5 +20,8 @@ def test_chunk_upload(httpx_mock, mocker):
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
 
     test_obj = FileObject('test', 'test', 'test', 'test', 'test', [])
-    test_bar = tqdm(total=1, unit='B', unit_scale=True, desc='test', leave=True)
-    upload_client.upload_chunk(test_obj, 0, b'', test_bar)
+    test_bar = tqdm(total=1, unit='B', unit_scale=True, desc='test')
+    res = upload_client.upload_chunk(test_obj, 0, b'1', test_bar)
+
+    assert test_bar.n == 1
+    assert res.status_code == 200
