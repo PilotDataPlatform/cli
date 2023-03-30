@@ -12,9 +12,6 @@ from typing import Tuple
 
 import httpx
 
-# import requests
-from tqdm import tqdm
-
 import app.models.upload_form as uf
 import app.services.output_manager.message_handler as mhandler
 from app.configs.app_config import AppConfig
@@ -233,19 +230,19 @@ class UploadClient:
         # the program will be killed if async jobs are too many
         # in the queue
         # thread_window_size = 30
-        file_name = file_object.file_name
-        rid = file_object.resumable_id
-        jid = file_object.job_id
-        iid = file_object.item_id
+        # file_name = file_object.file_name
+        # rid = file_object.resumable_id
+        # jid = file_object.job_id
+        # iid = file_object.item_id
 
-        bar = tqdm(
-            total=file_object.total_size,
-            leave=True,
-            bar_format='{desc} |{bar:30} {percentage:3.0f}% {remaining}',
-        )
+        # bar = tqdm(
+        #     total=file_object.total_size,
+        #     leave=True,
+        #     bar_format='{desc} |{bar:30} {percentage:3.0f}% {remaining}',
+        # )
 
         # updating the progress bar
-        bar.set_description(f'Uploading {file_name}, resumable_id: {rid}, job_id: {jid}, item_id: {iid}')
+        # bar.set_description(f'Uploading {file_name}, resumable_id: {rid}, job_id: {jid}, item_id: {iid}')
 
         # process on the file content
         f = open(file_object.local_path, 'rb')
@@ -262,18 +259,18 @@ class UploadClient:
                 if chunk_etag != local_chunk_etag:
                     SrvErrorHandler.customized_handle(ECustomizedError.INVALID_CHUNK_UPLOAD, value=count + 1)
                     raise INVALID_CHUNK_ETAG(count + 1)
-                bar.update(self.chunk_size)
+                file_object.update_progress(self.chunk_size)
             else:
                 pool.apply_async(
                     self.upload_chunk,
-                    args=(file_object, count + 1, chunk, bar),
+                    args=(file_object, count + 1, chunk),
                 )
 
             count += 1  # uploaded successfully
 
         f.close()
 
-    def upload_chunk(self, file_object: FileObject, chunk_number: int, chunk: str, bar: tqdm) -> None:
+    def upload_chunk(self, file_object: FileObject, chunk_number: int, chunk: str) -> None:
         """
         Summary:
             The function is to upload a chunk directly into minio storage.
@@ -290,6 +287,10 @@ class UploadClient:
         for i in range(AppConfig.Env.resilient_retry):
             if i > 0:
                 SrvErrorHandler.default_handle('retry number %s' % i)
+
+            # initialize and display the progress bar when chunk 1 is uploading
+            if chunk_number == 1:
+                file_object.update_progress(0)
 
             # request upload service to generate presigned url for the chunk
             params = {
@@ -316,8 +317,7 @@ class UploadClient:
                     raise Exception(error_msg)
 
                 # update the progress bar
-                bar.update(len(chunk))
-                bar.refresh()
+                file_object.update_progress(len(chunk))
 
                 return res
             else:
@@ -446,6 +446,12 @@ class UploadClient:
 
     def upload_token_refresh(self, azp: str = AppConfig.Env.keycloak_device_client_id):
         token_manager = SrvTokenManager()
+        DEFAULT_INTERVAL = 1  # seconds to check if the upload is finished
+        total_count = 0  # when total_count equals token_refresh_interval, refresh token
         while self.finish_upload is not True:
-            token_manager.refresh(azp)
-            time.sleep(AppConfig.Env.token_refresh_interval)
+            if total_count == AppConfig.Env.token_refresh_interval:
+                token_manager.refresh(azp)
+                total_count = 0
+
+            # if not then sleep for DEFAULT_INTERVAL seconds
+            time.sleep(DEFAULT_INTERVAL)
