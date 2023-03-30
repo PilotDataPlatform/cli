@@ -195,7 +195,6 @@ def simple_upload(  # noqa: C901
             upload_client.on_succeed,
             args=(file_object, tags),
         )
-
     upload_client.set_finish_upload()
 
     pool.close()
