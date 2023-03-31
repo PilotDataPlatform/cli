@@ -12,7 +12,7 @@ class AppConfig(object):
         user_config_path = ConfigClass.config_path
         msg_path = ConfigClass.custom_path
         user_config_file = f'{user_config_path}/config.ini'
-        token_warn_need_refresh = 30  # seconds
+        token_warn_need_refresh = 250  # seconds
 
         # NOTE: there is a limitation on minio that
         # the multipart number is 10000. so we set
