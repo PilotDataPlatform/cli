@@ -188,12 +188,12 @@ def simple_upload(  # noqa: C901
     pool = ThreadPool(num_of_thread + 1)
     pool.apply_async(upload_client.upload_token_refresh)
     for file_object in pre_upload_infos:
-        upload_client.stream_upload(file_object, pool)
+        chunck_res = upload_client.stream_upload(file_object, pool)
         # NOTE: if there is some racing error make the combine chunks
         # out of thread pool.
         pool.apply_async(
             upload_client.on_succeed,
-            args=(file_object, tags),
+            args=(file_object, tags, chunck_res),
         )
     upload_client.set_finish_upload()
 
