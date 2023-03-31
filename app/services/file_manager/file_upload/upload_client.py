@@ -185,7 +185,10 @@ class UploadClient:
 
         payload.update({'parent_folder_id': self.parent_folder_id})
         payload.update({'folder_tags': self.tags})
+        # print(payload)
+        raise Exception()
         response = resilient_session().post(url, json=payload, headers=headers, timeout=None)
+        # print(response.json().get('result'))
         if response.status_code == 200:
             result = response.json().get('result')
             res = []
