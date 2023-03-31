@@ -357,12 +357,11 @@ def file_download(**kwargs):
     interactive = False if len(paths) > 1 else True
     # void_validate_zone('download', zone)
 
-    user = UserConfig()
     if len(paths) == 0:
         SrvErrorHandler.customized_handle(ECustomizedError.MISSING_PROJECT_CODE, interactive)
     # Query file information and collecting errors
     if geid:
-        item_res = get_file_info_by_geid(paths, user.access_token)
+        item_res = get_file_info_by_geid(paths)
     else:
         item_res = []
         for path in paths:
