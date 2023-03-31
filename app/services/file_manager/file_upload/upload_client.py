@@ -28,6 +28,9 @@ from app.utils.aggregated import search_item
 from .exception import INVALID_CHUNK_ETAG
 from ..file_lineage import create_lineage
 
+# import requests
+# from tqdm import tqdm
+
 
 class UploadClient:
     """
@@ -239,9 +242,10 @@ class UploadClient:
         #     total=file_object.total_size,
         #     leave=True,
         #     bar_format='{desc} |{bar:30} {percentage:3.0f}% {remaining}',
+
         # )
 
-        # updating the progress bar
+        # # updating the progress bar
         # bar.set_description(f'Uploading {file_name}, resumable_id: {rid}, job_id: {jid}, item_id: {iid}')
 
         # process on the file content
@@ -265,9 +269,11 @@ class UploadClient:
                     self.upload_chunk,
                     args=(file_object, count + 1, chunk),
                 )
+                # self.upload_chunk(file_object, count + 1, chunk)
 
             count += 1  # uploaded successfully
 
+        # bar.close()
         f.close()
 
     def upload_chunk(self, file_object: FileObject, chunk_number: int, chunk: str) -> None:
@@ -288,9 +294,7 @@ class UploadClient:
             if i > 0:
                 SrvErrorHandler.default_handle('retry number %s' % i)
 
-            # initialize and display the progress bar when chunk 1 is uploading
-            if chunk_number == 1:
-                file_object.update_progress(0)
+            file_object.update_progress(0)
 
             # request upload service to generate presigned url for the chunk
             params = {
@@ -318,6 +322,8 @@ class UploadClient:
 
                 # update the progress bar
                 file_object.update_progress(len(chunk))
+                if chunk_number == file_object.total_chunks:
+                    file_object.close_progress()
 
                 return res
             else:
@@ -446,7 +452,7 @@ class UploadClient:
 
     def upload_token_refresh(self, azp: str = AppConfig.Env.keycloak_device_client_id):
         token_manager = SrvTokenManager()
-        DEFAULT_INTERVAL = 1  # seconds to check if the upload is finished
+        DEFAULT_INTERVAL = 5  # seconds to check if the upload is finished
         total_count = 0  # when total_count equals token_refresh_interval, refresh token
         while self.finish_upload is not True:
             if total_count == AppConfig.Env.token_refresh_interval:

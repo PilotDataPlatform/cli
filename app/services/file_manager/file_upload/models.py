@@ -96,3 +96,13 @@ class FileObject:
 
         self.progress_bar.update(chunk_size)
         self.progress_bar.refresh()
+
+    def close_progress(self) -> None:
+        """
+        Summary:
+            The function is to close the progress bar
+        """
+        if self.progress_bar is not None:
+            self.progress_bar.clear()
+            self.progress_bar.close()
+            self.progress_bar = None
