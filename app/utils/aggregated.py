@@ -48,7 +48,7 @@ def search_item(project_code, zone, folder_relative_path, item_type, container_t
     return res.json()
 
 
-# @require_valid_token()
+@require_valid_token()
 def get_file_info_by_geid(geid: list):
     token = UserConfig().access_token
     payload = {'geid': geid}
