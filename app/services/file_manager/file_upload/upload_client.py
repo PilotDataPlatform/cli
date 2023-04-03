@@ -457,3 +457,4 @@ class UploadClient:
 
             # if not then sleep for DEFAULT_INTERVAL seconds
             time.sleep(DEFAULT_INTERVAL)
+            total_count = total_count + DEFAULT_INTERVAL
