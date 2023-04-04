@@ -55,3 +55,62 @@ def test_token_refresh_auto(mocker):
 
     # make sure the token refresh function is called
     token_refresh_mock.assert_called_once()
+
+
+def test_resumable_pre_upload_success(httpx_mock, mocker):
+    upload_client = UploadClient('test', 'project_code', 'parent_folder_id')
+    mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
+    test_obj = FileObject('resumable_id', 'job_id', 'item_id', 'object/path', 'local_path', [])
+
+    url = AppConfig.Connections.url_bff + f'/v1/project/{upload_client.project_code}/files/resumable'
+    httpx_mock.add_response(
+        method='POST', url=url, json={'result': [{'resumable_id': 'resumable_id', 'chunks_info': ['chunks_info']}]}
+    )
+
+    res = upload_client.resume_upload([test_obj])
+
+    assert len(res) == 1
+    assert res[0].resumable_id == 'resumable_id'
+    assert res[0].uploaded_chunks == ['chunks_info']
+
+
+def test_resumable_pre_upload_failed_with_404(httpx_mock, mocker):
+    upload_client = UploadClient('test', 'project_code', 'parent_folder_id')
+    mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
+    test_obj = FileObject('resumable_id', 'job_id', 'item_id', 'object/path', 'local_path', [])
+
+    url = AppConfig.Connections.url_bff + f'/v1/project/{upload_client.project_code}/files/resumable'
+    httpx_mock.add_response(
+        method='POST',
+        url=url,
+        json={'result': [{'resumable_id': 'resumable_id', 'chunks_info': ['chunks_info']}]},
+        status_code=404,
+    )
+
+    try:
+        upload_client.resume_upload([test_obj])
+    except SystemExit:
+        pass
+    else:
+        AssertionError('SystemExit not raised')
+
+
+def test_output_manifest_success(mocker):
+    upload_client = UploadClient('test', 'project_code', 'parent_folder_id')
+    json_dump_mocker = mocker.patch('json.dump', return_value=None)
+    mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
+    test_obj = FileObject('resumable_id', 'job_id', 'item_id', 'object/path', 'local_path', [])
+
+    res = upload_client.output_manifest([test_obj], 'test')
+
+    assert res.get('project_code') == 'project_code'
+    assert res.get('parent_folder_id') == 'parent_folder_id'
+    assert len(res.get('file_objects')) == 1
+
+    file_item = res.get('file_objects').get('item_id')
+    assert file_item.get('resumable_id') == 'resumable_id'
+    assert file_item.get('local_path') == 'local_path'
+    assert file_item.get('object_path') == 'object/path'
+    assert file_item.get('item_id') == 'item_id'
+
+    json_dump_mocker.assert_called_once()
