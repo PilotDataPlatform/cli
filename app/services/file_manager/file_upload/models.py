@@ -21,6 +21,17 @@ class UploadType(Enum):
         return '%s' % self.name
 
 
+class ItemStatus(str, Enum):
+    # the new enum type for file status
+
+    REGISTERED = 'REGISTERED'  # file is created by upload service but not complete yet. either in progress or fail.
+    ACTIVE = 'ACTIVE'  # file uploading is complete.
+    ARCHIVED = 'ARCHIVED'  # the file has been deleted
+
+    def __str__(self):
+        return '%s' % self.name
+
+
 class FileObject:
     """
     Summary:
