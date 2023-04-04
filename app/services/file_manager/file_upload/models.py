@@ -3,12 +3,10 @@
 # Contact Indoc Research for any questions regarding the use of this source code.
 
 import math
-
-# from os.path import basename
-# from os.path import dirname
-# from os.path import getsize
-import os
 from enum import Enum
+from os.path import basename
+from os.path import dirname
+from os.path import getsize
 from typing import List
 from typing import Tuple
 
@@ -57,7 +55,7 @@ class FileObject:
         self.job_id = job_id
         self.item_id = item_id
         self.object_path = object_path
-        self.parent_path, self.file_name = os.path.dirname(object_path), os.path.basename(object_path)
+        self.parent_path, self.file_name = dirname(object_path), basename(object_path)
 
         # local file info
         self.local_path = local_path
@@ -76,7 +74,7 @@ class FileObject:
             - total_size: the size of file
             - total_chunks: the number of chunks will be uploaded.
         """
-        file_length_in_bytes = os.path.getsize(local_path)
+        file_length_in_bytes = getsize(local_path)
         total_size = file_length_in_bytes
         total_chunks = math.ceil(total_size / AppConfig.Env.chunk_size)
         return total_size, total_chunks
