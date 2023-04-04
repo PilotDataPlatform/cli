@@ -8,6 +8,8 @@ import math
 import os
 import time
 from multiprocessing.pool import ThreadPool
+from typing import Any
+from typing import Dict
 from typing import List
 from typing import Tuple
 
@@ -103,7 +105,7 @@ class UploadClient:
         total_chunks = math.ceil(total_size / self.chunk_size)
         return total_size, total_chunks
 
-    @require_valid_token()
+    # @require_valid_token()
     def resume_upload(self, unfinished_file_objects: List[FileObject]) -> List[FileObject]:
         """
         Summary:
@@ -141,16 +143,15 @@ class UploadClient:
 
         # make the response into file objects
         uploaded_infos = response.json().get('result', [])
-        file_objects = []
         for uploaded_info in uploaded_infos:
             file_obj = rid_file_object_map.get(uploaded_info.get('resumable_id'))
             # update the chunk info
             file_obj.uploaded_chunks = uploaded_info.get('chunks_info')
         mhandler.SrvOutPutHandler.resume_check_success()
 
-        return file_objects
+        return unfinished_file_objects
 
-    @require_valid_token()
+    # @require_valid_token()
     def pre_upload(self, local_file_paths: List[str], output_path: str) -> List[FileObject]:
         """
         Summary:
@@ -214,7 +215,7 @@ class UploadClient:
         else:
             SrvErrorHandler.default_handle(str(response.status_code) + ': ' + str(response.content), self.regular_file)
 
-    def output_manifest(self, file_objects: List[FileObject], output_path: str) -> None:
+    def output_manifest(self, file_objects: List[FileObject], output_path: str) -> Dict[str, Any]:
         """
         Summary:
             The function is to output the manifest file.
