@@ -247,7 +247,7 @@ def resume_upload(
     # make them as FileObject
     unfinished_items = [
         FileObject(
-            x.get('resumable_id'), x.get('item_id'), x.get('job_id'), x.get('object_path'), x.get('local_paht'), []
+            x.get('resumable_id'), x.get('item_id'), x.get('job_id'), x.get('object_path'), x.get('local_path'), []
         )
         for x in unfinished_items
     ]
