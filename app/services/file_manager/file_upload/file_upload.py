@@ -17,6 +17,7 @@ import app.services.logger_services.log_functions as logger
 import app.services.output_manager.message_handler as mhandler
 from app.configs.app_config import AppConfig
 from app.services.file_manager.file_upload.models import FileObject
+from app.services.file_manager.file_upload.models import ItemStatus
 from app.services.file_manager.file_upload.models import UploadType
 from app.services.file_manager.file_upload.upload_client import UploadClient
 from app.services.output_manager.error_handler import ECustomizedError
@@ -241,9 +242,11 @@ def resume_upload(
     )
 
     # check files in manifest if some of them are already uploaded
-    item_ids = [x.get('item_id') for x in manifest_json.get('file_objects')]
+    item_ids = []
+    for item_id in manifest_json.get('file_objects'):
+        item_ids.append(item_id)
     items = get_file_info_by_geid(item_ids)
-    unfinished_items = [x for x in items if x.get('status') == 'REGISTERED']  # update to enum later
+    unfinished_items = [x for x in items if x.get('status') == ItemStatus.REGISTERED]  # update to enum later
     # make them as FileObject
     unfinished_items = [
         FileObject(
