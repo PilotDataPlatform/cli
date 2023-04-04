@@ -3,6 +3,7 @@
 # Contact Indoc Research for any questions regarding the use of this source code.
 
 import hashlib
+import json
 import math
 import os
 import time
@@ -103,15 +104,12 @@ class UploadClient:
         return total_size, total_chunks
 
     @require_valid_token()
-    def resume_upload(self, resumable_id: str, job_id: str, item_id: str, local_path: str) -> List[FileObject]:
+    def resume_upload(self, unfinished_file_objects: List[FileObject]) -> List[FileObject]:
         """
         Summary:
             The function is to check the uploaded chunks in object storage.
         Parameter:
-            - resumable_id(str): The unique id to indicate the multipart upload.
-            - job_id(str): The unique id to indicate the job id.
-            - item_id(str): The unique id for the item.
-            - local_path: the local path of interrupted file.
+            - unfinished_file_objects(List[FileObject]): the unfinished items that need to be resumed.
         return:
             - list of FileObject: the infomation retrieved from backend.
                 - resumable_id(str): the unique identifier for multipart upload.
@@ -119,20 +117,21 @@ class UploadClient:
                 - local_path(str): the local path of file.
                 - chunk_info(dict): the mapping for chunks that already been uploaded.
         """
+        mhandler.SrvOutPutHandler.resume_warning(len(unfinished_file_objects))
 
         headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
         url = AppConfig.Connections.url_bff + f'/v1/project/{self.project_code}/files/resumable'
-        file_name = os.path.basename(local_path)
-        object_path = os.path.join(self.current_folder_node, file_name)
+        rid_file_object_map = {x.resumable_id: x for x in unfinished_file_objects}
         payload = {
             'bucket': self.bucket,
             'zone': self.zone,
             'object_infos': [
                 {
-                    'object_path': object_path,
-                    'item_id': item_id,
-                    'resumable_id': resumable_id,
+                    'object_path': x.object_path,
+                    'item_id': x.item_id,
+                    'resumable_id': x.resumable_id,
                 }
+                for x in unfinished_file_objects
             ],
         }
 
@@ -144,27 +143,21 @@ class UploadClient:
         uploaded_infos = response.json().get('result', [])
         file_objects = []
         for uploaded_info in uploaded_infos:
-            file_objects.append(
-                FileObject(
-                    uploaded_info.get('resumable_id'),
-                    job_id,
-                    item_id,
-                    uploaded_info.get('object_path'),
-                    local_path,  # TODO change it after folder manifest is setup
-                    uploaded_info.get('chunks_info'),
-                )
-            )
+            file_obj = rid_file_object_map.get(uploaded_info.get('resumable_id'))
+            # update the chunk info
+            file_obj.uploaded_chunks = uploaded_info.get('chunks_info')
         mhandler.SrvOutPutHandler.resume_check_success()
 
         return file_objects
 
     @require_valid_token()
-    def pre_upload(self, local_file_paths: List[str]) -> List[FileObject]:
+    def pre_upload(self, local_file_paths: List[str], output_path: str) -> List[FileObject]:
         """
         Summary:
             The function is to initiate all the multipart upload.
         Parameter:
             - local_file_paths(list of str): the local path of files to be uploaded.
+            - output_path(str): the output path of manifest.
         return:
             - list of FileObject: the infomation retrieved from backend.
                 - resumable_id(str): the unique identifier for multipart upload.
@@ -192,16 +185,21 @@ class UploadClient:
         response = resilient_session().post(url, json=payload, headers=headers, timeout=None)
         if response.status_code == 200:
             result = response.json().get('result')
-            res = []
+            file_objets = []
             for job in result:
                 object_path = job.get('target_names')[0]
                 resumable_id = job.get('payload').get('resumable_identifier')
                 item_id = job.get('payload').get('item_id')
                 job_id = job.get('job_id')
-                res.append(FileObject(resumable_id, job_id, item_id, object_path, file_mapping.get(object_path), {}))
+                file_objets.append(
+                    FileObject(resumable_id, job_id, item_id, object_path, file_mapping.get(object_path), {})
+                )
+
+            # then output manifest file to the output path
+            self.output_manifest(file_objets, output_path)
 
             mhandler.SrvOutPutHandler.preupload_success()
-            return res
+            return file_objets
         elif response.status_code == 403:
             SrvErrorHandler.customized_handle(ECustomizedError.PERMISSION_DENIED, self.regular_file)
         elif response.status_code == 401:
@@ -215,6 +213,32 @@ class UploadClient:
             SrvErrorHandler.customized_handle(ECustomizedError.FILE_LOCKED, True)
         else:
             SrvErrorHandler.default_handle(str(response.status_code) + ': ' + str(response.content), self.regular_file)
+
+    def output_manifest(self, file_objects: List[FileObject], output_path: str) -> None:
+        """
+        Summary:
+            The function is to output the manifest file.
+        Parameter:
+            - file_objects(list of FileObject): the file objects that contains correct
+                information for chunk uploading.
+        return:
+            - manifest_json(dict): the manifest file in json format.
+        """
+
+        manifest_json = {
+            'project_code': self.project_code,
+            'operator': self.operator,
+            'zone': self.zone,
+            'parent_folder_id': self.parent_folder_id,
+            'current_folder_node': self.current_folder_node,
+            'tags': self.tags,
+            'file_objects': {file_object.item_id: file_object.to_dict() for file_object in file_objects},
+        }
+
+        with open(output_path, 'w') as f:
+            json.dump(manifest_json, f)
+
+        return manifest_json
 
     def stream_upload(self, file_object: FileObject, pool: ThreadPool) -> None:
         """

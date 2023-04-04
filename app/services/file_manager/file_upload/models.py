@@ -73,3 +73,21 @@ class FileObject:
         total_size = file_length_in_bytes
         total_chunks = math.ceil(total_size / AppConfig.Env.chunk_size)
         return total_size, total_chunks
+
+    def to_dict(self):
+        """
+        Summary:
+            The function is to convert the object to json format.
+        return:
+            - json format of the object.
+        """
+        return {
+            'resumable_id': self.resumable_id,
+            'job_id': self.job_id,
+            'item_id': self.item_id,
+            'object_path': self.object_path,
+            'local_path': self.local_path,
+            'total_size': self.total_size,
+            'total_chunks': self.total_chunks,
+            'uploaded_chunks': self.uploaded_chunks,
+        }

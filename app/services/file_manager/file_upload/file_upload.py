@@ -7,6 +7,7 @@ import os
 import time
 import zipfile
 from multiprocessing.pool import ThreadPool
+from typing import Any
 from typing import Dict
 from typing import Tuple
 
@@ -15,12 +16,14 @@ import click
 import app.services.logger_services.log_functions as logger
 import app.services.output_manager.message_handler as mhandler
 from app.configs.app_config import AppConfig
+from app.services.file_manager.file_upload.models import FileObject
 from app.services.file_manager.file_upload.models import UploadType
 from app.services.file_manager.file_upload.upload_client import UploadClient
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.output_manager.error_handler import customized_error_msg
 from app.utils.aggregated import get_file_in_folder
+from app.utils.aggregated import get_file_info_by_geid
 from app.utils.aggregated import search_item
 
 
@@ -36,7 +39,7 @@ def compress_folder_to_zip(path):
 
 
 def assemble_path(
-    f: str, target_folder: str, project_code: str, zone: str, resumable_id: str, zipping: bool = False
+    f: str, target_folder: str, project_code: str, zone: str, zipping: bool = False
 ) -> Tuple[str, Dict, bool, str]:
     '''
     Summary:
@@ -54,7 +57,6 @@ def assemble_path(
          - target_folder(str): the folder on the platform
          - project_code(str): the unique identifier of project
          - zone(str): the zone label eg.greenroom/core
-         - resumable_id(str): the unique identifier of a upload process
          - zipping(bool): default False. The flag to indicate if upload as a zip
     Return:
          - current_file_path: the format file path on platform
@@ -73,7 +75,7 @@ def assemble_path(
     parent_folder = parent_folder.get('result')
     create_folder_flag = False
 
-    if len(current_file_path.split('/')) > 2 and not resumable_id:
+    if len(current_file_path.split('/')) > 2:
         sub_path = target_folder.split('/')
         for index in range(len(sub_path) - 1):
             folder_path = '/'.join(sub_path[0 : 2 + index])
@@ -87,8 +89,6 @@ def assemble_path(
                 break
             else:
                 parent_folder = res.get('result')
-    elif resumable_id:
-        mhandler.SrvOutPutHandler.resume_warning(resumable_id)
 
     # error check if the user dont have permission to see the folder
     # because the name folder will always be there if user has correct permission
@@ -106,6 +106,7 @@ def simple_upload(  # noqa: C901
     resumable_id: str = None,
     job_id: str = None,
     item_id: str = None,
+    output_path: str = None,
 ):
     upload_start_time = time.time()
     my_file = upload_event.get('file')
@@ -177,7 +178,7 @@ def simple_upload(  # noqa: C901
 
             # sending the pre upload request to generate
             # the placeholder in object storage
-            pre_upload_infos.extend(upload_client.pre_upload(file_batchs))
+            pre_upload_infos.extend(upload_client.pre_upload(file_batchs, output_path))
 
     # now loop over each file under the folder and start
     # the chunk upload
@@ -213,4 +214,66 @@ def simple_upload(  # noqa: C901
             os.remove(file_batchs[0]) if os.path.isdir(my_file) and job_type == UploadType.AS_FILE else None
 
     num_of_file = len(upload_file_path)
+    logger.info(f'Upload Time: {time.time() - upload_start_time:.2f}s for {num_of_file:d} files')
+
+
+def resume_upload(
+    manifest_json: Dict[str, Any],
+    num_of_thread: int = 1,
+):
+    """
+    Summary:
+        Resume upload from the manifest file
+    Parameters:
+        - manifest_json: the manifest json which store the upload information
+        - num_of_thread: the number of thread to upload the file
+    """
+    upload_start_time = time.time()
+
+    upload_client = UploadClient(
+        input_path=manifest_json.get('file'),
+        project_code=manifest_json.get('project_code'),
+        zone=manifest_json.get('zone'),
+        job_type='AS_FOLDER',
+        current_folder_node=manifest_json.get('current_folder_node', ''),
+        parent_folder_id=manifest_json.get('parent_folder_id', ''),
+        tags=manifest_json.get('tags'),
+    )
+
+    # check files in manifest if some of them are already uploaded
+    item_ids = [x.get('item_id') for x in manifest_json.get('file_objects')]
+    items = get_file_info_by_geid(item_ids)
+    unfinished_items = [x for x in items if x.get('status') == 'REGISTERED']  # update to enum later
+    # make them as FileObject
+    unfinished_items = [
+        FileObject(
+            x.get('resumable_id'), x.get('item_id'), x.get('job_id'), x.get('object_path'), x.get('local_paht'), []
+        )
+        for x in unfinished_items
+    ]
+
+    # then for the rest of the files, check if any chunks are already uploaded
+    unfinished_items = upload_client.resume_upload(unfinished_items)
+
+    # lastly, start resumable upload for the rest of the chunks
+    # thread number +1 reserve one thread to refresh token
+    # and remove the token decorator in functions
+
+    pool = ThreadPool(num_of_thread + 1)
+    pool.apply_async(upload_client.upload_token_refresh)
+    for file_object in unfinished_items:
+        upload_client.stream_upload(file_object, pool)
+        # NOTE: if there is some racing error make the combine chunks
+        # out of thread pool.
+        pool.apply_async(
+            upload_client.on_succeed,
+            args=(file_object, manifest_json.get('tags')),
+        )
+
+    upload_client.set_finish_upload()
+
+    pool.close()
+    pool.join()
+
+    num_of_file = len(unfinished_items)
     logger.info(f'Upload Time: {time.time() - upload_start_time:.2f}s for {num_of_file:d} files')
