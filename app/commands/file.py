@@ -108,7 +108,7 @@ def cli():
 @click.option(
     '--output-path',
     '-o',
-    default='./',
+    default='./manifest.json',
     required=False,
     help='The output path for the manifest file of resumable upload',
     show_default=True,
