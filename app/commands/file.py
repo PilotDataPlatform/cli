@@ -183,6 +183,7 @@ def file_put(**kwargs):  # noqa: C901
     # the loop will read all input path(folder or files)
     # and process them one by one
     for f in paths:
+        # so this function will always return the furthest folder node as current_folder_node+parent_folder_id
         current_folder_node, parent_folder, create_folder_flag, result_file = assemble_path(
             f,
             target_folder,
@@ -191,14 +192,14 @@ def file_put(**kwargs):  # noqa: C901
             zipping,
         )
 
-        current_folder_node = 'testproject/admin'
+        current_folder_node = 'testproject/admin/test11'
         parent_folder = {'id': 'testproject'}
-        create_folder_flag = False
+        create_folder_flag = True
         result_file = None
 
         upload_event = {
             'project_code': project_code,
-            'file': f,
+            'file': f.rstrip('/'),  # remove the ending slash
             'tags': tag if tag else [],
             'zone': zone,
             'upload_message': upload_message,

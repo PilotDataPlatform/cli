@@ -107,7 +107,7 @@ def simple_upload(  # noqa: C901
     output_path: str = None,
 ):
     upload_start_time = time.time()
-    my_file = upload_event.get('file')
+    input_path = upload_event.get('file')
     project_code = upload_event.get('project_code')
     tags = upload_event.get('tags')
     zone = upload_event.get('zone')
@@ -121,39 +121,37 @@ def simple_upload(  # noqa: C901
     source_file = upload_event.get('valid_source')
     attribute = upload_event.get('attribute')
 
-    mhandler.SrvOutPutHandler.start_uploading(my_file)
+    mhandler.SrvOutPutHandler.start_uploading(input_path)
     # TODO: PILOT-2392 simplify the logic under
     # if the input request zip folder then process the path as single file
     # otherwise read throught the folder to get path underneath
-    if os.path.isdir(my_file):
+    if os.path.isdir(input_path):
         job_type = UploadType.AS_FILE if compress_zip else UploadType.AS_FOLDER
         if job_type == UploadType.AS_FILE:
-            upload_file_path = [my_file.rstrip('/').lstrip() + '.zip']
+            upload_file_path = [input_path.rstrip('/').lstrip() + '.zip']
             target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
-            compress_folder_to_zip(my_file)
-        elif job_type == UploadType.AS_FOLDER:
-            SrvErrorHandler.customized_handle(ECustomizedError.UNSUPPORTED_PROJECT, True, project_code)
+            compress_folder_to_zip(input_path)
         else:
             logger.warning('Current version does not support folder tagging, ' 'any selected tags will be ignored')
-            upload_file_path = get_file_in_folder(my_file)
+            upload_file_path = get_file_in_folder(input_path)
     else:
-        upload_file_path = [my_file]
-        target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
+        upload_file_path = [input_path]
 
         if create_folder_flag:
             job_type = UploadType.AS_FOLDER
-            my_file = os.path.dirname(my_file)  # update the path as folder
+            input_path = os.path.dirname(input_path)  # update the path as folder
+            target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
         else:
             job_type = UploadType.AS_FILE
 
     # print('upload_file_path:', upload_file_path)
     # print('target_folder:', target_folder)
-    # print('my_file:', my_file)
+    # print('input_path:', input_path)
     # print('job_type:', job_type)
     # print('zone:', zone)
 
     upload_client = UploadClient(
-        input_path=my_file,
+        input_path=input_path,
         project_code=project_code,
         zone=zone,
         job_type=job_type,
@@ -163,19 +161,23 @@ def simple_upload(  # noqa: C901
         tags=tags,
     )
 
-    # print()
+    # format the local path into object storage path for preupload
+    file_objects = []
+    for file in upload_file_path:
+        # first remove the input path from the file path
+        file_path_sub = file.replace(input_path + '/', '')
+        object_path = os.path.join(target_folder, file_path_sub)
+        file_objects.append(FileObject(object_path, file, None))
 
     # here add the batch of 500 per loop, the pre upload api cannot
     # process very large amount of file at same time. otherwise it will timeout
-    num_of_batchs = math.ceil(len(upload_file_path) / AppConfig.Env.upload_batch_size)
+    num_of_batchs = math.ceil(len(file_objects) / AppConfig.Env.upload_batch_size)
     # here is list of pre upload result. We decided to call pre upload api by batch
-    # the result will store as (UploaderObject, preupload_id_mapping)
     pre_upload_infos = []
-
     for batch in range(0, num_of_batchs):
         start_index = batch * AppConfig.Env.upload_batch_size
         end_index = (batch + 1) * AppConfig.Env.upload_batch_size
-        file_batchs = upload_file_path[start_index:end_index]
+        file_batchs = file_objects[start_index:end_index]
 
         # sending the pre upload request to generate
         # the placeholder in object storage
@@ -212,7 +214,7 @@ def simple_upload(  # noqa: C901
             time.sleep(0.5)
         if source_file:
             upload_client.create_file_lineage(source_file)
-            os.remove(file_batchs[0]) if os.path.isdir(my_file) and job_type == UploadType.AS_FILE else None
+            os.remove(file_batchs[0]) if os.path.isdir(input_path) and job_type == UploadType.AS_FILE else None
 
     num_of_file = len(upload_file_path)
     logger.info(f'Upload Time: {time.time() - upload_start_time:.2f}s for {num_of_file:d} files')
