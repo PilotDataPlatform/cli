@@ -129,6 +129,8 @@ def generate_pre_upload_form(
         - request_payload(dict): the payload for preupload api.
         - local_file_mapping(dict): the mapping from object path into local path.
     """
+    # print(project_code, operator, local_file_paths, input_path, zone, job_type, current_folder)
+
     data, local_file_mapping = [], {}
     for file_local_path in local_file_paths:
         # the rule here is:
