@@ -151,7 +151,7 @@ class UploadClient:
 
         return unfinished_file_objects
 
-    # @require_valid_token()
+    @require_valid_token()
     def pre_upload(self, local_file_paths: List[str], output_path: str) -> List[FileObject]:
         """
         Summary:

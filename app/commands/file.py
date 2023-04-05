@@ -167,6 +167,8 @@ def file_put(**kwargs):  # noqa: C901
         if not upload_message:
             upload_message = AppConfig.Env.default_upload_message
 
+    raise Exception('test')
+
     # Unique Paths
     paths = set(paths)
     # the loop will read all input path(folder or files)
