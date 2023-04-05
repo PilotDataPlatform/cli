@@ -10,6 +10,8 @@ from os.path import getsize
 from typing import List
 from typing import Tuple
 
+from tqdm import tqdm
+
 from app.configs.app_config import AppConfig
 
 
@@ -52,6 +54,9 @@ class FileObject:
 
     # resumable info
     uploaded_chunks: List[dict]
+
+    # progress bar object
+    progress_bar = None
 
     def __init__(
         self, resumable_id: str, job_id: str, item_id: str, object_path: str, local_path: str, uploaded_chunks: List
@@ -102,3 +107,31 @@ class FileObject:
             'total_chunks': self.total_chunks,
             'uploaded_chunks': self.uploaded_chunks,
         }
+
+    def update_progress(self, chunk_size: int) -> None:
+        """
+        Summary:
+            The function is to update the progress bar
+        Parameter:
+            - chunk_size(int): the size of a chunk
+        """
+        if self.progress_bar is None:
+            self.progress_bar = tqdm(
+                total=self.total_size,
+                leave=True,
+                bar_format='{desc} |{bar:30} {percentage:3.0f}% {remaining}',
+            )
+            self.progress_bar.set_description(f'Uploading {self.file_name}')
+
+        self.progress_bar.update(chunk_size)
+        self.progress_bar.refresh()
+
+    def close_progress(self) -> None:
+        """
+        Summary:
+            The function is to close the progress bar
+        """
+        if self.progress_bar is not None:
+            self.progress_bar.clear()
+            self.progress_bar.close()
+            self.progress_bar = None
