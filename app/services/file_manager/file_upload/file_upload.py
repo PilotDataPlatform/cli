@@ -146,6 +146,12 @@ def simple_upload(  # noqa: C901
         else:
             job_type = UploadType.AS_FILE
 
+    # print('upload_file_path:', upload_file_path)
+    # print('target_folder:', target_folder)
+    # print('my_file:', my_file)
+    # print('job_type:', job_type)
+    # print('zone:', zone)
+
     upload_client = UploadClient(
         input_path=my_file,
         project_code=project_code,
@@ -156,6 +162,8 @@ def simple_upload(  # noqa: C901
         regular_file=regular_file,
         tags=tags,
     )
+
+    # print()
 
     # here add the batch of 500 per loop, the pre upload api cannot
     # process very large amount of file at same time. otherwise it will timeout

@@ -4,14 +4,12 @@
 
 import hashlib
 import json
-import math
 import os
 import time
 from multiprocessing.pool import ThreadPool
 from typing import Any
 from typing import Dict
 from typing import List
-from typing import Tuple
 
 import httpx
 
@@ -90,21 +88,6 @@ class UploadClient:
         # then the token refresh loop will end
         self.finish_upload = False
 
-    def generate_meta(self, local_path: str) -> Tuple[int, int]:
-        """
-        Summary:
-            The function is to generate chunk upload meatedata for a file.
-        Parameter:
-            - input_path: The path of the local file eg. a/b/c.txt.
-        return:
-            - total_size: the size of file.
-            - total_chunks: the number of chunks will be uploaded.
-        """
-        file_length_in_bytes = os.path.getsize(local_path)
-        total_size = file_length_in_bytes
-        total_chunks = math.ceil(total_size / self.chunk_size)
-        return total_size, total_chunks
-
     # @require_valid_token()
     def resume_upload(self, unfinished_file_objects: List[FileObject]) -> List[FileObject]:
         """
@@ -151,7 +134,7 @@ class UploadClient:
 
         return unfinished_file_objects
 
-    @require_valid_token()
+    # @require_valid_token()
     def pre_upload(self, local_file_paths: List[str], output_path: str) -> List[FileObject]:
         """
         Summary:
@@ -166,7 +149,7 @@ class UploadClient:
                 - local_path(str): the local path of file.
                 - chunk_info(dict): the mapping for chunks that already been uploaded.
         """
-
+        # print('pre upload')
         headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
         url = AppConfig.Connections.url_bff + '/v1/project/{}/files'.format(self.project_code)
         # the file mapping is a dictionary that present the map from object storage path
@@ -183,6 +166,8 @@ class UploadClient:
 
         payload.update({'parent_folder_id': self.parent_folder_id})
         payload.update({'folder_tags': self.tags})
+        # print('pre upload payload: ', payload)
+        # raise Exception('pre upload')
         response = resilient_session().post(url, json=payload, headers=headers, timeout=None)
         if response.status_code == 200:
             result = response.json().get('result')

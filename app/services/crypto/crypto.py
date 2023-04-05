@@ -76,4 +76,5 @@ def decryption(encrypted_message, secret, interactive=True):
             else:
                 raise ex
     else:
-        ehandler.SrvErrorHandler.customized_handle(ehandler.ECustomizedError.LOGIN_SESSION_INVALID, True)
+        pass
+        # ehandler.SrvErrorHandler.customized_handle(ehandler.ECustomizedError.LOGIN_SESSION_INVALID, True)

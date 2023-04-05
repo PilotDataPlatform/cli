@@ -167,7 +167,16 @@ def file_put(**kwargs):  # noqa: C901
         if not upload_message:
             upload_message = AppConfig.Env.default_upload_message
 
-    raise Exception('test')
+    # for the path formating there will be following cases:
+    # - file:
+    #   1. the project path exist, then will be AS_FILE. nothing will be changed
+    #   2. the project path not exist, then will be AS_FOLDER. the current folder node will
+    #      be the parent folder node + parent folder id. (like one level up).
+    # - folder:
+    #   1. the project path exist, then will be AS_FOLDER. the current folder node will be
+    #      the one that user input.
+    #   2. the project path not exist, then will be AS_FOLDER. the current folder node will
+    #      be the parent folder node + parent folder id. (like one level up).
 
     # Unique Paths
     paths = set(paths)
@@ -181,6 +190,12 @@ def file_put(**kwargs):  # noqa: C901
             zone,
             zipping,
         )
+
+        current_folder_node = 'testproject/admin'
+        parent_folder = {'id': 'testproject'}
+        create_folder_flag = False
+        result_file = None
+
         upload_event = {
             'project_code': project_code,
             'file': f,
@@ -193,6 +208,7 @@ def file_put(**kwargs):  # noqa: C901
             'compress_zip': zipping,
             'attribute': attribute,
         }
+        # print(upload_event)
         if pipeline:
             upload_event['process_pipeline'] = pipeline
         if source_file:
