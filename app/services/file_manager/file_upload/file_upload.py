@@ -104,9 +104,6 @@ def assemble_path(
 def simple_upload(  # noqa: C901
     upload_event,
     num_of_thread: int = 1,
-    resumable_id: str = None,
-    job_id: str = None,
-    item_id: str = None,
     output_path: str = None,
 ):
     upload_start_time = time.time()
@@ -134,7 +131,7 @@ def simple_upload(  # noqa: C901
             upload_file_path = [my_file.rstrip('/').lstrip() + '.zip']
             target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
             compress_folder_to_zip(my_file)
-        elif job_type == UploadType.AS_FOLDER and resumable_id:
+        elif job_type == UploadType.AS_FOLDER:
             SrvErrorHandler.customized_handle(ECustomizedError.UNSUPPORTED_PROJECT, True, project_code)
         else:
             logger.warning('Current version does not support folder tagging, ' 'any selected tags will be ignored')
@@ -167,19 +164,14 @@ def simple_upload(  # noqa: C901
     # the result will store as (UploaderObject, preupload_id_mapping)
     pre_upload_infos = []
 
-    # TODO later will adapt the folder resumable upload
-    # for now it is only for file resumable
-    if resumable_id and job_id:
-        pre_upload_infos.extend(upload_client.resume_upload(resumable_id, job_id, item_id, upload_file_path[0]))
-    else:
-        for batch in range(0, num_of_batchs):
-            start_index = batch * AppConfig.Env.upload_batch_size
-            end_index = (batch + 1) * AppConfig.Env.upload_batch_size
-            file_batchs = upload_file_path[start_index:end_index]
+    for batch in range(0, num_of_batchs):
+        start_index = batch * AppConfig.Env.upload_batch_size
+        end_index = (batch + 1) * AppConfig.Env.upload_batch_size
+        file_batchs = upload_file_path[start_index:end_index]
 
-            # sending the pre upload request to generate
-            # the placeholder in object storage
-            pre_upload_infos.extend(upload_client.pre_upload(file_batchs, output_path))
+        # sending the pre upload request to generate
+        # the placeholder in object storage
+        pre_upload_infos.extend(upload_client.pre_upload(file_batchs, output_path))
 
     # now loop over each file under the folder and start
     # the chunk upload

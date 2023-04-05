@@ -140,9 +140,6 @@ def file_put(**kwargs):  # noqa: C901
     # check if user input at least one file/folder
     if len(paths) == 0:
         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_PATHS, True)
-    # # check if resumable_id exist then job_id should also be inputed
-    # if (resumable_id is None) != (job_id is None):
-    #     SrvErrorHandler.customized_handle(ECustomizedError.INVALID_RESUMABLE, True)
 
     project_path = click.prompt('ProjectCode') if not project_path else project_path
     project_code, target_folder = identify_target_folder(project_path)
@@ -199,9 +196,7 @@ def file_put(**kwargs):  # noqa: C901
         if source_file:
             upload_event['valid_source'] = src_file_info
 
-        simple_upload(
-            upload_event, num_of_thread=thread, resumable_id=None, job_id=None, item_id=None, output_path=output_path
-        )
+        simple_upload(upload_event, num_of_thread=thread, output_path=output_path)
 
         srv_manifest.attach_manifest(attribute, result_file, zone) if attribute else None
         message_handler.SrvOutPutHandler.all_file_uploaded()
