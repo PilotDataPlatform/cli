@@ -54,7 +54,13 @@ class FileObject:
     uploaded_chunks: List[dict]
 
     def __init__(
-        self, resumable_id: str, job_id: str, item_id: str, object_path: str, local_path: str, uploaded_chunks: List
+        self,
+        object_path: str,
+        local_path: str,
+        uploaded_chunks: List,
+        resumable_id: str = None,
+        job_id: str = None,
+        item_id: str = None,
     ) -> None:
         # object storage info
         self.resumable_id = resumable_id

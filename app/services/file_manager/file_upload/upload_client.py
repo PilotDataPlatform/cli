@@ -135,7 +135,7 @@ class UploadClient:
         return unfinished_file_objects
 
     # @require_valid_token()
-    def pre_upload(self, local_file_paths: List[str], output_path: str) -> List[FileObject]:
+    def pre_upload(self, file_objects: List[FileObject], output_path: str) -> List[FileObject]:
         """
         Summary:
             The function is to initiate all the multipart upload.
@@ -152,17 +152,18 @@ class UploadClient:
         # print('pre upload')
         headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
         url = AppConfig.Connections.url_bff + '/v1/project/{}/files'.format(self.project_code)
-        # the file mapping is a dictionary that present the map from object storage path
-        # with local file path. It will be used in chunk upload api.
-        payload, file_mapping = uf.generate_pre_upload_form(
-            self.project_code,
-            self.operator,
-            local_file_paths,
-            self.input_path,
-            zone=self.zone,
-            job_type=self.job_type,
-            current_folder=self.current_folder_node,
-        )
+
+        file_mapping = {x.object_path: x.local_path for x in file_objects}
+        payload = {
+            'project_code': self.project_code,
+            'operator': self.operator,
+            'job_type': str(self.job_type),
+            'zone': self.zone,
+            'current_folder_node': self.current_folder_node,
+            'data': [
+                {'resumable_filename': x.file_name, 'resumable_relative_path': x.parent_path} for x in file_objects
+            ],
+        }
 
         payload.update({'parent_folder_id': self.parent_folder_id})
         payload.update({'folder_tags': self.tags})
