@@ -142,7 +142,6 @@ def generate_pre_upload_form(
             file_relative_path = file_local_path.replace(input_path + '/', '')
             object_path = join(current_folder, file_relative_path)
             parent_path, file_name = dirname(object_path), basename(object_path)
-
         else:
             file_name = basename(file_local_path)
             parent_path = current_folder
