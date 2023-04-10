@@ -232,17 +232,25 @@ def resume_upload(
 
     # check files in manifest if some of them are already uploaded
     item_ids = []
-    for item_id in manifest_json.get('file_objects'):
+    all_files = manifest_json.get('file_objects')
+    for item_id in all_files:
         item_ids.append(item_id)
     items = get_file_info_by_geid(item_ids)
-    unfinished_items = [x for x in items if x.get('status') == ItemStatus.REGISTERED]  # update to enum later
-    # make them as FileObject
-    unfinished_items = [
-        FileObject(
-            x.get('resumable_id'), x.get('item_id'), x.get('job_id'), x.get('object_path'), x.get('local_path'), []
-        )
-        for x in unfinished_items
-    ]
+
+    unfinished_items = []
+    for x in items:
+        if x.get('result').get('status') == ItemStatus.REGISTERED:
+            file_info = all_files.get(x.get('result').get('id'))
+            unfinished_items.append(
+                FileObject(
+                    file_info.get('resumable_id'),
+                    file_info.get('job_id'),
+                    file_info.get('item_id'),
+                    file_info.get('object_path'),
+                    file_info.get('local_path'),
+                    [],
+                )
+            )
 
     # then for the rest of the files, check if any chunks are already uploaded
     unfinished_items = upload_client.resume_upload(unfinished_items)
