@@ -7,8 +7,6 @@ from multiprocessing import TimeoutError
 from multiprocessing.pool import ThreadPool
 from time import sleep
 
-from tqdm import tqdm
-
 from app.configs.app_config import AppConfig
 from app.services.file_manager.file_upload.models import FileObject
 from app.services.file_manager.file_upload.upload_client import UploadClient
@@ -24,15 +22,14 @@ def test_chunk_upload(httpx_mock, mocker):
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
 
     test_obj = FileObject('test', 'test', 'test', 'test', 'test', [])
-    test_bar = tqdm(total=1, unit='B', unit_scale=True, desc='test')
-    res = upload_client.upload_chunk(test_obj, 0, b'1', test_bar)
+    res = upload_client.upload_chunk(test_obj, 0, b'1')
 
-    assert test_bar.n == 1
+    assert test_obj.progress_bar.n == 1
     assert res.status_code == 200
 
 
 def test_token_refresh_auto(mocker):
-    AppConfig.Env.token_refresh_interval = 2
+    AppConfig.Env.token_refresh_interval = 1
 
     token_refresh_mock = mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.refresh', return_value=None
@@ -41,7 +38,7 @@ def test_token_refresh_auto(mocker):
     upload_client = UploadClient('test', 'test', 'test')
     pool = ThreadPool(2)
     async_fun = pool.apply_async(upload_client.upload_token_refresh)
-    sleep(1)
+    sleep(3)
     upload_client.set_finish_upload()
 
     # add the timeout to avoid the test stuck
