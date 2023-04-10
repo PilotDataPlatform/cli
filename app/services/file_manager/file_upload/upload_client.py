@@ -29,9 +29,6 @@ from app.utils.aggregated import search_item
 from .exception import INVALID_CHUNK_ETAG
 from ..file_lineage import create_lineage
 
-# import requests
-# from tqdm import tqdm
-
 
 class UploadClient:
     """
