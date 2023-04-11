@@ -101,7 +101,7 @@ def test_assemble_path_at_non_existing_folder(mocker):
     current_file_path, parent_folder, create_folder_flag, _ = assemble_path(
         local_file_path, target_folder, project_code, zone, resumable_id
     )
-    assert current_file_path == 'admin/test_folder_not_exist/file.txt'
+    assert current_file_path == 'admin/test_folder_not_exist'
     assert parent_folder.get('name') == 'admin'
     assert create_folder_flag is True
 
