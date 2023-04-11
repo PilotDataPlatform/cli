@@ -23,6 +23,7 @@ from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
 from app.services.user_authentication.token_manager import SrvTokenManager
+from app.utils.aggregated import get_file_info_by_geid
 from app.utils.aggregated import resilient_session
 from app.utils.aggregated import search_item
 
@@ -413,30 +414,12 @@ class UploadClient:
             - bool: if job success or not
         """
 
-        url = AppConfig.Connections.url_status
-        headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.session_id}
-        query = {
-            'action': 'data_upload',
-            'project_code': self.project_code,
-            'operator': self.operator,
-            'session_id': self.session_id,
-        }
-
-        response = resilient_session().get(url, headers=headers, params=query)
+        # with pre-register upload, we can check if the file entity is already exist
+        # if exist, we can continue with manifest process
+        file_entity = get_file_info_by_geid([file_object.item_id])[0].get('result', {})
         mhandler.SrvOutPutHandler.finalize_upload()
-        object_path = file_object.object_path
-        if response.status_code == 200:
-            result = response.json().get('result')
-            for i in result:
-                if i.get('source') == object_path and i.get('status') == 'SUCCEED':
-                    mhandler.SrvOutPutHandler.upload_job_done()
-                    return True
-                elif i.get('source') == object_path and i.get('status') == 'TERMINATED':
-                    SrvErrorHandler.customized_handle(ECustomizedError.FILE_EXIST, self.regular_file)
-                elif i.get('source') == object_path and i.get('status') == 'CHUNK_UPLOADED':
-                    return False
-                else:
-                    SrvErrorHandler.default_handle(response.content)
+        if file_entity.get('status') == 'ACTIVE':
+            return True
         else:
             return False
 
