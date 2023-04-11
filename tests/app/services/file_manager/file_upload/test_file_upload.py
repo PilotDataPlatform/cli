@@ -122,8 +122,9 @@ def test_resume_upload(mocker):
 
     get_return = test_obj.to_dict()
     get_return.update({'status': ItemStatus.REGISTERED})
+    get_return.update({'id': get_return.get('item_id')})
     get_mock = mocker.patch(
-        'app.services.file_manager.file_upload.file_upload.get_file_info_by_geid', return_value=[get_return]
+        'app.services.file_manager.file_upload.file_upload.get_file_info_by_geid', return_value=[{'result': get_return}]
     )
     resume_upload_mock = mocker.patch(
         'app.services.file_manager.file_upload.file_upload.UploadClient.resume_upload', return_value=[]
