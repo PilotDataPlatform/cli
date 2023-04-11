@@ -120,7 +120,7 @@ def test_folder_upload_tagging_should_block(mocker, capfd):
     try:
         simple_upload(upload_event)
     except SystemExit:
-        out, err = capfd.readouterr()
+        out, _ = capfd.readouterr()
 
         expect = (
             f'Starting upload of: {file_name}\n' + customized_error_msg(ECustomizedError.UNSUPPORT_TAG_MANIFEST) + '\n'
