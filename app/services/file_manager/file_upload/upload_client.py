@@ -6,14 +6,12 @@ import hashlib
 import math
 import os
 import time
+from multiprocessing.pool import ApplyResult
 from multiprocessing.pool import ThreadPool
 from typing import List
 from typing import Tuple
 
 import httpx
-
-# import requests
-from tqdm import tqdm
 
 import app.models.upload_form as uf
 import app.services.output_manager.message_handler as mhandler
@@ -25,6 +23,7 @@ from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
 from app.utils.aggregated import get_file_info_by_geid
+from app.services.user_authentication.token_manager import SrvTokenManager
 from app.utils.aggregated import resilient_session
 from app.utils.aggregated import search_item
 
@@ -82,6 +81,10 @@ class UploadClient:
         self.parent_folder_id = parent_folder_id
         self.regular_file = regular_file
         self.tags = tags
+
+        # the flag to indicate if all upload process finished
+        # then the token refresh loop will end
+        self.finish_upload = False
 
     def generate_meta(self, local_path: str) -> Tuple[int, int]:
         """
@@ -212,7 +215,7 @@ class UploadClient:
         else:
             SrvErrorHandler.default_handle(str(response.status_code) + ': ' + str(response.content), self.regular_file)
 
-    def stream_upload(self, file_object: FileObject, pool: ThreadPool) -> None:
+    def stream_upload(self, file_object: FileObject, pool: ThreadPool) -> List[ApplyResult]:
         """
         Summary:
             The function is a wrap to display the uploading process.
@@ -222,75 +225,45 @@ class UploadClient:
             - file_object(FileObject): the file object that contains correct
                 information for chunk uploading.
         return:
-            - None
+            - List[ApplyResult]: the result of each chunk upload. and will be
+                used in on_success function to make sure all the chunks have
+                been uploaded.
         """
         count = 0
-        async_result = []
-        # the window_size is to limit the async job creation
-        # the program will be killed if async jobs are too many
-        # in the queue
-        thread_window_size = 30
-        # remaining_size = file_object.total_size
-        file_name = file_object.file_name
-        rid = file_object.resumable_id
-        jid = file_object.job_id
-        iid = file_object.item_id
 
-        with tqdm(
-            total=file_object.total_size,
-            leave=True,
-            bar_format='{desc} |{bar:30} {percentage:3.0f}% {remaining}',
-        ) as bar:
-            # updating the progress bar
-            bar.set_description(
-                'Uploading {} , resumable_id: {}, job_id: {}, item_id: {}'.format(file_name, rid, jid, iid)
-            )
+        # process on the file content
+        f = open(file_object.local_path, 'rb')
+        # this will be used to check if the chunk has been uploaded
+        # in the on_success function. to make sure on_success is called
+        # after all the chunks have been uploaded.
+        chunk_result = []
+        while True:
+            chunk = f.read(self.chunk_size)
+            chunk_etag = file_object.uploaded_chunks.get(str(count + 1))
+            if not chunk:
+                break
+            # if current chunk has been uploaded to object storage
+            # only check the md5 if the file is same. If ture,
+            # skip current chunk, if not, raise the error.
+            elif chunk_etag:
+                local_chunk_etag = hashlib.md5(chunk).hexdigest()
+                if chunk_etag != local_chunk_etag:
+                    SrvErrorHandler.customized_handle(ECustomizedError.INVALID_CHUNK_UPLOAD, value=count + 1)
+                    raise INVALID_CHUNK_ETAG(count + 1)
+                file_object.update_progress(self.chunk_size)
+            else:
+                res = pool.apply_async(
+                    self.upload_chunk,
+                    args=(file_object, count + 1, chunk),
+                )
+                chunk_result.append(res)
 
-            # process on the file content
-            f = open(file_object.local_path, 'rb')
-            while True:
-                chunk = f.read(self.chunk_size)
-                chunk_etag = file_object.uploaded_chunks.get(str(count + 1))
-                if not chunk:
-                    break
-                # if current chunk has been uploaded to object storage
-                # only check the md5 if the file is same. If ture,
-                # skip current chunk, if not, raise the error.
-                elif chunk_etag:
-                    local_chunk_etag = hashlib.md5(chunk).hexdigest()
-                    if chunk_etag != local_chunk_etag:
-                        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_CHUNK_UPLOAD, value=count + 1)
-                        raise INVALID_CHUNK_ETAG(count + 1)
-                    bar.update(self.chunk_size)
-                else:
-                    res = pool.apply_async(
-                        self.upload_chunk,
-                        args=(file_object, count + 1, chunk),
-                    )
-                    async_result.append((res, len(chunk)))
-                count += 1  # uploaded successfully
+            count += 1  # uploaded successfully
 
-                # if the async queue reaches window size we wait
-                # all job finished and queue again
-                if len(async_result) == thread_window_size:
-                    for async_res, chunk_size in async_result:
-                        # update progress bar
-                        result = async_res.get()
-                        if result:
-                            bar.update(chunk_size)
-                    # then clear up the queue
-                    async_result = []
+        f.close()
 
-            # finish up rest of async job in the queue
-            for async_res, chunk_size in async_result:
-                # update progress bar
-                result = async_res.get()
-                if result:
-                    bar.update(chunk_size)
+        return chunk_result
 
-            f.close()
-
-    @require_valid_token()
     def upload_chunk(self, file_object: FileObject, chunk_number: int, chunk: str) -> None:
         """
         Summary:
@@ -308,6 +281,8 @@ class UploadClient:
         for i in range(AppConfig.Env.resilient_retry):
             if i > 0:
                 SrvErrorHandler.default_handle('retry number %s' % i)
+
+            file_object.update_progress(0)
 
             # request upload service to generate presigned url for the chunk
             params = {
@@ -333,6 +308,11 @@ class UploadClient:
                     error_msg = 'Fail to upload the chunck %s: %s' % (chunk_number, str(res.text))
                     raise Exception(error_msg)
 
+                # update the progress bar
+                file_object.update_progress(len(chunk))
+                if chunk_number == file_object.total_chunks:
+                    file_object.close_progress()
+
                 return res
             else:
                 SrvErrorHandler.default_handle('Chunk Error: retry number %s' % i)
@@ -344,8 +324,7 @@ class UploadClient:
             # the time will be longer for more retry
             time.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
 
-    @require_valid_token()
-    def on_succeed(self, file_object: FileObject, tags: List[str]):
+    def on_succeed(self, file_object: FileObject, tags: List[str], chunk_result: List[ApplyResult]) -> None:
         """
         Summary:
             The function is to finalize the upload process.
@@ -353,9 +332,15 @@ class UploadClient:
             - file_object(FileObject): the file object that contains correct
                 information for chunk uploading.
             - tags(list of str): the tag attached with uploaded object.
+            - chunk_result(list of ApplyResult): the result of each chunk upload.
         return:
             - None
         """
+
+        # check if all the chunks have been uploaded
+        for res in chunk_result:
+            while res.get() is None:
+                time.sleep(1)
 
         for i in range(AppConfig.Env.resilient_retry):
             url = self.base_url + '/v1/files'
@@ -418,7 +403,6 @@ class UploadClient:
             }
             create_lineage(lineage_event)
 
-    @require_valid_token()
     def check_status(self, file_object: FileObject) -> bool:
         """
         Summary:
@@ -438,3 +422,19 @@ class UploadClient:
             return True
         else:
             return False
+
+    def set_finish_upload(self):
+        self.finish_upload = True
+
+    def upload_token_refresh(self, azp: str = AppConfig.Env.keycloak_device_client_id):
+        token_manager = SrvTokenManager()
+        DEFAULT_INTERVAL = 2  # seconds to check if the upload is finished
+        total_count = 0  # when total_count equals token_refresh_interval, refresh token
+        while self.finish_upload is not True:
+            if total_count >= AppConfig.Env.token_refresh_interval:
+                token_manager.refresh(azp)
+                total_count = 0
+
+            # if not then sleep for DEFAULT_INTERVAL seconds
+            time.sleep(DEFAULT_INTERVAL)
+            total_count = total_count + DEFAULT_INTERVAL
