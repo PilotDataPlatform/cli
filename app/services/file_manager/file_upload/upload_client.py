@@ -179,6 +179,9 @@ class UploadClient:
                 {'resumable_filename': x.file_name, 'resumable_relative_path': x.parent_path} for x in file_objects
             ],
         }
+
+        # print('pre upload payload', payload)
+        raise Exception('stop here')
         response = resilient_session().post(url, json=payload, headers=headers, timeout=None)
 
         if response.status_code == 200:
