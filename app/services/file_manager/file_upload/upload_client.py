@@ -103,7 +103,7 @@ class UploadClient:
         total_chunks = math.ceil(total_size / self.chunk_size)
         return total_size, total_chunks
 
-    # @require_valid_token()
+    @require_valid_token()
     def resume_upload(self, unfinished_file_objects: List[FileObject]) -> List[FileObject]:
         """
         Summary:
