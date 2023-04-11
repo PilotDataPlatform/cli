@@ -235,7 +235,7 @@ def file_resume(**kwargs):  # noqa: C901
     """
 
     thread = kwargs.get('thread')
-    resumable_manifest_file = kwargs.get('resumable_file')
+    resumable_manifest_file = kwargs.get('resumable_manifest')
 
     # check if manifest file exist then read the manifest file as json
     if not os.path.exists(resumable_manifest_file):
