@@ -62,7 +62,6 @@ class FileObject:
         self,
         object_path: str,
         local_path: str,
-        uploaded_chunks: List,
         resumable_id: str = None,
         job_id: str = None,
         item_id: str = None,
@@ -79,7 +78,7 @@ class FileObject:
         self.total_size, self.total_chunks = self.generate_meta(local_path)
 
         # resumable info
-        self.uploaded_chunks = uploaded_chunks
+        self.uploaded_chunks = {}
 
     def generate_meta(self, local_path: str) -> Tuple[int, int]:
         """

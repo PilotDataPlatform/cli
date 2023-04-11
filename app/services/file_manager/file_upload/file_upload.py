@@ -141,16 +141,9 @@ def simple_upload(  # noqa: C901
         if create_folder_flag:
             job_type = UploadType.AS_FOLDER
             input_path = os.path.dirname(input_path)  # update the path as folder
-            target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
         else:
             target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
             job_type = UploadType.AS_FILE
-
-    # print('upload_file_path:', upload_file_path)
-    # print('target_folder:', target_folder)
-    # print('input_path:', input_path)
-    # print('job_type:', job_type)
-    # print('zone:', zone)
 
     upload_client = UploadClient(
         input_path=input_path,
@@ -169,7 +162,7 @@ def simple_upload(  # noqa: C901
         # first remove the input path from the file path
         file_path_sub = file.replace(input_path + '/', '')
         object_path = os.path.join(target_folder, file_path_sub)
-        file_objects.append(FileObject(object_path, file, None))
+        file_objects.append(FileObject(object_path, file))
 
     # here add the batch of 500 per loop, the pre upload api cannot
     # process very large amount of file at same time. otherwise it will timeout
@@ -257,12 +250,11 @@ def resume_upload(
             file_info = all_files.get(x.get('result').get('id'))
             unfinished_items.append(
                 FileObject(
+                    file_info.get('object_path'),
+                    file_info.get('local_path'),
                     file_info.get('resumable_id'),
                     file_info.get('job_id'),
                     file_info.get('item_id'),
-                    file_info.get('object_path'),
-                    file_info.get('local_path'),
-                    [],
                 )
             )
 

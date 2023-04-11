@@ -196,11 +196,6 @@ def file_put(**kwargs):  # noqa: C901
             zipping,
         )
 
-        current_folder_node = 'testproject/admin/test11'
-        parent_folder = {'id': 'testproject'}
-        create_folder_flag = True
-        result_file = None
-
         upload_event = {
             'project_code': project_code,
             'file': f.rstrip('/'),  # remove the ending slash
