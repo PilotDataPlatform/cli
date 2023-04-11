@@ -154,3 +154,4 @@ integration_tests
 
 # cli manifest data
 ./manifest.json
+manifest.json

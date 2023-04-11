@@ -85,6 +85,7 @@ def assemble_path(
             # find the longest existing folder as parent folder
             # if user input a path that need to create some folders
             if not res.get('result'):
+                current_file_path = folder_path
                 click.confirm(customized_error_msg(ECustomizedError.CREATE_FOLDER_IF_NOT_EXIST), abort=True)
                 create_folder_flag = True
                 break
@@ -136,12 +137,12 @@ def simple_upload(  # noqa: C901
             upload_file_path = get_file_in_folder(my_file)
     else:
         upload_file_path = [my_file]
-        target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
 
         if create_folder_flag:
             job_type = UploadType.AS_FOLDER
             my_file = os.path.dirname(my_file)  # update the path as folder
         else:
+            target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
             job_type = UploadType.AS_FILE
 
     upload_client = UploadClient(
