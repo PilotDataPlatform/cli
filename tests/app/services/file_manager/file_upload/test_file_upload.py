@@ -111,8 +111,32 @@ def test_folder_upload_tagging_should_block(mocker, capfd):
         'file': file_name,
         'project_code': 'test_project',
         'tags': ['test_tag'],
-        'zone': 0,
-        'manifest': 'test_manifest',
+        'zone': 'greenroom',
+    }
+
+    mocker.patch('os.path.isdir', return_value=True)
+
+    try:
+        simple_upload(upload_event)
+    except SystemExit:
+        out, _ = capfd.readouterr()
+
+        expect = (
+            f'Starting upload of: {file_name}\n' + customized_error_msg(ECustomizedError.UNSUPPORT_TAG_MANIFEST) + '\n'
+        )
+
+        assert out == expect
+    else:
+        AssertionError('SystemExit not raised')
+
+
+def test_folder_upload_manifest_should_block(mocker, capfd):
+    file_name = 'test'
+    upload_event = {
+        'file': file_name,
+        'project_code': 'test_project',
+        'zone': 'greenroom',
+        'attribute': 'test_manifest',
     }
 
     mocker.patch('os.path.isdir', return_value=True)
