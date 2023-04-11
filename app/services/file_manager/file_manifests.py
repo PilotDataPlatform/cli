@@ -61,9 +61,9 @@ class SrvFileManifests(metaclass=MetaService):
             return False, res_json
 
     @require_valid_token()
-    def attach(self, manifest_json: dict, item_id: str, zone: str):
+    def attach(self, manifest_json, file_name, zone):
         url = self.app_config.Connections.url_bff + '/v1/manifest/attach'
-        manifest_json['item_id'] = item_id
+        manifest_json['file_name'] = file_name
         manifest_json['zone'] = zone
         headers = {
             'Authorization': 'Bearer ' + self.user.access_token,
@@ -151,8 +151,8 @@ class SrvFileManifests(metaclass=MetaService):
             validation_error = ''
         return validation, validation_error
 
-    def attach_manifest(self, manifest: dict, item_id: str, zone: str):
-        res = self.attach(manifest, item_id, zone)
+    def attach_manifest(self, manifest, file_name, zone):
+        res = self.attach(manifest, file_name, zone)
         if res.get('code') != 200:
             error = res.get('error_msg')
             if self.interactive:
