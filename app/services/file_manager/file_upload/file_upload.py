@@ -8,6 +8,7 @@ import time
 import zipfile
 from multiprocessing.pool import ThreadPool
 from typing import Dict
+from typing import List
 from typing import Tuple
 
 import click
@@ -15,6 +16,7 @@ import click
 import app.services.logger_services.log_functions as logger
 import app.services.output_manager.message_handler as mhandler
 from app.configs.app_config import AppConfig
+from app.services.file_manager.file_upload.models import FileObject
 from app.services.file_manager.file_upload.models import UploadType
 from app.services.file_manager.file_upload.upload_client import UploadClient
 from app.services.output_manager.error_handler import ECustomizedError
@@ -108,7 +110,7 @@ def simple_upload(  # noqa: C901
     resumable_id: str = None,
     job_id: str = None,
     item_id: str = None,
-):
+) -> List[FileObject]:
     upload_start_time = time.time()
     my_file = upload_event.get('file')
     project_code = upload_event.get('project_code')
@@ -215,3 +217,5 @@ def simple_upload(  # noqa: C901
 
     num_of_file = len(upload_file_path)
     logger.info(f'Upload Time: {time.time() - upload_start_time:.2f}s for {num_of_file:d} files')
+
+    return pre_upload_infos
