@@ -2,8 +2,8 @@
 #
 # Contact Indoc Research for any questions regarding the use of this source code.
 
-from functools import wraps
 import re
+from functools import wraps
 from multiprocessing import TimeoutError
 from multiprocessing.pool import ThreadPool
 from time import sleep
@@ -60,7 +60,8 @@ def test_check_status_fail(httpx_mock, mocker):
     result = upload_client.check_status(test_obj)
 
     assert result is False
-=======
+
+
 def test_chunk_upload(httpx_mock, mocker):
     upload_client = UploadClient('test', 'test', 'test')
 
