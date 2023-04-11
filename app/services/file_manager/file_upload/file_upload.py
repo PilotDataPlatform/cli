@@ -197,11 +197,6 @@ def simple_upload(  # noqa: C901
             args=(file_object, tags, chunk_res),
         )
         on_succeed_res.append(res)
-
-    # wait for all the chunk combination to finish
-    for res in on_succeed_res:
-        while res.get() is None:
-            time.sleep(0.5)
     upload_client.set_finish_upload()
 
     pool.close()
