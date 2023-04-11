@@ -22,8 +22,8 @@ from app.services.file_manager.file_upload.models import UploadType
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
-from app.utils.aggregated import get_file_info_by_geid
 from app.services.user_authentication.token_manager import SrvTokenManager
+from app.utils.aggregated import get_file_info_by_geid
 from app.utils.aggregated import resilient_session
 from app.utils.aggregated import search_item
 
