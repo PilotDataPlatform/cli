@@ -126,14 +126,12 @@ def simple_upload(  # noqa: C901
     attribute = upload_event.get('attribute')
 
     mhandler.SrvOutPutHandler.start_uploading(input_path)
-    # TODO: PILOT-2392 simplify the logic under
     # if the input request zip folder then process the path as single file
     # otherwise read throught the folder to get path underneath
     if os.path.isdir(input_path):
         job_type = UploadType.AS_FILE if compress_zip else UploadType.AS_FOLDER
         if job_type == UploadType.AS_FILE:
             upload_file_path = [input_path.rstrip('/').lstrip() + '.zip']
-            # target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
             compress_folder_to_zip(input_path)
         else:
             logger.warning('Current version does not support folder tagging, ' 'any selected tags will be ignored')
@@ -145,7 +143,6 @@ def simple_upload(  # noqa: C901
             job_type = UploadType.AS_FOLDER
             input_path = os.path.dirname(input_path)  # update the path as folder
         else:
-            # target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
             job_type = UploadType.AS_FILE
 
     upload_client = UploadClient(
@@ -190,14 +187,21 @@ def simple_upload(  # noqa: C901
 
     pool = ThreadPool(num_of_thread + 1)
     pool.apply_async(upload_client.upload_token_refresh)
+    on_succeed_res = []
     for file_object in pre_upload_infos:
         chunk_res = upload_client.stream_upload(file_object, pool)
         # NOTE: if there is some racing error make the combine chunks
         # out of thread pool.
-        pool.apply_async(
+        res = pool.apply_async(
             upload_client.on_succeed,
             args=(file_object, tags, chunk_res),
         )
+        on_succeed_res.append(res)
+
+    # wait for all the chunk combination to finish
+    for res in on_succeed_res:
+        while res.get() is None:
+            time.sleep(0.5)
     upload_client.set_finish_upload()
 
     pool.close()
