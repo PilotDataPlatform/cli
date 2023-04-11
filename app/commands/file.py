@@ -216,7 +216,7 @@ def file_put(**kwargs):  # noqa: C901
     show_default=True,
 )
 @click.option(
-    '--resumable-file',
+    '--resumable-manifest',
     '-r',
     default=None,
     required=True,
