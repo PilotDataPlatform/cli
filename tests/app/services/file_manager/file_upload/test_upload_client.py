@@ -10,6 +10,7 @@ from time import sleep
 from app.configs.app_config import AppConfig
 from app.services.file_manager.file_upload.models import FileObject
 from app.services.file_manager.file_upload.upload_client import UploadClient
+from tests.conftest import decoded_token
 
 
 def test_chunk_upload(httpx_mock, mocker):
@@ -55,6 +56,11 @@ def test_token_refresh_auto(mocker):
 
 
 def test_resumable_pre_upload_success(httpx_mock, mocker):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+
     upload_client = UploadClient('test', 'project_code', 'parent_folder_id')
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
     test_obj = FileObject('resumable_id', 'job_id', 'item_id', 'object/path', 'local_path', [])
@@ -72,6 +78,11 @@ def test_resumable_pre_upload_success(httpx_mock, mocker):
 
 
 def test_resumable_pre_upload_failed_with_404(httpx_mock, mocker):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+
     upload_client = UploadClient('test', 'project_code', 'parent_folder_id')
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
     test_obj = FileObject('resumable_id', 'job_id', 'item_id', 'object/path', 'local_path', [])
