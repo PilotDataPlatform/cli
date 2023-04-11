@@ -134,8 +134,9 @@ def simple_upload(  # noqa: C901
             compress_folder_to_zip(my_file)
         elif job_type == UploadType.AS_FOLDER and resumable_id:
             SrvErrorHandler.customized_handle(ECustomizedError.UNSUPPORTED_PROJECT, True, project_code)
+        elif tags or attribute:
+            SrvErrorHandler.customized_handle(ECustomizedError.UNSUPPORT_TAG_MANIFEST, True)
         else:
-            logger.warning('Current version does not support folder tagging, ' 'any selected tags will be ignored')
             upload_file_path = get_file_in_folder(my_file)
     else:
         upload_file_path = [my_file]
