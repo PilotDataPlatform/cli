@@ -108,7 +108,7 @@ def cli():
 @click.option(
     '--output-path',
     '-o',
-    default='./',
+    default='./manifest.json',
     required=False,
     help='The output path for the manifest file of resumable upload',
     show_default=True,
@@ -140,6 +140,10 @@ def file_put(**kwargs):  # noqa: C901
     # check if user input at least one file/folder
     if len(paths) == 0:
         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_PATHS, True)
+
+    # check if the manifest file exists
+    if os.path.exists(output_path):
+        click.confirm(customized_error_msg(ECustomizedError.MANIFEST_OF_FOLDER_FILE_EXIST) % (output_path), abort=True)
 
     project_path = click.prompt('ProjectCode') if not project_path else project_path
     project_code, target_folder = identify_target_folder(project_path)
@@ -238,7 +242,7 @@ def file_put(**kwargs):  # noqa: C901
     help='The manifest file for resumable upload',
     show_default=True,
 )
-@doc(file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD))
+@doc(file_help.file_help_page(file_help.FileHELP.FILE_RESUME))
 def file_resume(**kwargs):  # noqa: C901
     """
     Summary:
@@ -262,6 +266,7 @@ def file_resume(**kwargs):  # noqa: C901
         # are rather similar with the input
         validate_upload_event(resumable_manifest)
 
+    # print(resumable_manifest)
     resume_upload(resumable_manifest, thread)
 
 
