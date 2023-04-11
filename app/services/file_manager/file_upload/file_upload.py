@@ -85,6 +85,7 @@ def assemble_path(
             # find the longest existing folder as parent folder
             # if user input a path that need to create some folders
             if not res.get('result'):
+                current_file_path = folder_path
                 click.confirm(customized_error_msg(ECustomizedError.CREATE_FOLDER_IF_NOT_EXIST), abort=True)
                 create_folder_flag = True
                 break
@@ -142,6 +143,7 @@ def simple_upload(  # noqa: C901
             input_path = os.path.dirname(input_path)  # update the path as folder
             target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
         else:
+            target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
             job_type = UploadType.AS_FILE
 
     # print('upload_file_path:', upload_file_path)
@@ -192,14 +194,13 @@ def simple_upload(  # noqa: C901
     pool = ThreadPool(num_of_thread + 1)
     pool.apply_async(upload_client.upload_token_refresh)
     for file_object in pre_upload_infos:
-        upload_client.stream_upload(file_object, pool)
+        chunk_res = upload_client.stream_upload(file_object, pool)
         # NOTE: if there is some racing error make the combine chunks
         # out of thread pool.
         pool.apply_async(
             upload_client.on_succeed,
-            args=(file_object, tags),
+            args=(file_object, tags, chunk_res),
         )
-
     upload_client.set_finish_upload()
 
     pool.close()
@@ -245,17 +246,25 @@ def resume_upload(
 
     # check files in manifest if some of them are already uploaded
     item_ids = []
-    for item_id in manifest_json.get('file_objects'):
+    all_files = manifest_json.get('file_objects')
+    for item_id in all_files:
         item_ids.append(item_id)
     items = get_file_info_by_geid(item_ids)
-    unfinished_items = [x for x in items if x.get('status') == ItemStatus.REGISTERED]  # update to enum later
-    # make them as FileObject
-    unfinished_items = [
-        FileObject(
-            x.get('resumable_id'), x.get('item_id'), x.get('job_id'), x.get('object_path'), x.get('local_path'), []
-        )
-        for x in unfinished_items
-    ]
+
+    unfinished_items = []
+    for x in items:
+        if x.get('result').get('status') == ItemStatus.REGISTERED:
+            file_info = all_files.get(x.get('result').get('id'))
+            unfinished_items.append(
+                FileObject(
+                    file_info.get('resumable_id'),
+                    file_info.get('job_id'),
+                    file_info.get('item_id'),
+                    file_info.get('object_path'),
+                    file_info.get('local_path'),
+                    [],
+                )
+            )
 
     # then for the rest of the files, check if any chunks are already uploaded
     unfinished_items = upload_client.resume_upload(unfinished_items)

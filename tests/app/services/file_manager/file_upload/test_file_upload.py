@@ -101,7 +101,7 @@ def test_assemble_path_at_non_existing_folder(mocker):
     current_file_path, parent_folder, create_folder_flag, _ = assemble_path(
         local_file_path, target_folder, project_code, zone, resumable_id
     )
-    assert current_file_path == 'admin/test_folder_not_exist/file.txt'
+    assert current_file_path == 'admin/test_folder_not_exist'
     assert parent_folder.get('name') == 'admin'
     assert create_folder_flag is True
 
@@ -122,8 +122,9 @@ def test_resume_upload(mocker):
 
     get_return = test_obj.to_dict()
     get_return.update({'status': ItemStatus.REGISTERED})
+    get_return.update({'id': get_return.get('item_id')})
     get_mock = mocker.patch(
-        'app.services.file_manager.file_upload.file_upload.get_file_info_by_geid', return_value=[get_return]
+        'app.services.file_manager.file_upload.file_upload.get_file_info_by_geid', return_value=[{'result': get_return}]
     )
     resume_upload_mock = mocker.patch(
         'app.services.file_manager.file_upload.file_upload.UploadClient.resume_upload', return_value=[]

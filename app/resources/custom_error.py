@@ -58,6 +58,9 @@ class Error:
             'The specified multipart upload does not exist. '
             'The upload ID may be invalid, or the upload may have been aborted or completed.'
         ),
+        'MANIFEST_OF_FOLDER_FILE_EXIST': (
+            'The manifest file of folder %s already exist. ' 'Do you want to overwrite the existing manifest file?'
+        ),
         'INVALID_CHUNK_UPLOAD': (
             '\nThe chunk number %d is not the same with previous etag.\n'
             'It means the resumable file is not the same with previous one.\n'
