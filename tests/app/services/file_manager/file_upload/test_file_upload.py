@@ -3,6 +3,9 @@
 # Contact Indoc Research for any questions regarding the use of this source code.
 
 from app.services.file_manager.file_upload.file_upload import assemble_path
+from app.services.file_manager.file_upload.file_upload import simple_upload
+from app.services.output_manager.error_handler import ECustomizedError
+from app.services.output_manager.error_handler import customized_error_msg
 
 
 def test_assemble_path_at_name_folder(mocker):
@@ -100,3 +103,29 @@ def test_assemble_path_at_non_existing_folder(mocker):
     assert current_file_path == 'admin/test_folder_not_exist/file.txt'
     assert parent_folder.get('name') == 'admin'
     assert create_folder_flag is True
+
+
+def test_folder_upload_tagging_should_block(mocker, capfd):
+    file_name = 'test'
+    upload_event = {
+        'file': file_name,
+        'project_code': 'test_project',
+        'tags': ['test_tag'],
+        'zone': 0,
+        'manifest': 'test_manifest',
+    }
+
+    mocker.patch('os.path.isdir', return_value=True)
+
+    try:
+        simple_upload(upload_event)
+    except SystemExit:
+        out, err = capfd.readouterr()
+
+        expect = (
+            f'Starting upload of: {file_name}\n' + customized_error_msg(ECustomizedError.UNSUPPORT_TAG_MANIFEST) + '\n'
+        )
+
+        assert out == expect
+    else:
+        AssertionError('SystemExit not raised')
