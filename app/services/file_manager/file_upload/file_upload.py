@@ -69,13 +69,18 @@ def assemble_path(
 
     current_file_path = target_folder + '/' + f.rstrip('/').split('/')[-1]
     result_file = current_file_path
+    if zipping:
+        result_file = result_file + '.zip'
 
     # set name folder as first parent folder
-    name_folder = current_file_path.split('/')[0]
+    name_folder = target_folder.split('/')[0]
     parent_folder = search_item(project_code, zone, name_folder, 'name_folder')
     parent_folder = parent_folder.get('result')
-    create_folder_flag = False
 
+    # if f input is a file then current_folder_node is target_folder
+    # otherwise it is target_folder + f input name
+    current_folder_node = target_folder if os.path.isfile(f) else current_file_path
+    create_folder_flag = False
     if len(current_file_path.split('/')) > 2:
         sub_path = target_folder.split('/')
         for index in range(len(sub_path) - 1):
@@ -85,7 +90,7 @@ def assemble_path(
             # find the longest existing folder as parent folder
             # if user input a path that need to create some folders
             if not res.get('result'):
-                current_file_path = folder_path
+                current_folder_node = folder_path
                 click.confirm(customized_error_msg(ECustomizedError.CREATE_FOLDER_IF_NOT_EXIST), abort=True)
                 create_folder_flag = True
                 break
@@ -97,9 +102,7 @@ def assemble_path(
     if not parent_folder:
         SrvErrorHandler.customized_handle(ECustomizedError.PERMISSION_DENIED, True)
 
-    if zipping:
-        result_file = result_file + '.zip'
-    return current_file_path, parent_folder, create_folder_flag, result_file
+    return current_folder_node, parent_folder, create_folder_flag, result_file
 
 
 def simple_upload(  # noqa: C901
@@ -114,7 +117,7 @@ def simple_upload(  # noqa: C901
     zone = upload_event.get('zone')
     # process_pipeline = upload_event.get('process_pipeline', None)
     # upload_message = upload_event.get('upload_message')
-    target_folder = upload_event.get('current_folder_node', '')
+    current_folder_node = upload_event.get('current_folder_node', '')
     parent_folder_id = upload_event.get('parent_folder_id', '')
     create_folder_flag = upload_event.get('create_folder_flag', False)
     compress_zip = upload_event.get('compress_zip', False)
@@ -130,7 +133,7 @@ def simple_upload(  # noqa: C901
         job_type = UploadType.AS_FILE if compress_zip else UploadType.AS_FOLDER
         if job_type == UploadType.AS_FILE:
             upload_file_path = [input_path.rstrip('/').lstrip() + '.zip']
-            target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
+            # target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
             compress_folder_to_zip(input_path)
         else:
             logger.warning('Current version does not support folder tagging, ' 'any selected tags will be ignored')
@@ -142,7 +145,7 @@ def simple_upload(  # noqa: C901
             job_type = UploadType.AS_FOLDER
             input_path = os.path.dirname(input_path)  # update the path as folder
         else:
-            target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
+            # target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
             job_type = UploadType.AS_FILE
 
     upload_client = UploadClient(
@@ -150,7 +153,7 @@ def simple_upload(  # noqa: C901
         project_code=project_code,
         zone=zone,
         job_type=job_type,
-        current_folder_node=target_folder,
+        current_folder_node=current_folder_node,
         parent_folder_id=parent_folder_id,
         regular_file=regular_file,
         tags=tags,
@@ -158,6 +161,7 @@ def simple_upload(  # noqa: C901
 
     # format the local path into object storage path for preupload
     file_objects = []
+    target_folder = upload_event.get('target_folder', '')
     for file in upload_file_path:
         # first remove the input path from the file path
         file_path_sub = file.replace(input_path + '/', '')

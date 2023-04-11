@@ -173,14 +173,15 @@ def file_put(**kwargs):  # noqa: C901
 
     # for the path formating there will be following cases:
     # - file:
-    #   1. the project path exist, then will be AS_FILE. nothing will be changed
-    #   2. the project path not exist, then will be AS_FOLDER. the current folder node will
-    #      be the parent folder node + parent folder id. (like one level up).
+    #   1. the project path exist, then will be AS_FILE. nothing will be changed.
+    #      current_folder_node will be empty string.
+    #   2. the project path not exist, then will be AS_FOLDER. the current_folder_node will
+    #      be the parent folder node + the shortest non-exist folder. (like one level down).
     # - folder:
     #   1. the project path exist, then will be AS_FOLDER. the current folder node will be
     #      the one that user input.
     #   2. the project path not exist, then will be AS_FOLDER. the current folder node will
-    #      be the parent folder node + parent folder id. (like one level up).
+    #      be the parent folder node + the shortest non-exist folder. (like one level down).
 
     # Unique Paths
     paths = set(paths)
@@ -198,6 +199,7 @@ def file_put(**kwargs):  # noqa: C901
 
         upload_event = {
             'project_code': project_code,
+            'target_folder': target_folder,
             'file': f.rstrip('/'),  # remove the ending slash
             'tags': tag if tag else [],
             'zone': zone,
@@ -208,7 +210,6 @@ def file_put(**kwargs):  # noqa: C901
             'compress_zip': zipping,
             'attribute': attribute,
         }
-        # print(upload_event)
         if pipeline:
             upload_event['process_pipeline'] = pipeline
         if source_file:
