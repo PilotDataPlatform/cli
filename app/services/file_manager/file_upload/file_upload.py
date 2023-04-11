@@ -183,15 +183,21 @@ def simple_upload(  # noqa: C901
 
     # now loop over each file under the folder and start
     # the chunk upload
-    pool = ThreadPool(num_of_thread)
+
+    # thread number +1 reserve one thread to refresh token
+    # and remove the token decorator in functions
+
+    pool = ThreadPool(num_of_thread + 1)
+    pool.apply_async(upload_client.upload_token_refresh)
     for file_object in pre_upload_infos:
-        upload_client.stream_upload(file_object, pool)
-        # TODO: if there is some racing error make the combine chunks
+        chunk_res = upload_client.stream_upload(file_object, pool)
+        # NOTE: if there is some racing error make the combine chunks
         # out of thread pool.
         pool.apply_async(
             upload_client.on_succeed,
-            args=(file_object, tags),
+            args=(file_object, tags, chunk_res),
         )
+    upload_client.set_finish_upload()
 
     pool.close()
     pool.join()
