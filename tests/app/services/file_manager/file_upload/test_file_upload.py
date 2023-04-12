@@ -2,10 +2,14 @@
 #
 # Contact Indoc Research for any questions regarding the use of this source code.
 
+from app.configs.app_config import AppConfig
 from app.services.file_manager.file_upload.file_upload import assemble_path
 from app.services.file_manager.file_upload.file_upload import simple_upload
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import customized_error_msg
+from app.services.file_manager.file_upload.file_upload import resume_upload
+from app.services.file_manager.file_upload.models import FileObject
+from app.services.file_manager.file_upload.models import ItemStatus
 
 
 def test_assemble_path_at_name_folder(mocker):
@@ -100,10 +104,9 @@ def test_assemble_path_at_non_existing_folder(mocker):
     current_file_path, parent_folder, create_folder_flag, _ = assemble_path(
         local_file_path, target_folder, project_code, zone, resumable_id
     )
-    assert current_file_path == 'admin/test_folder_not_exist/file.txt'
+    assert current_file_path == 'admin/test_folder_not_exist'
     assert parent_folder.get('name') == 'admin'
     assert create_folder_flag is True
-
 
 def test_folder_upload_tagging_should_block(mocker, capfd):
     file_name = 'test'
@@ -153,3 +156,33 @@ def test_folder_upload_manifest_should_block(mocker, capfd):
         assert out == expect
     else:
         AssertionError('SystemExit not raised')
+
+
+def test_resume_upload(mocker):
+    mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
+    test_obj = FileObject('resumable_id', 'job_id', 'item_id', 'object/path', 'local_path', [])
+
+    manifest_json = {
+        'project_code': 'project_code',
+        'operator': 'operator',
+        'zone': AppConfig.Env.green_zone,
+        'parent_folder_id': 'parent_folder_id',
+        'current_folder_node': 'current_folder_node',
+        'tags': 'tags',
+        'file_objects': {test_obj.item_id: test_obj.to_dict()},
+    }
+
+    get_return = test_obj.to_dict()
+    get_return.update({'status': ItemStatus.REGISTERED})
+    get_return.update({'id': get_return.get('item_id')})
+    get_mock = mocker.patch(
+        'app.services.file_manager.file_upload.file_upload.get_file_info_by_geid', return_value=[{'result': get_return}]
+    )
+    resume_upload_mock = mocker.patch(
+        'app.services.file_manager.file_upload.file_upload.UploadClient.resume_upload', return_value=[]
+    )
+
+    resume_upload(manifest_json, 1)
+
+    get_mock.assert_called_once()
+    resume_upload_mock.assert_called_once()

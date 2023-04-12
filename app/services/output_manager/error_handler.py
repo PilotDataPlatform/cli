@@ -40,6 +40,7 @@ class ECustomizedError(enum.Enum):
     UPLOAD_FAIL = 'UPLOAD_FAIL'
     # the error when multipart upload id is not exist
     UPLOAD_ID_NOT_EXIST = 'UPLOAD_ID_NOT_EXIST'
+    MANIFEST_OF_FOLDER_FILE_EXIST = 'MANIFEST_OF_FOLDER_FILE_EXIST'
     # the error when chunk md5 is not match
     INVALID_CHUNK_UPLOAD = 'INVALID_CHUNK_UPLOAD'
     UNSUPPORT_TAG_MANIFEST = 'UNSUPPORT_TAG_MANIFEST'
