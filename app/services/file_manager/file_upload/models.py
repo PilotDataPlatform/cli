@@ -24,7 +24,7 @@ class UploadType(Enum):
 
 
 class ItemStatus(str, Enum):
-    # the new enum type for file status
+    """Enum type for item status where."""
 
     REGISTERED = 'REGISTERED'  # file is created by upload service but not complete yet. either in progress or fail.
     ACTIVE = 'ACTIVE'  # file uploading is complete.
