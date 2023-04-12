@@ -42,7 +42,7 @@ class Error:
             'may only contain lowercase letters, numbers, and/or special characters of -_, .'
         ),
         'INVALID_PATHS': 'The input path is empty. Please select at least one file or folder to upload',
-        'INVALID_RESUMABLE': 'Both resumable_id and job_id should be specified when doing resumable upload',
+        'INVALID_RESUMABLE': 'The resumable manifest file is not exist.',
         'INVALID_FOLDERNAME': (
             'The input folder name is not valid. Please follow the rule:\n'
             ' - cannot contains special characters.\n'
@@ -57,6 +57,9 @@ class Error:
         'UPLOAD_ID_NOT_EXIST': (
             'The specified multipart upload does not exist. '
             'The upload ID may be invalid, or the upload may have been aborted or completed.'
+        ),
+        'MANIFEST_OF_FOLDER_FILE_EXIST': (
+            'The manifest file of folder %s already exist. ' 'Do you want to overwrite the existing manifest file?'
         ),
         'INVALID_CHUNK_UPLOAD': (
             '\nThe chunk number %d is not the same with previous etag.\n'

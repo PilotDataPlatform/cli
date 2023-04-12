@@ -32,15 +32,15 @@ def mock_settings(monkeypatch):
 def decoded_token():
     current_time = int(time.time()) + 1000
     return {
-        'exp': current_time,
+        'exp': current_time + 100,
         'iat': current_time,
-        'auth_time': current_time - 2,
+        'auth_time': current_time - 100,
         'jti': 'f0848a19-7ddb-4170-bca4-b2ee48512ac3',
         'iss': 'http://token-auth/issuer',
         'aud': 'account',
         'sub': 'a8b728f6-c95a-4999-b98e-0ccf7492a9b4',
         'typ': 'Bearer',
-        'azp': 'kong',
+        'azp': AppConfig.Env.keycloak_device_client_id,
         'nonce': 'a3cb03d0-b00a-480d-8fd2-e06f80898cf1',
         'session_state': 'b92a3847-a485-4060-91fd-83300b09acb6',
         'acr': '1',
