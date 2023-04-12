@@ -151,3 +151,7 @@ integration_tests
 
 #Pycharm
 .idea
+
+# cli manifest data
+./manifest.json
+manifest.json
