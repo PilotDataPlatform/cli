@@ -20,7 +20,7 @@ class UploadType(Enum):
     AS_FOLDER = 'AS_FOLDER'
 
     def __str__(self):
-        return '%s' % self.name
+        return self.name
 
 
 class ItemStatus(str, Enum):
@@ -31,7 +31,7 @@ class ItemStatus(str, Enum):
     ARCHIVED = 'ARCHIVED'  # the file has been deleted
 
     def __str__(self):
-        return '%s' % self.name
+        return self.name
 
 
 class FileObject:
