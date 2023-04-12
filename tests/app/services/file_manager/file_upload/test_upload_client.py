@@ -38,7 +38,7 @@ def test_check_status_success(httpx_mock, mocker):
         status_code=200,
     )
 
-    test_obj = FileObject('test', 'test', 'test', 'test', 'test', [])
+    test_obj = FileObject('test', 'test', 'test', 'test', 'test')
     result = upload_client.check_status(test_obj)
 
     assert result is True
@@ -57,7 +57,7 @@ def test_check_status_fail(httpx_mock, mocker):
         status_code=200,
     )
 
-    test_obj = FileObject('test', 'test', 'test', 'test', 'test', [])
+    test_obj = FileObject('test', 'test', 'test', 'test', 'test')
     result = upload_client.check_status(test_obj)
 
     assert result is False
