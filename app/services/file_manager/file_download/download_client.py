@@ -90,18 +90,19 @@ class SrvFileDownload(metaclass=MetaService):
         }
         url = self.appconfig.Connections.url_v2_download_pre % (self.project_code)
         res = resilient_session().post(url, headers=headers, json=payload)
-        res_json = res.json().get('result')
+        res_json = res.json()
         self.check_point = True
 
         if res.status_code == 200:
             # fetch the info from hash token
-            self.hash_code = res_json.get('payload', {}).get('hash_code')
+            response = res.json().get('result')
+            self.hash_code = response.get('payload', {}).get('hash_code')
             download_info = jwt.decode(self.hash_code, options={'verify_signature': False})
             file_path = download_info.get('file_path')
-            pre_status = EFileStatus(res_json.get('status'))
+            pre_status = EFileStatus(response.get('status'))
         elif res.status_code == 403:
             SrvErrorHandler.customized_handle(ECustomizedError.NO_FILE_PERMMISION, self.interactive)
-        elif res.status_code == 400 and res_json.get('error_msg') == 'Folder is empty':
+        elif res.status_code == 400 and 'number of file must greater than 0' in res_json.get('error_msg'):
             SrvErrorHandler.customized_handle(ECustomizedError.FOLDER_EMPTY, self.interactive)
         else:
             SrvErrorHandler.customized_handle(ECustomizedError.DOWNLOAD_FAIL, self.interactive)
