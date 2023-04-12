@@ -127,11 +127,11 @@ class UploadClient:
             'zone': self.zone,
             'object_infos': [
                 {
-                    'object_path': x.object_path,
-                    'item_id': x.item_id,
-                    'resumable_id': x.resumable_id,
+                    'object_path': file_object.object_path,
+                    'item_id': file_object.item_id,
+                    'resumable_id': file_object.resumable_id,
                 }
-                for x in unfinished_file_objects
+                for file_object in unfinished_file_objects
             ],
         }
 
