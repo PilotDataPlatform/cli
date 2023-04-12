@@ -5,8 +5,11 @@
 from app.configs.app_config import AppConfig
 from app.services.file_manager.file_upload.file_upload import assemble_path
 from app.services.file_manager.file_upload.file_upload import resume_upload
+from app.services.file_manager.file_upload.file_upload import simple_upload
 from app.services.file_manager.file_upload.models import FileObject
 from app.services.file_manager.file_upload.models import ItemStatus
+from app.services.output_manager.error_handler import ECustomizedError
+from app.services.output_manager.error_handler import customized_error_msg
 
 
 def test_assemble_path_at_name_folder(mocker):
@@ -104,6 +107,56 @@ def test_assemble_path_at_non_existing_folder(mocker):
     assert current_file_path == 'admin/test_folder_not_exist'
     assert parent_folder.get('name') == 'admin'
     assert create_folder_flag is True
+
+
+def test_dont_allow_tagging_when_folder_upload(mocker, capfd):
+    file_name = 'test'
+    upload_event = {
+        'file': file_name,
+        'project_code': 'test_project',
+        'tags': ['test_tag'],
+        'zone': 'greenroom',
+    }
+
+    mocker.patch('os.path.isdir', return_value=True)
+
+    try:
+        simple_upload(upload_event)
+    except SystemExit:
+        out, _ = capfd.readouterr()
+
+        expect = (
+            f'Starting upload of: {file_name}\n' + customized_error_msg(ECustomizedError.UNSUPPORT_TAG_MANIFEST) + '\n'
+        )
+
+        assert out == expect
+    else:
+        AssertionError('SystemExit not raised')
+
+
+def test_dont_allow_attribute_attaching_when_folder_upload(mocker, capfd):
+    file_name = 'test'
+    upload_event = {
+        'file': file_name,
+        'project_code': 'test_project',
+        'zone': 'greenroom',
+        'attribute': 'test_manifest',
+    }
+
+    mocker.patch('os.path.isdir', return_value=True)
+
+    try:
+        simple_upload(upload_event)
+    except SystemExit:
+        out, _ = capfd.readouterr()
+
+        expect = (
+            f'Starting upload of: {file_name}\n' + customized_error_msg(ECustomizedError.UNSUPPORT_TAG_MANIFEST) + '\n'
+        )
+
+        assert out == expect
+    else:
+        AssertionError('SystemExit not raised')
 
 
 def test_resume_upload(mocker):
