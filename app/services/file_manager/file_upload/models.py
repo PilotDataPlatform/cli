@@ -24,11 +24,17 @@ class UploadType(Enum):
 
 
 class ItemStatus(str, Enum):
-    """Enum type for item status where."""
+    """Enum type for item status where:
 
-    REGISTERED = 'REGISTERED'  # file is created by upload service but not complete yet. either in progress or fail.
-    ACTIVE = 'ACTIVE'  # file uploading is complete.
-    ARCHIVED = 'ARCHIVED'  # the file has been deleted
+        - REGISTERED means file is created by upload service but not complete yet. either in progress or fail.
+        - ACTIVE means file uploading is complete.
+        - ARCHIVED means the file has been deleted
+    The status will be stored at metadata table.
+    """
+
+    REGISTERED = 'REGISTERED'
+    ACTIVE = 'ACTIVE'
+    ARCHIVED = 'ARCHIVED'
 
     def __str__(self):
         return self.name
