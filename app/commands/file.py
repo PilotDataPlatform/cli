@@ -220,7 +220,7 @@ def file_put(**kwargs):  # noqa: C901
         )
 
         # since only file upload can attach manifest, take the first file object
-        srv_manifest.attach_manifest(attribute, file_objects[0], zone) if attribute else None
+        srv_manifest.attach_manifest(attribute, file_objects[0].item_id, zone) if attribute else None
         message_handler.SrvOutPutHandler.all_file_uploaded()
 
 
