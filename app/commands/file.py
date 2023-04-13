@@ -171,11 +171,24 @@ def file_put(**kwargs):  # noqa: C901
         if not upload_message:
             upload_message = AppConfig.Env.default_upload_message
 
+    # for the path formating there will be following cases:
+    # - file:
+    #   1. the project path exist, then will be AS_FILE. nothing will be changed.
+    #      current_folder_node will be empty string.
+    #   2. the project path not exist, then will be AS_FOLDER. the current_folder_node will
+    #      be the parent folder node + the shortest non-exist folder. (like one level down).
+    # - folder:
+    #   1. the project path exist, then will be AS_FOLDER. the current folder node will be
+    #      the one that user input.
+    #   2. the project path not exist, then will be AS_FOLDER. the current folder node will
+    #      be the parent folder node + the shortest non-exist folder. (like one level down).
+
     # Unique Paths
     paths = set(paths)
     # the loop will read all input path(folder or files)
     # and process them one by one
     for f in paths:
+        # so this function will always return the furthest folder node as current_folder_node+parent_folder_id
         current_folder_node, parent_folder, create_folder_flag, result_file = assemble_path(
             f,
             target_folder,
@@ -183,9 +196,11 @@ def file_put(**kwargs):  # noqa: C901
             zone,
             zipping,
         )
+
         upload_event = {
             'project_code': project_code,
-            'file': f,
+            'target_folder': target_folder,
+            'file': f.rstrip('/'),  # remove the ending slash
             'tags': tag if tag else [],
             'zone': zone,
             'upload_message': upload_message,
@@ -200,9 +215,10 @@ def file_put(**kwargs):  # noqa: C901
         if source_file:
             upload_event['valid_source'] = src_file_info
 
-        simple_upload(upload_event, num_of_thread=thread, output_path=output_path)
+        item_ids = simple_upload(upload_event, num_of_thread=thread, output_path=output_path)
 
-        srv_manifest.attach_manifest(attribute, result_file, zone) if attribute else None
+        # since only file upload can attach manifest, take the first file object
+        srv_manifest.attach_manifest(attribute, item_ids[0], zone) if attribute else None
         message_handler.SrvOutPutHandler.all_file_uploaded()
 
 
