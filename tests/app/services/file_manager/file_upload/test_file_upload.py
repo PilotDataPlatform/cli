@@ -109,6 +109,21 @@ def test_assemble_path_at_non_existing_folder(mocker):
     assert create_folder_flag is True
 
 
+def test_file_upload_skip_empty_file(mocker):
+    file_name = 'test'
+    upload_event = {
+        'file': file_name,
+        'project_code': 'test_project',
+        'zone': 'greenroom',
+    }
+
+    mocker.patch('os.path.isdir', return_value=False)
+    mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(0, 0))
+
+    item_ids = simple_upload(upload_event)
+    assert len(item_ids) == 0
+
+
 def test_dont_allow_tagging_when_folder_upload(mocker, capfd):
     file_name = 'test'
     upload_event = {
