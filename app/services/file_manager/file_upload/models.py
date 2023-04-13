@@ -66,7 +66,12 @@ class FileObject:
     progress_bar = None
 
     def __init__(
-        self, resumable_id: str, job_id: str, item_id: str, object_path: str, local_path: str, uploaded_chunks: List
+        self,
+        object_path: str,
+        local_path: str,
+        resumable_id: str = None,
+        job_id: str = None,
+        item_id: str = None,
     ) -> None:
         # object storage info
         self.resumable_id = resumable_id
@@ -80,7 +85,7 @@ class FileObject:
         self.total_size, self.total_chunks = self.generate_meta(local_path)
 
         # resumable info
-        self.uploaded_chunks = uploaded_chunks
+        self.uploaded_chunks = {}
 
     def generate_meta(self, local_path: str) -> Tuple[int, int]:
         """
