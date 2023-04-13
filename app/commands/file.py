@@ -200,10 +200,10 @@ def file_put(**kwargs):  # noqa: C901
         if source_file:
             upload_event['valid_source'] = src_file_info
 
-        file_objects = simple_upload(upload_event, num_of_thread=thread, output_path=output_path)
+        item_ids = simple_upload(upload_event, num_of_thread=thread, output_path=output_path)
 
         # since only file upload can attach manifest, take the first file object
-        srv_manifest.attach_manifest(attribute, file_objects[0].item_id, zone) if attribute else None
+        srv_manifest.attach_manifest(attribute, item_ids[0].item_id, zone) if attribute else None
         message_handler.SrvOutPutHandler.all_file_uploaded()
 
 
