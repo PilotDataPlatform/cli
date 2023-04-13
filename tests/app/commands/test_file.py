@@ -20,7 +20,7 @@ def test_file_upload_command_success_with_attribute(mocker, cli_runner):
     mocker.patch('app.commands.file.assemble_path', return_value=('test', {'id': 'id'}, True, 'test'))
 
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
-    test_obj = FileObject('resumable_id', 'job_id', 'item_id', 'object/path', 'local_path', [])
+    test_obj = FileObject('resumable_id', 'job_id', 'item_id', 'object/path', 'local_path')
 
     simple_upload_mock = mocker.patch('app.commands.file.simple_upload', return_value=[test_obj])
     attribute_mock = mocker.patch(
