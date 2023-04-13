@@ -133,8 +133,9 @@ def simple_upload(  # noqa: C901
             upload_file_path = [my_file.rstrip('/').lstrip() + '.zip']
             target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
             compress_folder_to_zip(my_file)
+        elif tags or attribute:
+            SrvErrorHandler.customized_handle(ECustomizedError.UNSUPPORT_TAG_MANIFEST, True)
         else:
-            logger.warning('Current version does not support folder tagging, ' 'any selected tags will be ignored')
             upload_file_path = get_file_in_folder(my_file)
     else:
         upload_file_path = [my_file]
