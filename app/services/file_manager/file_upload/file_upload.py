@@ -182,14 +182,22 @@ def simple_upload(  # noqa: C901
 
     pool = ThreadPool(num_of_thread + 1)
     pool.apply_async(upload_client.upload_token_refresh)
+    on_success_res = []
     for file_object in pre_upload_infos:
         chunk_res = upload_client.stream_upload(file_object, pool)
         # NOTE: if there is some racing error make the combine chunks
         # out of thread pool.
-        pool.apply_async(
+        res = pool.apply_async(
             upload_client.on_succeed,
             args=(file_object, tags, chunk_res),
         )
+        on_success_res.append(res)
+
+    # finish the upload once all on success api return
+    # otherwise wait for 1 second and check again
+    for res in on_success_res:
+        while res.get() is None:
+            time.sleep(1)
     upload_client.set_finish_upload()
 
     pool.close()
@@ -264,15 +272,22 @@ def resume_upload(
 
     pool = ThreadPool(num_of_thread + 1)
     pool.apply_async(upload_client.upload_token_refresh)
+    on_success_res = []
     for file_object in unfinished_items:
-        upload_client.stream_upload(file_object, pool)
+        chunk_res = upload_client.stream_upload(file_object, pool)
         # NOTE: if there is some racing error make the combine chunks
         # out of thread pool.
-        pool.apply_async(
+        res = pool.apply_async(
             upload_client.on_succeed,
-            args=(file_object, manifest_json.get('tags')),
+            args=(file_object, manifest_json.get('tags'), chunk_res),
         )
+        on_success_res.append(res)
 
+    # finish the upload once all on success api return
+    # otherwise wait for 1 second and check again
+    for res in on_success_res:
+        while res.get() is None:
+            time.sleep(1)
     upload_client.set_finish_upload()
 
     pool.close()
