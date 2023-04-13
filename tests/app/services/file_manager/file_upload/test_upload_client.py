@@ -38,7 +38,7 @@ def test_check_status_success(httpx_mock, mocker):
         status_code=200,
     )
 
-    test_obj = FileObject('test', 'test', 'test', 'test', 'test', [])
+    test_obj = FileObject('test', 'test', 'test', 'test', 'test')
     result = upload_client.check_status(test_obj)
 
     assert result is True
@@ -57,7 +57,7 @@ def test_check_status_fail(httpx_mock, mocker):
         status_code=200,
     )
 
-    test_obj = FileObject('test', 'test', 'test', 'test', 'test', [])
+    test_obj = FileObject('test', 'test', 'test', 'test', 'test')
     result = upload_client.check_status(test_obj)
 
     assert result is False
@@ -72,7 +72,7 @@ def test_chunk_upload(httpx_mock, mocker):
     httpx_mock.add_response(method='PUT', url=test_presigned_url, json={'result': ''})
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
 
-    test_obj = FileObject('test', 'test', 'test', 'test', 'test', [])
+    test_obj = FileObject('test', 'test', 'test', 'test', 'test')
     res = upload_client.upload_chunk(test_obj, 0, b'1')
 
     assert test_obj.progress_bar.n == 1
@@ -113,7 +113,7 @@ def test_resumable_pre_upload_success(httpx_mock, mocker):
 
     upload_client = UploadClient('test', 'project_code', 'parent_folder_id')
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
-    test_obj = FileObject('resumable_id', 'job_id', 'item_id', 'object/path', 'local_path', [])
+    test_obj = FileObject('object/path', 'local_path', 'resumable_id', 'job_id', 'item_id')
 
     url = AppConfig.Connections.url_bff + f'/v1/project/{upload_client.project_code}/files/resumable'
     httpx_mock.add_response(
@@ -135,7 +135,7 @@ def test_resumable_pre_upload_failed_with_404(httpx_mock, mocker):
 
     upload_client = UploadClient('test', 'project_code', 'parent_folder_id')
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
-    test_obj = FileObject('resumable_id', 'job_id', 'item_id', 'object/path', 'local_path', [])
+    test_obj = FileObject('object/path', 'local_path', 'resumable_id', 'job_id', 'item_id')
 
     url = AppConfig.Connections.url_bff + f'/v1/project/{upload_client.project_code}/files/resumable'
     httpx_mock.add_response(
@@ -157,7 +157,7 @@ def test_output_manifest_success(mocker):
     upload_client = UploadClient('test', 'project_code', 'parent_folder_id')
     json_dump_mocker = mocker.patch('json.dump', return_value=None)
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
-    test_obj = FileObject('resumable_id', 'job_id', 'item_id', 'object/path', 'local_path', [])
+    test_obj = FileObject('object/path', 'local_path', 'resumable_id', 'job_id', 'item_id')
 
     res = upload_client.output_manifest([test_obj], 'test')
 
