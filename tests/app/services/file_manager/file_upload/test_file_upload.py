@@ -161,7 +161,7 @@ def test_dont_allow_attribute_attaching_when_folder_upload(mocker, capfd):
 
 def test_resume_upload(mocker):
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
-    test_obj = FileObject('resumable_id', 'job_id', 'item_id', 'object/path', 'local_path', [])
+    test_obj = FileObject('object/path', 'local_path', 'resumable_id', 'job_id', 'item_id')
 
     manifest_json = {
         'project_code': 'project_code',
