@@ -9,6 +9,7 @@ import zipfile
 from multiprocessing.pool import ThreadPool
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Tuple
 
 import click
@@ -107,7 +108,7 @@ def simple_upload(  # noqa: C901
     upload_event,
     num_of_thread: int = 1,
     output_path: str = None,
-):
+) -> List[str]:
     upload_start_time = time.time()
     my_file = upload_event.get('file')
     project_code = upload_event.get('project_code')
@@ -194,9 +195,7 @@ def simple_upload(  # noqa: C901
 
     # finish the upload once all on success api return
     # otherwise wait for 1 second and check again
-    for res in on_success_res:
-        while res.get() is None:
-            time.sleep(1)
+    [res.wait() for res in on_success_res]
     upload_client.set_finish_upload()
 
     pool.close()
@@ -216,7 +215,7 @@ def simple_upload(  # noqa: C901
     num_of_file = len(upload_file_path)
     logger.info(f'Upload Time: {time.time() - upload_start_time:.2f}s for {num_of_file:d} files')
 
-    return pre_upload_infos
+    return [file_object.item_id for file_object in pre_upload_infos]
 
 
 def resume_upload(
@@ -286,9 +285,7 @@ def resume_upload(
 
     # finish the upload once all on success api return
     # otherwise wait for 1 second and check again
-    for res in on_success_res:
-        while res.get() is None:
-            time.sleep(1)
+    [res.wait() for res in on_success_res]
     upload_client.set_finish_upload()
 
     pool.close()
