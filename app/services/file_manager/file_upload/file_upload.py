@@ -131,13 +131,12 @@ def simple_upload(  # noqa: C901
     if os.path.isdir(input_path):
         job_type = UploadType.AS_FILE if compress_zip else UploadType.AS_FOLDER
         if job_type == UploadType.AS_FILE:
-            upload_file_path = [my_file.rstrip('/').lstrip() + '.zip']
-            target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
-            compress_folder_to_zip(my_file)
+            upload_file_path = [input_path.rstrip('/').lstrip() + '.zip']
+            compress_folder_to_zip(input_path)
         elif tags or attribute:
             SrvErrorHandler.customized_handle(ECustomizedError.UNSUPPORT_TAG_MANIFEST, True)
         else:
-            upload_file_path = get_file_in_folder(my_file)
+            upload_file_path = get_file_in_folder(input_path)
     else:
         upload_file_path = [input_path]
 
@@ -189,7 +188,7 @@ def simple_upload(  # noqa: C901
 
     pool = ThreadPool(num_of_thread + 1)
     pool.apply_async(upload_client.upload_token_refresh)
-    on_succeed_res = []
+    on_success_res = []
     for file_object in pre_upload_infos:
         chunk_res = upload_client.stream_upload(file_object, pool)
         # NOTE: if there is some racing error make the combine chunks
