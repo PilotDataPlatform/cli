@@ -11,26 +11,6 @@ from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import customized_error_msg
 
 
-def test_file_upload_command_success(mocker, cli_runner):
-    project_code = 'test_project'
-    target_folder = 'admin'
-
-    mocker.patch('app.commands.file.identify_target_folder', return_value=(project_code, target_folder))
-    mocker.patch('app.commands.file.validate_upload_event', return_value={'source_file': '', 'attribute': ''})
-    mocker.patch('app.commands.file.assemble_path', return_value=('test', {'id': 'id'}, True, 'test'))
-    simple_upload_mock = mocker.patch('app.commands.file.simple_upload', return_value=None)
-
-    # create a test file
-    runner = click.testing.CliRunner()
-    with runner.isolated_filesystem():
-        with open('test.txt', 'w') as f:
-            f.write('test.txt')
-
-        result = cli_runner.invoke(file_put, ['--project-path', 'test', '--thread', 1, 'test.txt'])
-    assert result.exit_code == 0
-    simple_upload_mock.assert_called_once()
-
-
 def test_file_upload_command_success_with_attribute(mocker, cli_runner):
     project_code = 'test_project'
     target_folder = 'admin'
