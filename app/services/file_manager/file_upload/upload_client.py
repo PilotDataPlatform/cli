@@ -151,7 +151,7 @@ class UploadClient:
         return unfinished_file_objects
 
     @require_valid_token()
-    def pre_upload(self, local_file_paths: List[str], output_path: str) -> List[FileObject]:
+    def pre_upload(self, file_objects: List[FileObject], output_path: str) -> List[FileObject]:
         """
         Summary:
             The function is to initiate all the multipart upload.
@@ -168,32 +168,33 @@ class UploadClient:
 
         headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
         url = AppConfig.Connections.url_bff + '/v1/project/{}/files'.format(self.project_code)
-        # the file mapping is a dictionary that present the map from object storage path
-        # with local file path. It will be used in chunk upload api.
-        payload, file_mapping = uf.generate_pre_upload_form(
-            self.project_code,
-            self.operator,
-            local_file_paths,
-            self.input_path,
-            zone=self.zone,
-            job_type=self.job_type,
-            current_folder=self.current_folder_node,
-        )
+        payload = {
+            'project_code': self.project_code,
+            'operator': self.operator,
+            'job_type': str(self.job_type),
+            'zone': self.zone,
+            'current_folder_node': self.current_folder_node,
+            'parent_folder_id': self.parent_folder_id,
+            'folder_tags': self.tags,
+            'data': [
+                {'resumable_filename': x.file_name, 'resumable_relative_path': x.parent_path} for x in file_objects
+            ],
+        }
 
-        payload.update({'parent_folder_id': self.parent_folder_id})
-        payload.update({'folder_tags': self.tags})
         response = resilient_session().post(url, json=payload, headers=headers, timeout=None)
+
         if response.status_code == 200:
             result = response.json().get('result')
+            file_mapping = {x.object_path: x for x in file_objects}
             file_objets = []
             for job in result:
                 object_path = job.get('target_names')[0]
-                resumable_id = job.get('payload').get('resumable_identifier')
-                item_id = job.get('payload').get('item_id')
-                job_id = job.get('job_id')
-                file_objets.append(
-                    FileObject(resumable_id, job_id, item_id, object_path, file_mapping.get(object_path), {})
-                )
+                # get the file object from mapping and update the attribute
+                file_object = file_mapping.get(object_path)
+                file_object.resumable_id = job.get('payload').get('resumable_identifier')
+                file_object.item_id = job.get('payload').get('item_id')
+                file_object.job_id = job.get('job_id')
+                file_objets.append(file_object)
 
             # then output manifest file to the output path
             self.output_manifest(file_objets, output_path)
