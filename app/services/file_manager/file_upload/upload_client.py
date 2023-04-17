@@ -315,8 +315,7 @@ class UploadClient:
             }
             headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
             response = httpx.get(
-                # self.base_url + '/v1/files/chunks/presigned',
-                'http://localhost:5079/v1/files/chunks/presigned',
+                self.base_url + '/v1/files/chunks/presigned',
                 params=params,
                 headers=headers,
                 timeout=None,
@@ -366,8 +365,7 @@ class UploadClient:
                 time.sleep(1)
 
         for i in range(AppConfig.Env.resilient_retry):
-            # url = self.base_url + '/v1/files'
-            url = 'http://localhost:5079/v1/files'
+            url = self.base_url + '/v1/files'
             payload = uf.generate_on_success_form(
                 self.project_code,
                 self.operator,
