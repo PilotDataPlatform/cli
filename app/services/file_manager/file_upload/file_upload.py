@@ -123,7 +123,7 @@ def simple_upload(  # noqa: C901
     create_folder_flag = upload_event.get('create_folder_flag', False)
     compress_zip = upload_event.get('compress_zip', False)
     regular_file = upload_event.get('regular_file', True)
-    source_file = upload_event.get('valid_source')
+    source_id = upload_event.get('source_id', None)
     attribute = upload_event.get('attribute')
 
     mhandler.SrvOutPutHandler.start_uploading(input_path)
@@ -134,7 +134,7 @@ def simple_upload(  # noqa: C901
         if job_type == UploadType.AS_FILE:
             upload_file_path = [input_path.rstrip('/').lstrip() + '.zip']
             compress_folder_to_zip(input_path)
-        elif tags or attribute:
+        elif tags or attribute or source_id:
             SrvErrorHandler.customized_handle(ECustomizedError.UNSUPPORT_TAG_MANIFEST, True)
         else:
             upload_file_path = get_file_in_folder(input_path)
@@ -143,12 +143,10 @@ def simple_upload(  # noqa: C901
 
         if create_folder_flag:
             job_type = UploadType.AS_FOLDER
-            input_path = os.path.dirname(input_path)  # update the path as folder
         else:
             job_type = UploadType.AS_FILE
 
     upload_client = UploadClient(
-        input_path=input_path,
         project_code=project_code,
         zone=zone,
         job_type=job_type,
@@ -156,11 +154,13 @@ def simple_upload(  # noqa: C901
         parent_folder_id=parent_folder_id,
         regular_file=regular_file,
         tags=tags,
+        source_id=source_id,
     )
 
     # format the local path into object storage path for preupload
     file_objects = []
     target_folder = upload_event.get('target_folder', '')
+    input_path = os.path.dirname(input_path)
     for file in upload_file_path:
         # first remove the input path from the file path
         file_path_sub = file.replace(input_path + '/', '')
@@ -208,16 +208,13 @@ def simple_upload(  # noqa: C901
     pool.close()
     pool.join()
 
-    if source_file or attribute:
+    if attribute:
         continue_loop = True
         while continue_loop:
             # the last uploaded file
             succeed = upload_client.check_status(file_object)
             continue_loop = not succeed
             time.sleep(0.5)
-        if source_file:
-            upload_client.create_file_lineage(source_file)
-            os.remove(file_batchs[0]) if os.path.isdir(input_path) and job_type == UploadType.AS_FILE else None
 
     num_of_file = len(upload_file_path)
     logger.info(f'Upload Time: {time.time() - upload_start_time:.2f}s for {num_of_file:d} files')

@@ -2,8 +2,6 @@
 #
 # Contact Indoc Research for any questions regarding the use of this source code.
 
-from typing import List
-
 from app.services.file_manager.file_upload.models import FileObject
 
 
@@ -103,9 +101,7 @@ def generate_on_success_form(
     project_code: str,
     operator: str,
     file_object: FileObject,
-    tags: List[str],
     from_parents: str = None,
-    process_pipeline: str = None,
     upload_message: str = None,
 ):
     """
@@ -118,7 +114,6 @@ def generate_on_success_form(
         - file_object(FileObject): The object that contains the file information.
         - tags(list[str]): The tags that will be attached with file.
         - from_parents(str): indicate it is parent node.
-        - process_pipeline(str): the name of pipeline.
         - upload_message(str): the message for uploading.
     return:
         - request_payload(dict): the payload for preupload api.
@@ -135,12 +130,9 @@ def generate_on_success_form(
         'resumable_total_chunks': file_object.total_chunks,
         'resumable_total_size': file_object.total_size,
         'resumable_relative_path': file_object.parent_path,
-        'tags': tags,
     }
     if from_parents:
         request_payload['from_parents'] = from_parents
-    if process_pipeline:
-        request_payload['process_pipeline'] = process_pipeline
     if upload_message:
         request_payload['upload_message'] = upload_message
     return request_payload

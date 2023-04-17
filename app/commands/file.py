@@ -4,7 +4,6 @@
 
 import json
 import os
-import re
 
 import click
 
@@ -83,13 +82,6 @@ def cli():
     show_default=True,
 )
 @click.option(
-    '--pipeline',
-    default=None,
-    required=False,
-    help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_PIPELINE),
-    show_default=True,
-)
-@click.option(
     '--zip',
     default=None,
     required=False,
@@ -123,7 +115,6 @@ def file_put(**kwargs):  # noqa: C901
     zone = kwargs.get('zone')
     upload_message = kwargs.get('upload_message')
     source_file = kwargs.get('source_file')
-    pipeline = kwargs.get('pipeline')
     zipping = kwargs.get('zip')
     attribute = kwargs.get('attribute')
     thread = kwargs.get('thread')
@@ -152,7 +143,6 @@ def file_put(**kwargs):  # noqa: C901
         'zone': zone,
         'upload_message': upload_message,
         'source': source_file,
-        'process_pipeline': pipeline,
         'project_code': project_code,
         'token': user.access_token,
         'attribute': attribute,
@@ -162,12 +152,6 @@ def file_put(**kwargs):  # noqa: C901
     src_file_info = validated_fieds['source_file']
     attribute = validated_fieds['attribute']
     if zone == AppConfig.Env.core_zone.lower():
-        if not pipeline:
-            # after validation, if not pipeline, provide default value
-            pipeline = AppConfig.Env.pipeline_straight_upload
-        else:
-            if not bool(re.match(r'^[a-z0-9_-]{1,20}$', pipeline)):
-                SrvErrorHandler.customized_handle(ECustomizedError.INVALID_PIPELINENAME, True)
         if not upload_message:
             upload_message = AppConfig.Env.default_upload_message
 
@@ -210,10 +194,8 @@ def file_put(**kwargs):  # noqa: C901
             'compress_zip': zipping,
             'attribute': attribute,
         }
-        if pipeline:
-            upload_event['process_pipeline'] = pipeline
         if source_file:
-            upload_event['valid_source'] = src_file_info
+            upload_event['source_id'] = src_file_info.get('id')
 
         item_ids = simple_upload(upload_event, num_of_thread=thread, output_path=output_path)
 
@@ -272,14 +254,11 @@ def validate_upload_event(event):
     zone = event.get('zone')
     upload_message = event.get('upload_message')
     source = event.get('source')
-    process_pipeline = event.get('process_pipeline')
     project_code = event.get('project_code')
     token = event.get('token')
     attribute = event.get('attribute')
     tag = event.get('tag')
-    validator = UploadEventValidator(
-        project_code, zone, upload_message, source, process_pipeline, token, attribute, tag
-    )
+    validator = UploadEventValidator(project_code, zone, upload_message, source, token, attribute, tag)
     converted_content = validator.validate_upload_event()
     return converted_content
 
