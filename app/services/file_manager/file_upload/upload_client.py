@@ -28,10 +28,8 @@ from app.services.user_authentication.decorator import require_valid_token
 from app.services.user_authentication.token_manager import SrvTokenManager
 from app.utils.aggregated import get_file_info_by_geid
 from app.utils.aggregated import resilient_session
-from app.utils.aggregated import search_item
 
 from .exception import INVALID_CHUNK_ETAG
-from ..file_lineage import create_lineage
 
 
 class UploadClient:
@@ -39,7 +37,6 @@ class UploadClient:
     Summary:
         The upload client is per upload base. it stores some immutable.
         infomation of particular upload action:
-         - input_path: the path that user inputs. can be a folder or file.
          - project_code: the unique code of project.
          - zone: data zone. can be greenroom or core.
          - upload_message:
@@ -49,20 +46,18 @@ class UploadClient:
 
     def __init__(
         self,
-        input_path: str,
         project_code: str,
         parent_folder_id: str,
         zone: str = AppConfig.Env.green_zone,
         upload_message: str = 'cli straight upload',
         job_type: str = UploadType.AS_FILE,
-        process_pipeline: str = None,
         current_folder_node: str = '',
         regular_file: str = True,
         tags: list = None,
+        source_id: str = '',
     ):
         self.user = UserConfig()
         self.operator = self.user.username
-        self.input_path = input_path
         self.upload_message = upload_message
         self.chunk_size = AppConfig.Env.chunk_size  # remove
         self.base_url = {
@@ -79,11 +74,12 @@ class UploadClient:
         self.zone = zone
         self.job_type = job_type
         self.project_code = project_code
-        self.process_pipeline = process_pipeline
         self.current_folder_node = current_folder_node
         self.parent_folder_id = parent_folder_id
         self.regular_file = regular_file
+        # tags and souce_id are only allowed in file uplaod
         self.tags = tags
+        self.source_id = source_id
 
         # the flag to indicate if all upload process finished
         # then the token refresh loop will end
@@ -94,7 +90,7 @@ class UploadClient:
         Summary:
             The function is to generate chunk upload meatedata for a file.
         Parameter:
-            - input_path: The path of the local file eg. a/b/c.txt.
+            - local_path: The path of the local file eg. a/b/c.txt.
         return:
             - total_size: the size of file.
             - total_chunks: the number of chunks will be uploaded.
@@ -176,13 +172,13 @@ class UploadClient:
             'current_folder_node': self.current_folder_node,
             'parent_folder_id': self.parent_folder_id,
             'folder_tags': self.tags,
+            'source_id': self.source_id,
             'data': [
                 {'resumable_filename': x.file_name, 'resumable_relative_path': x.parent_path} for x in file_objects
             ],
         }
 
         response = resilient_session().post(url, json=payload, headers=headers, timeout=None)
-
         if response.status_code == 200:
             result = response.json().get('result')
             file_mapping = {x.object_path: x for x in file_objects}
@@ -319,7 +315,8 @@ class UploadClient:
             }
             headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
             response = httpx.get(
-                self.base_url + '/v1/files/chunks/presigned',
+                # self.base_url + '/v1/files/chunks/presigned',
+                'http://localhost:5079/v1/files/chunks/presigned',
                 params=params,
                 headers=headers,
                 timeout=None,
@@ -369,14 +366,13 @@ class UploadClient:
                 time.sleep(1)
 
         for i in range(AppConfig.Env.resilient_retry):
-            url = self.base_url + '/v1/files'
+            # url = self.base_url + '/v1/files'
+            url = 'http://localhost:5079/v1/files'
             payload = uf.generate_on_success_form(
                 self.project_code,
                 self.operator,
                 file_object,
-                tags,
                 [],
-                process_pipeline=self.process_pipeline,
                 upload_message=self.upload_message,
             )
             headers = {
@@ -398,36 +394,6 @@ class UploadClient:
                     SrvErrorHandler.default_handle('retry over 3 times')
 
             time.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
-
-    @require_valid_token()
-    def create_file_lineage(self, source_file: dict, new_file_object: FileObject):
-        """
-        Summary:
-            The function is to create a lineage with source file.
-        Parameter:
-            - source_file(str): the file object that indicate the exist data to link with.
-            - new_file_object(FileObject): the new object just uploaded.
-        return:
-            - bool: if job success or not.
-        """
-
-        if source_file and self.zone == AppConfig.Env.core_zone:
-            child_rel_path = new_file_object.object_path
-            child_item = search_item(self.project_code, self.zone, child_rel_path, 'file')
-            child_file = child_item['result']
-            parent_file_geid = source_file['id']
-            child_file_geid = child_file['id']
-            lineage_event = {
-                'input_id': parent_file_geid,
-                'output_id': child_file_geid,
-                'input_path': os.path.join(source_file['parent_path'], source_file['name']),
-                'output_path': os.path.join(child_file['parent_path'], child_file['name']),
-                'project_code': self.project_code,
-                'action_type': self.process_pipeline,
-                'operator': self.operator,
-                'token': self.user.access_token,
-            }
-            create_lineage(lineage_event)
 
     def check_status(self, file_object: FileObject) -> bool:
         """
