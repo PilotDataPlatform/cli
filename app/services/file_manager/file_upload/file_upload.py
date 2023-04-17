@@ -236,7 +236,6 @@ def resume_upload(
     upload_start_time = time.time()
 
     upload_client = UploadClient(
-        input_path=manifest_json.get('file'),
         project_code=manifest_json.get('project_code'),
         zone=manifest_json.get('zone'),
         job_type='AS_FOLDER',

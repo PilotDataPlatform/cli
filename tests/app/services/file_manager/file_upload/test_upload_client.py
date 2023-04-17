@@ -26,7 +26,7 @@ def mock_decorator(*args, **kwargs):
 
 
 def test_check_status_success(httpx_mock, mocker):
-    upload_client = UploadClient('test', 'test', 'test')
+    upload_client = UploadClient('project_code', 'parent_folder_id')
 
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
@@ -45,7 +45,7 @@ def test_check_status_success(httpx_mock, mocker):
 
 
 def test_check_status_fail(httpx_mock, mocker):
-    upload_client = UploadClient('test', 'test', 'test')
+    upload_client = UploadClient('project_code', 'parent_folder_id')
 
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
@@ -64,7 +64,7 @@ def test_check_status_fail(httpx_mock, mocker):
 
 
 def test_chunk_upload(httpx_mock, mocker):
-    upload_client = UploadClient('test', 'test', 'test')
+    upload_client = UploadClient('project_code', 'parent_folder_id')
 
     test_presigned_url = 'http://test/presigned'
     url = re.compile('^' + upload_client.base_url + '/v1/files/chunks/presigned.*$')
@@ -86,7 +86,7 @@ def test_token_refresh_auto(mocker):
         'app.services.user_authentication.token_manager.SrvTokenManager.refresh', return_value=None
     )
 
-    upload_client = UploadClient('test', 'test', 'test')
+    upload_client = UploadClient('project_code', 'parent_folder_id')
     pool = ThreadPool(2)
     async_fun = pool.apply_async(upload_client.upload_token_refresh)
     sleep(3)
@@ -111,7 +111,7 @@ def test_resumable_pre_upload_success(httpx_mock, mocker):
         return_value=decoded_token(),
     )
 
-    upload_client = UploadClient('test', 'project_code', 'parent_folder_id')
+    upload_client = UploadClient('project_code', 'parent_folder_id')
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
     test_obj = FileObject('object/path', 'local_path', 'resumable_id', 'job_id', 'item_id')
 
@@ -133,7 +133,7 @@ def test_resumable_pre_upload_failed_with_404(httpx_mock, mocker):
         return_value=decoded_token(),
     )
 
-    upload_client = UploadClient('test', 'project_code', 'parent_folder_id')
+    upload_client = UploadClient('project_code', 'parent_folder_id')
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
     test_obj = FileObject('object/path', 'local_path', 'resumable_id', 'job_id', 'item_id')
 
@@ -154,7 +154,7 @@ def test_resumable_pre_upload_failed_with_404(httpx_mock, mocker):
 
 
 def test_output_manifest_success(mocker):
-    upload_client = UploadClient('test', 'project_code', 'parent_folder_id')
+    upload_client = UploadClient('project_code', 'parent_folder_id')
     json_dump_mocker = mocker.patch('json.dump', return_value=None)
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
     test_obj = FileObject('object/path', 'local_path', 'resumable_id', 'job_id', 'item_id')
