@@ -81,6 +81,7 @@ class ECustomizedError(enum.Enum):
     CONTAINER_REGISTRY_NO_URL = 'CONTAINER_REGISTRY_NO_URL'
     CONFIG_NOT_FOUND = 'CONFIG_NOT_FOUND'
     CONFIG_EXIST = 'CONFIG_EXIST'
+    LINEAGE_FEATURE_NOT_READY = 'LINEAGE_FEATURE_NOT_READY'
 
 
 def customized_error_msg(customized_error: ECustomizedError):
