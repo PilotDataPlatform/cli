@@ -120,7 +120,7 @@ def test_file_upload_skip_empty_file(mocker):
     mocker.patch('os.path.isdir', return_value=False)
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(0, 0))
 
-    item_ids = simple_upload(upload_event)
+    item_ids = simple_upload(upload_event, output_path='./test')
     assert len(item_ids) == 0
 
 
