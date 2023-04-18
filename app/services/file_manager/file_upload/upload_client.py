@@ -357,9 +357,7 @@ class UploadClient:
         """
 
         # check if all the chunks have been uploaded
-        for res in chunk_result:
-            while res.get() is None:
-                time.sleep(1)
+        [res.wait() for res in chunk_result]
 
         for i in range(AppConfig.Env.resilient_retry):
             url = self.base_url + '/v1/files'
