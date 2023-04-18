@@ -192,9 +192,6 @@ class UploadClient:
                 file_object.job_id = job.get('job_id')
                 file_objets.append(file_object)
 
-            # then output manifest file to the output path
-            self.output_manifest(file_objets, output_path)
-
             mhandler.SrvOutPutHandler.preupload_success()
             return file_objets
         elif response.status_code == 403:

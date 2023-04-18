@@ -181,6 +181,9 @@ def simple_upload(  # noqa: C901
         # the placeholder in object storage
         pre_upload_infos.extend(upload_client.pre_upload(file_batchs, output_path))
 
+    # then output manifest file to the output path
+    upload_client.output_manifest(pre_upload_infos, output_path)
+
     # now loop over each file under the folder and start
     # the chunk upload
 

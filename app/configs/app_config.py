@@ -12,8 +12,8 @@ class AppConfig(object):
         user_config_path = ConfigClass.config_path
         msg_path = ConfigClass.custom_path
         user_config_file = f'{user_config_path}/config.ini'
-        token_warn_need_refresh = 30  # refresh token if token is about to expire
-        token_refresh_interval = 120  # auto refresh token every 2 minutes
+        token_warn_need_refresh = 120  # refresh token if token is about to expire
+        token_refresh_interval = 90  # auto refresh token every 40 seconds
 
         # NOTE: there is a limitation on minio that
         # the multipart number is 10000. so we set
