@@ -165,7 +165,14 @@ def simple_upload(  # noqa: C901
         # first remove the input path from the file path
         file_path_sub = file.replace(input_path + '/', '')
         object_path = os.path.join(target_folder, file_path_sub)
-        file_objects.append(FileObject(object_path, file))
+
+        # generate a placeholder for each file
+        file_object = FileObject(object_path, file)
+        # skip the file with 0 size
+        if file_object.total_size == 0:
+            logger.warning(f'Skip the file with 0 size: {file_object.file_name}')
+        else:
+            file_objects.append(FileObject(object_path, file))
 
     # here add the batch of 500 per loop, the pre upload api cannot
     # process very large amount of file at same time. otherwise it will timeout
@@ -193,10 +200,11 @@ def simple_upload(  # noqa: C901
     pool = ThreadPool(num_of_thread + 1)
     pool.apply_async(upload_client.upload_token_refresh)
     on_success_res = []
+
+    file_object: FileObject
     for file_object in pre_upload_infos:
         chunk_res = upload_client.stream_upload(file_object, pool)
-        # NOTE: if there is some racing error make the combine chunks
-        # out of thread pool.
+        # the on_success api will be called after all chunk uploaded
         res = pool.apply_async(
             upload_client.on_succeed,
             args=(file_object, tags, chunk_res),
@@ -219,7 +227,7 @@ def simple_upload(  # noqa: C901
             continue_loop = not succeed
             time.sleep(0.5)
 
-    num_of_file = len(upload_file_path)
+    num_of_file = len(pre_upload_infos)
     logger.info(f'Upload Time: {time.time() - upload_start_time:.2f}s for {num_of_file:d} files')
 
     return [file_object.item_id for file_object in pre_upload_infos]
