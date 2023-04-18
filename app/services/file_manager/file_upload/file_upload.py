@@ -256,28 +256,44 @@ def resume_upload(
     )
 
     # check files in manifest if some of them are already uploaded
-    item_ids = []
+    unfinished_items = []
     all_files = manifest_json.get('file_objects')
+    item_ids = []
     for item_id in all_files:
         item_ids.append(item_id)
-    items = get_file_info_by_geid(item_ids)
 
-    unfinished_items = []
-    for x in items:
-        if x.get('result').get('status') == ItemStatus.REGISTERED:
-            file_info = all_files.get(x.get('result').get('id'))
-            unfinished_items.append(
-                FileObject(
-                    file_info.get('object_path'),
-                    file_info.get('local_path'),
-                    file_info.get('resumable_id'),
-                    file_info.get('job_id'),
-                    file_info.get('item_id'),
+    # here add the batch of 500 per loop, the pre upload api cannot
+    # process very large amount of file at same time. otherwise it will timeout
+    num_of_batchs = math.ceil(len(all_files) / AppConfig.Env.upload_batch_size)
+    # here is list of pre upload result. We decided to call pre upload api by batch
+    for batch in range(0, num_of_batchs):
+        start_index = batch * AppConfig.Env.upload_batch_size
+        end_index = (batch + 1) * AppConfig.Env.upload_batch_size
+        file_batchs = item_ids[start_index:end_index]
+        items = get_file_info_by_geid(file_batchs)
+
+        # get the detail of item to see if the file is already uploaded
+        unfinished_files = []
+        for x in items:
+            if x.get('result').get('status') == ItemStatus.REGISTERED:
+                file_info = all_files.get(x.get('result').get('id'))
+                unfinished_files.append(
+                    FileObject(
+                        file_info.get('object_path'),
+                        file_info.get('local_path'),
+                        file_info.get('resumable_id'),
+                        file_info.get('job_id'),
+                        file_info.get('item_id'),
+                    )
                 )
-            )
 
-    # then for the rest of the files, check if any chunks are already uploaded
-    unfinished_items = upload_client.resume_upload(unfinished_items)
+        # then for the rest of the files, check if any chunks are already uploaded
+        mhandler.SrvOutPutHandler.resume_check_in_progress()
+        if len(unfinished_files) > 0:
+            unfinished_items.extend(upload_client.resume_upload(unfinished_files))
+
+    mhandler.SrvOutPutHandler.resume_warning(len(unfinished_items))
+    mhandler.SrvOutPutHandler.resume_check_success()
 
     # lastly, start resumable upload for the rest of the chunks
     # thread number +1 reserve one thread to refresh token
