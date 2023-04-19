@@ -7,7 +7,9 @@ import os
 import time
 import zipfile
 from multiprocessing.pool import ThreadPool
+from typing import Any
 from typing import Dict
+from typing import List
 from typing import Tuple
 
 import click
@@ -15,12 +17,15 @@ import click
 import app.services.logger_services.log_functions as logger
 import app.services.output_manager.message_handler as mhandler
 from app.configs.app_config import AppConfig
+from app.services.file_manager.file_upload.models import FileObject
+from app.services.file_manager.file_upload.models import ItemStatus
 from app.services.file_manager.file_upload.models import UploadType
 from app.services.file_manager.file_upload.upload_client import UploadClient
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.output_manager.error_handler import customized_error_msg
 from app.utils.aggregated import get_file_in_folder
+from app.utils.aggregated import get_file_info_by_geid
 from app.utils.aggregated import search_item
 
 
@@ -36,7 +41,7 @@ def compress_folder_to_zip(path):
 
 
 def assemble_path(
-    f: str, target_folder: str, project_code: str, zone: str, resumable_id: str, zipping: bool = False
+    f: str, target_folder: str, project_code: str, zone: str, zipping: bool = False
 ) -> Tuple[str, Dict, bool, str]:
     '''
     Summary:
@@ -54,7 +59,6 @@ def assemble_path(
          - target_folder(str): the folder on the platform
          - project_code(str): the unique identifier of project
          - zone(str): the zone label eg.greenroom/core
-         - resumable_id(str): the unique identifier of a upload process
          - zipping(bool): default False. The flag to indicate if upload as a zip
     Return:
          - current_file_path: the format file path on platform
@@ -66,14 +70,19 @@ def assemble_path(
 
     current_file_path = target_folder + '/' + f.rstrip('/').split('/')[-1]
     result_file = current_file_path
+    if zipping:
+        result_file = result_file + '.zip'
 
     # set name folder as first parent folder
-    name_folder = current_file_path.split('/')[0]
+    name_folder = target_folder.split('/')[0]
     parent_folder = search_item(project_code, zone, name_folder, 'name_folder')
     parent_folder = parent_folder.get('result')
-    create_folder_flag = False
 
-    if len(current_file_path.split('/')) > 2 and not resumable_id:
+    # if f input is a file then current_folder_node is target_folder
+    # otherwise it is target_folder + f input name
+    current_folder_node = target_folder if os.path.isfile(f) else current_file_path
+    create_folder_flag = False
+    if len(current_file_path.split('/')) > 2:
         sub_path = target_folder.split('/')
         for index in range(len(sub_path) - 1):
             folder_path = '/'.join(sub_path[0 : 2 + index])
@@ -82,104 +91,105 @@ def assemble_path(
             # find the longest existing folder as parent folder
             # if user input a path that need to create some folders
             if not res.get('result'):
-                current_file_path = folder_path
+                current_folder_node = folder_path
                 click.confirm(customized_error_msg(ECustomizedError.CREATE_FOLDER_IF_NOT_EXIST), abort=True)
                 create_folder_flag = True
                 break
             else:
                 parent_folder = res.get('result')
-    elif resumable_id:
-        mhandler.SrvOutPutHandler.resume_warning(resumable_id)
 
     # error check if the user dont have permission to see the folder
     # because the name folder will always be there if user has correct permission
     if not parent_folder:
         SrvErrorHandler.customized_handle(ECustomizedError.PERMISSION_DENIED, True)
 
-    if zipping:
-        result_file = result_file + '.zip'
-
-    return current_file_path, parent_folder, create_folder_flag, result_file
+    return current_folder_node, parent_folder, create_folder_flag, result_file
 
 
 def simple_upload(  # noqa: C901
     upload_event,
     num_of_thread: int = 1,
-    resumable_id: str = None,
-    job_id: str = None,
-    item_id: str = None,
-):
+    output_path: str = None,
+) -> List[str]:
     upload_start_time = time.time()
-    my_file = upload_event.get('file')
+    input_path = upload_event.get('file')
     project_code = upload_event.get('project_code')
     tags = upload_event.get('tags')
     zone = upload_event.get('zone')
     # process_pipeline = upload_event.get('process_pipeline', None)
     # upload_message = upload_event.get('upload_message')
-    target_folder = upload_event.get('current_folder_node', '')
+    current_folder_node = upload_event.get('current_folder_node', '')
     parent_folder_id = upload_event.get('parent_folder_id', '')
     create_folder_flag = upload_event.get('create_folder_flag', False)
     compress_zip = upload_event.get('compress_zip', False)
     regular_file = upload_event.get('regular_file', True)
-    source_file = upload_event.get('valid_source')
+    source_id = upload_event.get('source_id', None)
     attribute = upload_event.get('attribute')
 
-    mhandler.SrvOutPutHandler.start_uploading(my_file)
-    # TODO: PILOT-2392 simplify the logic under
+    mhandler.SrvOutPutHandler.start_uploading(input_path)
     # if the input request zip folder then process the path as single file
     # otherwise read throught the folder to get path underneath
-    if os.path.isdir(my_file):
+    if os.path.isdir(input_path):
         job_type = UploadType.AS_FILE if compress_zip else UploadType.AS_FOLDER
         if job_type == UploadType.AS_FILE:
-            upload_file_path = [my_file.rstrip('/').lstrip() + '.zip']
-            target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
-            compress_folder_to_zip(my_file)
-        elif job_type == UploadType.AS_FOLDER and resumable_id:
-            SrvErrorHandler.customized_handle(ECustomizedError.UNSUPPORTED_PROJECT, True, project_code)
+            upload_file_path = [input_path.rstrip('/').lstrip() + '.zip']
+            compress_folder_to_zip(input_path)
+        elif tags or attribute or source_id:
+            SrvErrorHandler.customized_handle(ECustomizedError.UNSUPPORT_TAG_MANIFEST, True)
         else:
-            logger.warning('Current version does not support folder tagging, ' 'any selected tags will be ignored')
-            upload_file_path = get_file_in_folder(my_file)
+            upload_file_path = get_file_in_folder(input_path)
     else:
-        upload_file_path = [my_file]
+        upload_file_path = [input_path]
 
         if create_folder_flag:
             job_type = UploadType.AS_FOLDER
-            my_file = os.path.dirname(my_file)  # update the path as folder
         else:
-            target_folder = '/'.join(target_folder.split('/')[:-1]).rstrip('/')
             job_type = UploadType.AS_FILE
 
     upload_client = UploadClient(
-        input_path=my_file,
         project_code=project_code,
         zone=zone,
         job_type=job_type,
-        current_folder_node=target_folder,
+        current_folder_node=current_folder_node,
         parent_folder_id=parent_folder_id,
         regular_file=regular_file,
         tags=tags,
+        source_id=source_id,
     )
+
+    # format the local path into object storage path for preupload
+    file_objects = []
+    target_folder = upload_event.get('target_folder', '')
+    input_path = os.path.dirname(input_path)
+    for file in upload_file_path:
+        # first remove the input path from the file path
+        file_path_sub = file.replace(input_path + '/', '')
+        object_path = os.path.join(target_folder, file_path_sub)
+
+        # generate a placeholder for each file
+        file_object = FileObject(object_path, file)
+        # skip the file with 0 size
+        if file_object.total_size == 0:
+            logger.warning(f'Skip the file with 0 size: {file_object.file_name}')
+        else:
+            file_objects.append(FileObject(object_path, file))
 
     # here add the batch of 500 per loop, the pre upload api cannot
     # process very large amount of file at same time. otherwise it will timeout
-    num_of_batchs = math.ceil(len(upload_file_path) / AppConfig.Env.upload_batch_size)
+    num_of_batchs = math.ceil(len(file_objects) / AppConfig.Env.upload_batch_size)
     # here is list of pre upload result. We decided to call pre upload api by batch
-    # the result will store as (UploaderObject, preupload_id_mapping)
     pre_upload_infos = []
+    for batch in range(0, num_of_batchs):
+        start_index = batch * AppConfig.Env.upload_batch_size
+        end_index = (batch + 1) * AppConfig.Env.upload_batch_size
+        file_batchs = file_objects[start_index:end_index]
 
-    # TODO later will adapt the folder resumable upload
-    # for now it is only for file resumable
-    if resumable_id and job_id:
-        pre_upload_infos.extend(upload_client.resume_upload(resumable_id, job_id, item_id, upload_file_path[0]))
-    else:
-        for batch in range(0, num_of_batchs):
-            start_index = batch * AppConfig.Env.upload_batch_size
-            end_index = (batch + 1) * AppConfig.Env.upload_batch_size
-            file_batchs = upload_file_path[start_index:end_index]
+        # sending the pre upload request to generate
+        # the placeholder in object storage
+        pre_upload_infos.extend(upload_client.pre_upload(file_batchs, output_path))
 
-            # sending the pre upload request to generate
-            # the placeholder in object storage
-            pre_upload_infos.extend(upload_client.pre_upload(file_batchs))
+    # then output manifest file to the output path
+    upload_client.output_manifest(pre_upload_infos, output_path)
 
     # now loop over each file under the folder and start
     # the chunk upload
@@ -189,29 +199,126 @@ def simple_upload(  # noqa: C901
 
     pool = ThreadPool(num_of_thread + 1)
     pool.apply_async(upload_client.upload_token_refresh)
+    on_success_res = []
+
+    file_object: FileObject
     for file_object in pre_upload_infos:
         chunk_res = upload_client.stream_upload(file_object, pool)
-        # NOTE: if there is some racing error make the combine chunks
-        # out of thread pool.
-        pool.apply_async(
+        # the on_success api will be called after all chunk uploaded
+        res = pool.apply_async(
             upload_client.on_succeed,
             args=(file_object, tags, chunk_res),
         )
+        on_success_res.append(res)
+
+    # finish the upload once all on success api return
+    # otherwise wait for 1 second and check again
+    [res.wait() for res in on_success_res]
     upload_client.set_finish_upload()
 
     pool.close()
     pool.join()
 
-    if source_file or attribute:
+    if attribute:
         continue_loop = True
         while continue_loop:
             # the last uploaded file
             succeed = upload_client.check_status(file_object)
             continue_loop = not succeed
             time.sleep(0.5)
-        if source_file:
-            upload_client.create_file_lineage(source_file)
-            os.remove(file_batchs[0]) if os.path.isdir(my_file) and job_type == UploadType.AS_FILE else None
 
-    num_of_file = len(upload_file_path)
+    num_of_file = len(pre_upload_infos)
+    logger.info(f'Upload Time: {time.time() - upload_start_time:.2f}s for {num_of_file:d} files')
+
+    return [file_object.item_id for file_object in pre_upload_infos]
+
+
+def resume_upload(
+    manifest_json: Dict[str, Any],
+    num_of_thread: int = 1,
+):
+    """
+    Summary:
+        Resume upload from the manifest file
+    Parameters:
+        - manifest_json: the manifest json which store the upload information
+        - num_of_thread: the number of thread to upload the file
+    """
+    upload_start_time = time.time()
+
+    upload_client = UploadClient(
+        project_code=manifest_json.get('project_code'),
+        zone=manifest_json.get('zone'),
+        job_type='AS_FOLDER',
+        current_folder_node=manifest_json.get('current_folder_node', ''),
+        parent_folder_id=manifest_json.get('parent_folder_id', ''),
+        tags=manifest_json.get('tags'),
+    )
+
+    # check files in manifest if some of them are already uploaded
+    unfinished_items = []
+    all_files = manifest_json.get('file_objects')
+    item_ids = []
+    for item_id in all_files:
+        item_ids.append(item_id)
+
+    # here add the batch of 500 per loop, the pre upload api cannot
+    # process very large amount of file at same time. otherwise it will timeout
+    num_of_batchs = math.ceil(len(all_files) / AppConfig.Env.upload_batch_size)
+    # here is list of pre upload result. We decided to call pre upload api by batch
+    for batch in range(0, num_of_batchs):
+        start_index = batch * AppConfig.Env.upload_batch_size
+        end_index = (batch + 1) * AppConfig.Env.upload_batch_size
+        file_batchs = item_ids[start_index:end_index]
+        items = get_file_info_by_geid(file_batchs)
+
+        # get the detail of item to see if the file is already uploaded
+        unfinished_files = []
+        for x in items:
+            if x.get('result').get('status') == ItemStatus.REGISTERED:
+                file_info = all_files.get(x.get('result').get('id'))
+                unfinished_files.append(
+                    FileObject(
+                        file_info.get('object_path'),
+                        file_info.get('local_path'),
+                        file_info.get('resumable_id'),
+                        file_info.get('job_id'),
+                        file_info.get('item_id'),
+                    )
+                )
+
+        # then for the rest of the files, check if any chunks are already uploaded
+        mhandler.SrvOutPutHandler.resume_check_in_progress()
+        if len(unfinished_files) > 0:
+            unfinished_items.extend(upload_client.resume_upload(unfinished_files))
+
+    mhandler.SrvOutPutHandler.resume_warning(len(unfinished_items))
+    mhandler.SrvOutPutHandler.resume_check_success()
+
+    # lastly, start resumable upload for the rest of the chunks
+    # thread number +1 reserve one thread to refresh token
+    # and remove the token decorator in functions
+
+    pool = ThreadPool(num_of_thread + 1)
+    pool.apply_async(upload_client.upload_token_refresh)
+    on_success_res = []
+    for file_object in unfinished_items:
+        chunk_res = upload_client.stream_upload(file_object, pool)
+        # NOTE: if there is some racing error make the combine chunks
+        # out of thread pool.
+        res = pool.apply_async(
+            upload_client.on_succeed,
+            args=(file_object, manifest_json.get('tags'), chunk_res),
+        )
+        on_success_res.append(res)
+
+    # finish the upload once all on success api return
+    # otherwise wait for 1 second and check again
+    [res.wait() for res in on_success_res]
+    upload_client.set_finish_upload()
+
+    pool.close()
+    pool.join()
+
+    num_of_file = len(unfinished_items)
     logger.info(f'Upload Time: {time.time() - upload_start_time:.2f}s for {num_of_file:d} files')

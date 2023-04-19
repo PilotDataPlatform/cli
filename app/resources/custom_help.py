@@ -6,9 +6,11 @@
 class HelpPage:
     page = {
         'update': {
-            'version': '2.2.0',
-            '1': 'CLI supports to perform multi-threading upload for file/folders',
-            '2': 'CLI supports to perform resumable upload for single file',
+            'version': '2.3.0',
+            '1': 'The logic of normal upload and resumble are splited. '
+            'add new command for resumable upload as `pilotcli file resume -r manifest.json`',
+            '2': 'The manifest file will be output for both file/folder upload',
+            '3': 'Optimize logic, input and error message',
         },
         'dataset': {
             'DATASET_DOWNLOAD': 'Download a dataset or a particular version of a dataset.',
@@ -32,6 +34,7 @@ class HelpPage:
             'FILE_LIST': 'List files and folders inside a given Project/folder.',
             'FILE_SYNC': 'Download files/folders from a given Project/folder/file in core zone.',
             'FILE_UPLOAD': 'Upload files/folders to a given Project path.',
+            'FILE_RESUME': 'Resume the upload process with given manifest file.',
             'FILE_Z': 'Target Zone (i.e., core/greenroom)  [default: greenroom]',
             'FILE_ATTRIBUTE_P': 'Project Code',
             'FILE_ATTRIBUTE_N': 'Attribute Template Name',

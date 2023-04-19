@@ -42,7 +42,7 @@ class Error:
             'may only contain lowercase letters, numbers, and/or special characters of -_, .'
         ),
         'INVALID_PATHS': 'The input path is empty. Please select at least one file or folder to upload',
-        'INVALID_RESUMABLE': 'Both resumable_id and job_id should be specified when doing resumable upload',
+        'INVALID_RESUMABLE': 'The resumable manifest file is not exist.',
         'INVALID_FOLDERNAME': (
             'The input folder name is not valid. Please follow the rule:\n'
             ' - cannot contains special characters.\n'
@@ -58,11 +58,15 @@ class Error:
             'The specified multipart upload does not exist. '
             'The upload ID may be invalid, or the upload may have been aborted or completed.'
         ),
+        'MANIFEST_OF_FOLDER_FILE_EXIST': (
+            'The manifest file of folder %s already exist. ' 'Do you want to overwrite the existing manifest file?'
+        ),
         'INVALID_CHUNK_UPLOAD': (
             '\nThe chunk number %d is not the same with previous etag.\n'
             'It means the resumable file is not the same with previous one.\n'
             'Please to double check the file content.'
         ),
+        'UNSUPPORT_TAG_MANIFEST': 'Tagging, lineage and manifest attaching are not supported for folder type.',
         'INVALID_INPUT': 'Invalid input. Please try again.',
         'UNSUPPORTED_PROJECT': 'This function is not supported in the given Project %s',
         'CREATE_FOLDER_IF_NOT_EXIST': 'Target folder does not exist. Would you like to create a new folder?',
@@ -118,4 +122,5 @@ class Error:
         'CONTAINER_REGISTRY_NO_URL': (
             'Container registry has not yet been configured. Related commands cannot be used at this time.'
         ),
+        'LINEAGE_FEATURE_NOT_READY': 'Lineage is not support at v2.3.0',
     }

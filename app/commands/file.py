@@ -2,7 +2,8 @@
 #
 # Contact Indoc Research for any questions regarding the use of this source code.
 
-import re
+import json
+import os
 
 import click
 
@@ -14,6 +15,7 @@ from app.services.file_manager.file_download.download_client import SrvFileDownl
 from app.services.file_manager.file_list import SrvFileList
 from app.services.file_manager.file_manifests import SrvFileManifests
 from app.services.file_manager.file_upload.file_upload import assemble_path
+from app.services.file_manager.file_upload.file_upload import resume_upload
 from app.services.file_manager.file_upload.file_upload import simple_upload
 from app.services.file_manager.file_upload.upload_validator import UploadEventValidator
 from app.services.output_manager.error_handler import ECustomizedError
@@ -80,13 +82,6 @@ def cli():
     show_default=True,
 )
 @click.option(
-    '--pipeline',
-    default=None,
-    required=False,
-    help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_PIPELINE),
-    show_default=True,
-)
-@click.option(
     '--zip',
     default=None,
     required=False,
@@ -103,27 +98,11 @@ def cli():
     show_default=True,
 )
 @click.option(
-    '--resumable-id',
-    '-rid',
-    default=None,
+    '--output-path',
+    '-o',
+    default='./manifest.json',
     required=False,
-    help='The upload id to resume the failed upload job',
-    show_default=True,
-)
-@click.option(
-    '--job-id',
-    '-jid',
-    default=None,
-    required=False,
-    help='The job id to resume the failed upload job',
-    show_default=True,
-)
-@click.option(
-    '--item-id',
-    '-item',
-    default=None,
-    required=False,
-    help='The item id is required when resume an upload job',
+    help='The output path for the manifest file of resumable upload',
     show_default=True,
 )
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD))
@@ -136,13 +115,15 @@ def file_put(**kwargs):  # noqa: C901
     zone = kwargs.get('zone')
     upload_message = kwargs.get('upload_message')
     source_file = kwargs.get('source_file')
-    pipeline = kwargs.get('pipeline')
     zipping = kwargs.get('zip')
     attribute = kwargs.get('attribute')
     thread = kwargs.get('thread')
-    resumable_id = kwargs.get('resumable_id')
-    job_id = kwargs.get('job_id')
-    item_id = kwargs.get('item_id')
+    output_path = kwargs.get('output_path')
+
+    # for 20230418 staging temporary disable the attribute
+    # since the backend is not ready yet
+    if source_file:
+        SrvErrorHandler.customized_handle(ECustomizedError.LINEAGE_FEATURE_NOT_READY, True)
 
     user = UserConfig()
     # Check zone and upload-message
@@ -155,9 +136,10 @@ def file_put(**kwargs):  # noqa: C901
     # check if user input at least one file/folder
     if len(paths) == 0:
         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_PATHS, True)
-    # check if resumable_id exist then job_id should also be inputed
-    if (resumable_id is None) != (job_id is None):
-        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_RESUMABLE, True)
+
+    # check if the manifest file exists
+    if os.path.exists(output_path):
+        click.confirm(customized_error_msg(ECustomizedError.MANIFEST_OF_FOLDER_FILE_EXIST) % (output_path), abort=True)
 
     project_path = click.prompt('ProjectCode') if not project_path else project_path
     project_code, target_folder = identify_target_folder(project_path)
@@ -166,7 +148,6 @@ def file_put(**kwargs):  # noqa: C901
         'zone': zone,
         'upload_message': upload_message,
         'source': source_file,
-        'process_pipeline': pipeline,
         'project_code': project_code,
         'token': user.access_token,
         'attribute': attribute,
@@ -176,31 +157,39 @@ def file_put(**kwargs):  # noqa: C901
     src_file_info = validated_fieds['source_file']
     attribute = validated_fieds['attribute']
     if zone == AppConfig.Env.core_zone.lower():
-        if not pipeline:
-            # after validation, if not pipeline, provide default value
-            pipeline = AppConfig.Env.pipeline_straight_upload
-        else:
-            if not bool(re.match(r'^[a-z0-9_-]{1,20}$', pipeline)):
-                SrvErrorHandler.customized_handle(ECustomizedError.INVALID_PIPELINENAME, True)
         if not upload_message:
             upload_message = AppConfig.Env.default_upload_message
+
+    # for the path formating there will be following cases:
+    # - file:
+    #   1. the project path exist, then will be AS_FILE. nothing will be changed.
+    #      current_folder_node will be empty string.
+    #   2. the project path not exist, then will be AS_FOLDER. the current_folder_node will
+    #      be the parent folder node + the shortest non-exist folder. (like one level down).
+    # - folder:
+    #   1. the project path exist, then will be AS_FOLDER. the current folder node will be
+    #      the one that user input.
+    #   2. the project path not exist, then will be AS_FOLDER. the current folder node will
+    #      be the parent folder node + the shortest non-exist folder. (like one level down).
+
     # Unique Paths
     paths = set(paths)
-
     # the loop will read all input path(folder or files)
     # and process them one by one
     for f in paths:
+        # so this function will always return the furthest folder node as current_folder_node+parent_folder_id
         current_folder_node, parent_folder, create_folder_flag, result_file = assemble_path(
             f,
             target_folder,
             project_code,
             zone,
-            resumable_id,
             zipping,
         )
+
         upload_event = {
             'project_code': project_code,
-            'file': f,
+            'target_folder': target_folder,
+            'file': f.rstrip('/'),  # remove the ending slash
             'tags': tag if tag else [],
             'zone': zone,
             'upload_message': upload_message,
@@ -210,15 +199,59 @@ def file_put(**kwargs):  # noqa: C901
             'compress_zip': zipping,
             'attribute': attribute,
         }
-        if pipeline:
-            upload_event['process_pipeline'] = pipeline
         if source_file:
-            upload_event['valid_source'] = src_file_info
+            upload_event['source_id'] = src_file_info.get('id')
 
-        simple_upload(upload_event, num_of_thread=thread, resumable_id=resumable_id, job_id=job_id, item_id=item_id)
+        item_ids = simple_upload(upload_event, num_of_thread=thread, output_path=output_path)
 
-        srv_manifest.attach_manifest(attribute, result_file, zone) if attribute else None
+        # since only file upload can attach manifest, take the first file object
+        srv_manifest.attach_manifest(attribute, item_ids[0], zone) if attribute else None
         message_handler.SrvOutPutHandler.all_file_uploaded()
+
+
+@click.command(name='resume')
+@click.option(
+    '--thread',
+    '-td',
+    default=1,
+    required=False,
+    help='The number of thread for upload a file',
+    show_default=True,
+)
+@click.option(
+    '--resumable-manifest',
+    '-r',
+    default=None,
+    required=True,
+    help='The manifest file for resumable upload',
+    show_default=True,
+)
+@doc(file_help.file_help_page(file_help.FileHELP.FILE_RESUME))
+def file_resume(**kwargs):  # noqa: C901
+    """
+    Summary:
+        Resume upload file. Now split the logic of resumable upload and
+        normal file upload to make the code more clear.
+    Parameters:
+        - thread: The number of thread for upload a file
+        - resumable_file: The manifest file for resumable upload
+    """
+
+    thread = kwargs.get('thread')
+    resumable_manifest_file = kwargs.get('resumable_manifest')
+
+    # check if manifest file exist then read the manifest file as json
+    if not os.path.exists(resumable_manifest_file):
+        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_RESUMABLE, True)
+
+    with open(resumable_manifest_file, 'r') as f:
+        resumable_manifest = json.load(f)
+        # use the same validator with upload. because resumable and normal upload
+        # are rather similar with the input
+        validate_upload_event(resumable_manifest)
+
+    # print(resumable_manifest)
+    resume_upload(resumable_manifest, thread)
 
 
 def validate_upload_event(event):
@@ -226,14 +259,11 @@ def validate_upload_event(event):
     zone = event.get('zone')
     upload_message = event.get('upload_message')
     source = event.get('source')
-    process_pipeline = event.get('process_pipeline')
     project_code = event.get('project_code')
     token = event.get('token')
     attribute = event.get('attribute')
     tag = event.get('tag')
-    validator = UploadEventValidator(
-        project_code, zone, upload_message, source, process_pipeline, token, attribute, tag
-    )
+    validator = UploadEventValidator(project_code, zone, upload_message, source, token, attribute, tag)
     converted_content = validator.validate_upload_event()
     return converted_content
 
