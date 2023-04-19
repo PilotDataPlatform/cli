@@ -174,8 +174,6 @@ def simple_upload(  # noqa: C901
         else:
             file_objects.append(FileObject(object_path, file))
 
-    raise Exception('test')
-
     # here add the batch of 500 per loop, the pre upload api cannot
     # process very large amount of file at same time. otherwise it will timeout
     num_of_batchs = math.ceil(len(file_objects) / AppConfig.Env.upload_batch_size)
