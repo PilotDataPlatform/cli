@@ -163,7 +163,7 @@ def simple_upload(  # noqa: C901
     input_path = os.path.dirname(input_path)
     for file in upload_file_path:
         # first remove the input path from the file path
-        file_path_sub = file.replace(input_path + '/', '')
+        file_path_sub = file.replace(input_path + '/', '') if input_path else file
         object_path = os.path.join(target_folder, file_path_sub)
 
         # generate a placeholder for each file
@@ -173,6 +173,8 @@ def simple_upload(  # noqa: C901
             logger.warning(f'Skip the file with 0 size: {file_object.file_name}')
         else:
             file_objects.append(FileObject(object_path, file))
+
+    raise Exception('test')
 
     # here add the batch of 500 per loop, the pre upload api cannot
     # process very large amount of file at same time. otherwise it will timeout
