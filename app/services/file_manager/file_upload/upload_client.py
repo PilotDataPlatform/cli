@@ -3,11 +3,14 @@
 # Contact Indoc Research for any questions regarding the use of this source code.
 
 import hashlib
+import json
 import math
 import os
 import time
 from multiprocessing.pool import ApplyResult
 from multiprocessing.pool import ThreadPool
+from typing import Any
+from typing import Dict
 from typing import List
 from typing import Tuple
 
@@ -25,10 +28,8 @@ from app.services.user_authentication.decorator import require_valid_token
 from app.services.user_authentication.token_manager import SrvTokenManager
 from app.utils.aggregated import get_file_info_by_geid
 from app.utils.aggregated import resilient_session
-from app.utils.aggregated import search_item
 
 from .exception import INVALID_CHUNK_ETAG
-from ..file_lineage import create_lineage
 
 
 class UploadClient:
@@ -36,7 +37,6 @@ class UploadClient:
     Summary:
         The upload client is per upload base. it stores some immutable.
         infomation of particular upload action:
-         - input_path: the path that user inputs. can be a folder or file.
          - project_code: the unique code of project.
          - zone: data zone. can be greenroom or core.
          - upload_message:
@@ -46,20 +46,18 @@ class UploadClient:
 
     def __init__(
         self,
-        input_path: str,
         project_code: str,
         parent_folder_id: str,
         zone: str = AppConfig.Env.green_zone,
         upload_message: str = 'cli straight upload',
         job_type: str = UploadType.AS_FILE,
-        process_pipeline: str = None,
         current_folder_node: str = '',
         regular_file: str = True,
         tags: list = None,
+        source_id: str = '',
     ):
         self.user = UserConfig()
         self.operator = self.user.username
-        self.input_path = input_path
         self.upload_message = upload_message
         self.chunk_size = AppConfig.Env.chunk_size  # remove
         self.base_url = {
@@ -76,11 +74,12 @@ class UploadClient:
         self.zone = zone
         self.job_type = job_type
         self.project_code = project_code
-        self.process_pipeline = process_pipeline
         self.current_folder_node = current_folder_node
         self.parent_folder_id = parent_folder_id
         self.regular_file = regular_file
+        # tags and souce_id are only allowed in file uplaod
         self.tags = tags
+        self.source_id = source_id
 
         # the flag to indicate if all upload process finished
         # then the token refresh loop will end
@@ -91,7 +90,7 @@ class UploadClient:
         Summary:
             The function is to generate chunk upload meatedata for a file.
         Parameter:
-            - input_path: The path of the local file eg. a/b/c.txt.
+            - local_path: The path of the local file eg. a/b/c.txt.
         return:
             - total_size: the size of file.
             - total_chunks: the number of chunks will be uploaded.
@@ -102,15 +101,12 @@ class UploadClient:
         return total_size, total_chunks
 
     @require_valid_token()
-    def resume_upload(self, resumable_id: str, job_id: str, item_id: str, local_path: str) -> List[FileObject]:
+    def resume_upload(self, unfinished_file_objects: List[FileObject]) -> List[FileObject]:
         """
         Summary:
             The function is to check the uploaded chunks in object storage.
         Parameter:
-            - resumable_id(str): The unique id to indicate the multipart upload.
-            - job_id(str): The unique id to indicate the job id.
-            - item_id(str): The unique id for the item.
-            - local_path: the local path of interrupted file.
+            - unfinished_file_objects(List[FileObject]): the unfinished items that need to be resumed.
         return:
             - list of FileObject: the infomation retrieved from backend.
                 - resumable_id(str): the unique identifier for multipart upload.
@@ -121,17 +117,17 @@ class UploadClient:
 
         headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
         url = AppConfig.Connections.url_bff + f'/v1/project/{self.project_code}/files/resumable'
-        file_name = os.path.basename(local_path)
-        object_path = os.path.join(self.current_folder_node, file_name)
+        rid_file_object_map = {x.resumable_id: x for x in unfinished_file_objects}
         payload = {
             'bucket': self.bucket,
             'zone': self.zone,
             'object_infos': [
                 {
-                    'object_path': object_path,
-                    'item_id': item_id,
-                    'resumable_id': resumable_id,
+                    'object_path': file_object.object_path,
+                    'item_id': file_object.item_id,
+                    'resumable_id': file_object.resumable_id,
                 }
+                for file_object in unfinished_file_objects
             ],
         }
 
@@ -141,29 +137,21 @@ class UploadClient:
 
         # make the response into file objects
         uploaded_infos = response.json().get('result', [])
-        file_objects = []
         for uploaded_info in uploaded_infos:
-            file_objects.append(
-                FileObject(
-                    uploaded_info.get('resumable_id'),
-                    job_id,
-                    item_id,
-                    uploaded_info.get('object_path'),
-                    local_path,  # TODO change it after folder manifest is setup
-                    uploaded_info.get('chunks_info'),
-                )
-            )
-        mhandler.SrvOutPutHandler.resume_check_success()
+            file_obj = rid_file_object_map.get(uploaded_info.get('resumable_id'))
+            # update the chunk info
+            file_obj.uploaded_chunks = uploaded_info.get('chunks_info')
 
-        return file_objects
+        return unfinished_file_objects
 
     @require_valid_token()
-    def pre_upload(self, local_file_paths: List[str]) -> List[FileObject]:
+    def pre_upload(self, file_objects: List[FileObject], output_path: str) -> List[FileObject]:
         """
         Summary:
             The function is to initiate all the multipart upload.
         Parameter:
             - local_file_paths(list of str): the local path of files to be uploaded.
+            - output_path(str): the output path of manifest.
         return:
             - list of FileObject: the infomation retrieved from backend.
                 - resumable_id(str): the unique identifier for multipart upload.
@@ -174,33 +162,36 @@ class UploadClient:
 
         headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
         url = AppConfig.Connections.url_bff + '/v1/project/{}/files'.format(self.project_code)
-        # the file mapping is a dictionary that present the map from object storage path
-        # with local file path. It will be used in chunk upload api.
-        payload, file_mapping = uf.generate_pre_upload_form(
-            self.project_code,
-            self.operator,
-            local_file_paths,
-            self.input_path,
-            zone=self.zone,
-            job_type=self.job_type,
-            current_folder=self.current_folder_node,
-        )
+        payload = {
+            'project_code': self.project_code,
+            'operator': self.operator,
+            'job_type': str(self.job_type),
+            'zone': self.zone,
+            'current_folder_node': self.current_folder_node,
+            'parent_folder_id': self.parent_folder_id,
+            'folder_tags': self.tags,
+            'source_id': self.source_id,
+            'data': [
+                {'resumable_filename': x.file_name, 'resumable_relative_path': x.parent_path} for x in file_objects
+            ],
+        }
 
-        payload.update({'parent_folder_id': self.parent_folder_id})
-        payload.update({'folder_tags': self.tags})
         response = resilient_session().post(url, json=payload, headers=headers, timeout=None)
         if response.status_code == 200:
             result = response.json().get('result')
-            res = []
+            file_mapping = {x.object_path: x for x in file_objects}
+            file_objets = []
             for job in result:
                 object_path = job.get('target_names')[0]
-                resumable_id = job.get('payload').get('resumable_identifier')
-                item_id = job.get('payload').get('item_id')
-                job_id = job.get('job_id')
-                res.append(FileObject(resumable_id, job_id, item_id, object_path, file_mapping.get(object_path), {}))
+                # get the file object from mapping and update the attribute
+                file_object = file_mapping.get(object_path)
+                file_object.resumable_id = job.get('payload').get('resumable_identifier')
+                file_object.item_id = job.get('payload').get('item_id')
+                file_object.job_id = job.get('job_id')
+                file_objets.append(file_object)
 
             mhandler.SrvOutPutHandler.preupload_success()
-            return res
+            return file_objets
         elif response.status_code == 403:
             SrvErrorHandler.customized_handle(ECustomizedError.PERMISSION_DENIED, self.regular_file)
         elif response.status_code == 401:
@@ -214,6 +205,32 @@ class UploadClient:
             SrvErrorHandler.customized_handle(ECustomizedError.FILE_LOCKED, True)
         else:
             SrvErrorHandler.default_handle(str(response.status_code) + ': ' + str(response.content), self.regular_file)
+
+    def output_manifest(self, file_objects: List[FileObject], output_path: str) -> Dict[str, Any]:
+        """
+        Summary:
+            The function is to output the manifest file.
+        Parameter:
+            - file_objects(list of FileObject): the file objects that contains correct
+                information for chunk uploading.
+        return:
+            - manifest_json(dict): the manifest file in json format.
+        """
+
+        manifest_json = {
+            'project_code': self.project_code,
+            'operator': self.operator,
+            'zone': self.zone,
+            'parent_folder_id': self.parent_folder_id,
+            'current_folder_node': self.current_folder_node,
+            'tags': self.tags,
+            'file_objects': {file_object.item_id: file_object.to_dict() for file_object in file_objects},
+        }
+
+        with open(output_path, 'w') as f:
+            json.dump(manifest_json, f)
+
+        return manifest_json
 
     def stream_upload(self, file_object: FileObject, pool: ThreadPool) -> List[ApplyResult]:
         """
@@ -338,9 +355,7 @@ class UploadClient:
         """
 
         # check if all the chunks have been uploaded
-        for res in chunk_result:
-            while res.get() is None:
-                time.sleep(1)
+        [res.wait() for res in chunk_result]
 
         for i in range(AppConfig.Env.resilient_retry):
             url = self.base_url + '/v1/files'
@@ -348,9 +363,7 @@ class UploadClient:
                 self.project_code,
                 self.operator,
                 file_object,
-                tags,
                 [],
-                process_pipeline=self.process_pipeline,
                 upload_message=self.upload_message,
             )
             headers = {
@@ -372,36 +385,6 @@ class UploadClient:
                     SrvErrorHandler.default_handle('retry over 3 times')
 
             time.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
-
-    @require_valid_token()
-    def create_file_lineage(self, source_file: dict, new_file_object: FileObject):
-        """
-        Summary:
-            The function is to create a lineage with source file.
-        Parameter:
-            - source_file(str): the file object that indicate the exist data to link with.
-            - new_file_object(FileObject): the new object just uploaded.
-        return:
-            - bool: if job success or not.
-        """
-
-        if source_file and self.zone == AppConfig.Env.core_zone:
-            child_rel_path = new_file_object.object_path
-            child_item = search_item(self.project_code, self.zone, child_rel_path, 'file')
-            child_file = child_item['result']
-            parent_file_geid = source_file['id']
-            child_file_geid = child_file['id']
-            lineage_event = {
-                'input_id': parent_file_geid,
-                'output_id': child_file_geid,
-                'input_path': os.path.join(source_file['parent_path'], source_file['name']),
-                'output_path': os.path.join(child_file['parent_path'], child_file['name']),
-                'project_code': self.project_code,
-                'action_type': self.process_pipeline,
-                'operator': self.operator,
-                'token': self.user.access_token,
-            }
-            create_lineage(lineage_event)
 
     def check_status(self, file_object: FileObject) -> bool:
         """

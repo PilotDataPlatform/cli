@@ -13,12 +13,11 @@ from app.utils.aggregated import search_item
 
 
 class UploadEventValidator:
-    def __init__(self, project_code, zone, upload_message, source, process_pipeline, token, attribute, tag):
+    def __init__(self, project_code, zone, upload_message, source, token, attribute, tag):
         self.project_code = project_code
         self.zone = zone
         self.upload_message = upload_message
         self.source = source
-        self.process_pipeline = process_pipeline
         self.token = token
         self.attribute = attribute
         self.tag = tag
@@ -30,15 +29,10 @@ class UploadEventValidator:
                 ECustomizedError.INVALID_UPLOAD_REQUEST, True, value='upload-message is required'
             )
         if self.source:
-            if not self.process_pipeline:
-                SrvErrorHandler.customized_handle(
-                    ECustomizedError.INVALID_UPLOAD_REQUEST, True, value='process pipeline name required'
-                )
-            else:
-                source_file_info = search_item(self.project_code, AppConfig.Env.green_zone.lower(), self.source, 'file')
-                source_file_info = source_file_info['result']
-                if not source_file_info:
-                    SrvErrorHandler.customized_handle(ECustomizedError.INVALID_SOURCE_FILE, True, value=self.source)
+            source_file_info = search_item(self.project_code, AppConfig.Env.green_zone.lower(), self.source, 'file')
+            source_file_info = source_file_info['result']
+            if not source_file_info:
+                SrvErrorHandler.customized_handle(ECustomizedError.INVALID_SOURCE_FILE, True, value=self.source)
         return source_file_info
 
     def validate_attribute(self):

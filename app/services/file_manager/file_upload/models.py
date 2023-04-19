@@ -20,7 +20,25 @@ class UploadType(Enum):
     AS_FOLDER = 'AS_FOLDER'
 
     def __str__(self):
-        return '%s' % self.name
+        return self.name
+
+
+class ItemStatus(str, Enum):
+    """
+    Summary:
+        Enum type for item status where:
+            - REGISTERED means file is created by upload service but not complete yet. either in progress or fail.
+            - ACTIVE means file uploading is complete.
+            - ARCHIVED means the file has been deleted
+        The status will be stored at metadata table.
+    """
+
+    REGISTERED = 'REGISTERED'
+    ACTIVE = 'ACTIVE'
+    ARCHIVED = 'ARCHIVED'
+
+    def __str__(self):
+        return self.name
 
 
 class FileObject:
@@ -48,7 +66,12 @@ class FileObject:
     progress_bar = None
 
     def __init__(
-        self, resumable_id: str, job_id: str, item_id: str, object_path: str, local_path: str, uploaded_chunks: List
+        self,
+        object_path: str,
+        local_path: str,
+        resumable_id: str = None,
+        job_id: str = None,
+        item_id: str = None,
     ) -> None:
         # object storage info
         self.resumable_id = resumable_id
@@ -62,7 +85,7 @@ class FileObject:
         self.total_size, self.total_chunks = self.generate_meta(local_path)
 
         # resumable info
-        self.uploaded_chunks = uploaded_chunks
+        self.uploaded_chunks = {}
 
     def generate_meta(self, local_path: str) -> Tuple[int, int]:
         """
@@ -78,6 +101,24 @@ class FileObject:
         total_size = file_length_in_bytes
         total_chunks = math.ceil(total_size / AppConfig.Env.chunk_size)
         return total_size, total_chunks
+
+    def to_dict(self):
+        """
+        Summary:
+            The function is to convert the object to json format.
+        return:
+            - json format of the object.
+        """
+        return {
+            'resumable_id': self.resumable_id,
+            'job_id': self.job_id,
+            'item_id': self.item_id,
+            'object_path': self.object_path,
+            'local_path': self.local_path,
+            'total_size': self.total_size,
+            'total_chunks': self.total_chunks,
+            'uploaded_chunks': self.uploaded_chunks,
+        }
 
     def update_progress(self, chunk_size: int) -> None:
         """
