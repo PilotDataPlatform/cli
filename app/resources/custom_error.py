@@ -122,5 +122,4 @@ class Error:
         'CONTAINER_REGISTRY_NO_URL': (
             'Container registry has not yet been configured. Related commands cannot be used at this time.'
         ),
-        'LINEAGE_FEATURE_NOT_READY': 'Lineage is not support at v2.3.0',
     }
