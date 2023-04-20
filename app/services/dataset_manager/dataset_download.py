@@ -43,15 +43,14 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
             'Session-ID': self.session_id,
         }
         payload = {'version': self.version}
-        try:
-            response = requests.get(url, headers=headers, params=payload)
-            res = response.json()
-            code = res.get('code')
-            if code == 404:
-                SrvErrorHandler.customized_handle(ECustomizedError.VERSION_NOT_EXIST, True, self.version)
-            else:
-                return res
-        except Exception:
+        response = requests.get(url, headers=headers, params=payload)
+        res = response.json()
+        code = response.status_code
+        if code == 200:
+            return res
+        elif code == 404:
+            SrvErrorHandler.customized_handle(ECustomizedError.VERSION_NOT_EXIST, True, self.version)
+        else:
             SrvErrorHandler.default_handle(response.content, True)
 
     @require_valid_token()
