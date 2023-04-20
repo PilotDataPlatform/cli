@@ -120,11 +120,6 @@ def file_put(**kwargs):  # noqa: C901
     thread = kwargs.get('thread')
     output_path = kwargs.get('output_path')
 
-    # for 20230418 staging temporary disable the attribute
-    # since the backend is not ready yet
-    if source_file:
-        SrvErrorHandler.customized_handle(ECustomizedError.LINEAGE_FEATURE_NOT_READY, True)
-
     user = UserConfig()
     # Check zone and upload-message
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
