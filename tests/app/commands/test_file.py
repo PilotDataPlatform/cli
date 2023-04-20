@@ -4,11 +4,13 @@
 
 import click
 
+from app.commands.file import file_list
 from app.commands.file import file_put
 from app.commands.file import file_resume
 from app.services.file_manager.file_upload.models import FileObject
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import customized_error_msg
+from tests.conftest import decoded_token
 
 
 def test_file_upload_command_success_with_attribute(mocker, cli_runner):
@@ -59,3 +61,15 @@ def test_resumable_upload_command_failed_with_file_not_exists(mocker, cli_runner
     result = cli_runner.invoke(file_resume, ['--resumable-manifest', 'test.json', '--thread', 1])
     assert result.exit_code == 0
     assert result.output == customized_error_msg(ECustomizedError.INVALID_RESUMABLE) + '\n'
+
+
+def test_file_list_with_pagination(mocker, cli_runner):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+    mock_list = mocker.patch(
+        'app.services.file_manager.file_list.SrvFileList.list_files', return_value='...file1 ...file2...'
+    )
+    cli_runner.invoke(file_list, ['testproject/admin', '-z', 'greenroom'])
+    mock_list.assert_called_once()
