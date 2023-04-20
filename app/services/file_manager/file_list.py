@@ -67,9 +67,10 @@ class SrvFileList(metaclass=MetaService):
     def list_files_with_pagination(self, paths, zone, page, page_size):
         while True:
             files = self.list_files(paths, zone, page, page_size)
-            if len(files) < page_size and page == 0:
-                break
-            elif len(files) < page_size and page != 0:
+            file_list = files.split('...')[:-1] if files != '' else []
+            if len(file_list) < page_size and page == 0:
+                choice = ['exit']
+            elif len(file_list) < page_size and page != 0:
                 choice = ['previous page', 'exit']
             elif page == 0:
                 choice = ['next page', 'exit']
