@@ -195,7 +195,7 @@ def file_put(**kwargs):  # noqa: C901
             'attribute': attribute,
         }
         if source_file:
-            upload_event['source_id'] = src_file_info.get('id')
+            upload_event['source_id'] = src_file_info.get('id', '')
 
         item_ids = simple_upload(upload_event, num_of_thread=thread, output_path=output_path)
 

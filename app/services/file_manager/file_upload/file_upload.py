@@ -123,7 +123,7 @@ def simple_upload(  # noqa: C901
     create_folder_flag = upload_event.get('create_folder_flag', False)
     compress_zip = upload_event.get('compress_zip', False)
     regular_file = upload_event.get('regular_file', True)
-    source_id = upload_event.get('source_id', None)
+    source_id = upload_event.get('source_id', '')
     attribute = upload_event.get('attribute')
 
     mhandler.SrvOutPutHandler.start_uploading(input_path)
