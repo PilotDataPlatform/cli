@@ -114,7 +114,6 @@ class UploadClient:
                 - local_path(str): the local path of file.
                 - chunk_info(dict): the mapping for chunks that already been uploaded.
         """
-        mhandler.SrvOutPutHandler.resume_warning(len(unfinished_file_objects))
 
         headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
         url = AppConfig.Connections.url_bff + f'/v1/project/{self.project_code}/files/resumable'
@@ -142,7 +141,6 @@ class UploadClient:
             file_obj = rid_file_object_map.get(uploaded_info.get('resumable_id'))
             # update the chunk info
             file_obj.uploaded_chunks = uploaded_info.get('chunks_info')
-        mhandler.SrvOutPutHandler.resume_check_success()
 
         return unfinished_file_objects
 
