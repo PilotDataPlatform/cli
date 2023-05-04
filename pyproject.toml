@@ -7,7 +7,7 @@ authors = ["Indoc Research"]
 [tool.poetry.dependencies]
 python = ">=3.7,<3.11"
 click = "7.1.2"
-PyJWT = "1.7.1"
+PyJWT = "2.4.0"
 questionary = "^1.10.0"
 tqdm = "4.56.0"
 cryptography = "3.1.1"
