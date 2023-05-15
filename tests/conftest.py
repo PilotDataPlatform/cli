@@ -20,6 +20,7 @@ def reset_singletons():
 def mock_settings(monkeypatch):
     monkeypatch.setattr(AppConfig.Connections, 'url_authn', 'http://service_auth')
     monkeypatch.setattr(AppConfig.Connections, 'url_bff', 'http://bff_cli')
+    monkeypatch.setattr(AppConfig.Connections, 'url_dataset', 'http://url_dataset')
     monkeypatch.setattr(AppConfig.Connections, 'url_upload_greenroom', 'http://upload_gr')
     monkeypatch.setattr(AppConfig.Connections, 'url_upload_core', 'http://upload_core')
     monkeypatch.setattr(UserConfig, 'username', 'test-user')

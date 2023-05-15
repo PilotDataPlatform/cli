@@ -224,6 +224,7 @@ class UploadClient:
             'parent_folder_id': self.parent_folder_id,
             'current_folder_node': self.current_folder_node,
             'tags': self.tags,
+            'upload_message': self.upload_message,
             'file_objects': {file_object.item_id: file_object.to_dict() for file_object in file_objects},
         }
 
