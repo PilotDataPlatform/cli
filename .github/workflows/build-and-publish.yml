@@ -29,7 +29,7 @@ jobs:
     if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop' || needs.extract-branch-name.outputs.branch == 'PILOT-2936' }}
     runs-on: ubuntu-20.04
     outputs:
-      upload_url: ${{steps.extract_branch.outputs.upload_url}}
+      upload_url: ${{steps.create_release.outputs.upload_url}}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
