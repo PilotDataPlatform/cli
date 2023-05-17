@@ -93,7 +93,7 @@ jobs:
           asset_content_type: application/octet-stream
 
   push-binary-macos:
-    needs: [ create-release, push-binary-linux ]
+    needs: [ push-binary-linux ]
     if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop'  || needs.extract-branch-name.outputs.branch == 'PILOT-2936' }}
     runs-on: macos-12
     steps:
