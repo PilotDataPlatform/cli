@@ -32,6 +32,19 @@ jobs:
     outputs:
       upload_url: ${{steps.extract_branch.outputs.upload_url}}
     steps:
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9.16
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.3.2
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+
       - name: Set version in env
         run: poetry run echo "TAG_VERSION=`poetry version --short`" >> $GITHUB_ENV
 
