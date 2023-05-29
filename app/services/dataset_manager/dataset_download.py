@@ -5,8 +5,9 @@
 import datetime
 import os
 import time
+from typing import Any
+from typing import Dict
 
-import requests
 from tqdm import tqdm
 
 import app.services.logger_services.log_functions as logger
@@ -17,6 +18,7 @@ from app.services.dataset_manager.model import EFileStatus
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.output_manager.message_handler import SrvOutPutHandler
+from app.utils.aggregated import resilient_session
 
 from ..user_authentication.decorator import require_valid_token
 
@@ -42,7 +44,7 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
             'Session-ID': self.session_id,
         }
         payload = {'version': self.version}
-        response = requests.get(url, headers=headers, params=payload)
+        response = resilient_session().get(url, headers=headers, params=payload)
         res = response.json()
         code = response.status_code
         if code == 200:
@@ -53,7 +55,7 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
             SrvErrorHandler.default_handle(response.content, True)
 
     @require_valid_token()
-    def pre_dataset_download(self):
+    def pre_dataset_download(self) -> Dict[str, Any]:
         url = AppConfig.Connections.url_dataset_v2download + '/download/pre'
         headers = {
             'Authorization': 'Bearer ' + self.user.access_token,
@@ -62,38 +64,18 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
         }
         payload = {'dataset_code': self.dataset_code, 'session_id': self.session_id, 'operator': self.user.username}
         try:
-            response = requests.post(url, headers=headers, json=payload)
+            response = resilient_session().post(url, headers=headers, json=payload)
             res = response.json()
             return res
-        except Exception:
-            SrvErrorHandler.default_handle(response.content, True)
-
-    # def generate_download_url(self):
-    #     if self.version:
-    #         download_url = AppConfig.Connections.url_dataset_v2download + f'/download/{self.hash_code}'
-    #     else:
-    #         download_url = AppConfig.Connections.url_download_core + f'v1/download/{self.hash_code}'
-    #     headers = {
-    #         'Authorization': 'Bearer ' + self.user.access_token,
-    #     }
-    #     print(download_url)
-    #     res = requests.get(download_url, headers=headers)
-    #     res_json = res.json()
-    #     print(res_json)
-    #     if self.version:
-    #         self.download_url = self.hash_code
-    #         default_filename = self.download_url.split('/')[-1].split('?')[0]
-    #         self.default_filename = unquote(default_filename)
-    #     else:
-    #         self.download_url = download_url
-    #         self.default_filename = res_json.get('error_msg').split('/')[-1].rstrip('.')
+        except Exception as e:
+            SrvErrorHandler.default_handle(f'error when pre dataset download:{e}', True)
 
     @require_valid_token()
     def download_status(self) -> EFileStatus:
         url = AppConfig.Connections.url_download_core + f'v1/download/status/{self.hash_code}'
-        res = requests.get(url)
-        res_json = res.json()
-        if res_json.get('code') == 200:
+        res = resilient_session().get(url)
+        if res.status_code == 200:
+            res_json = res.json()
             status = res_json.get('result').get('status')
             return EFileStatus(status)
         else:
@@ -108,10 +90,10 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
         return status
 
     @require_valid_token()
-    def send_download_request(self):
+    def send_download_request(self) -> str:
         logger.info('start downloading...')
 
-        with requests.get(self.download_url, stream=True, allow_redirects=True) as r:
+        with resilient_session().get(self.download_url, stream=True, allow_redirects=True) as r:
             r.raise_for_status()
             # Since version zip file was created by our system, thus no need to consider filename contain '?'
             if not self.default_filename:
@@ -134,7 +116,7 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
                     bar.update(size)
         return output_path
 
-    def avoid_duplicate_file_name(self, filename):
+    def avoid_duplicate_file_name(self, filename) -> str:
         suffix = 1
         original_filename = filename
         file, ext = os.path.splitext(original_filename)
@@ -151,7 +133,7 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
         return filename
 
     @require_valid_token()
-    def download_dataset(self):
+    def download_dataset(self) -> None:
         pre_result = self.pre_dataset_download()
         self.hash_code = pre_result.get('result').get('payload').get('hash_code')
         self.download_url = AppConfig.Connections.url_download_core + f'v1/download/{self.hash_code}'
@@ -169,7 +151,7 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
             SrvErrorHandler.customized_handle(ECustomizedError.DOWNLOAD_FAIL, True)
 
     @require_valid_token()
-    def download_dataset_version(self, version):
+    def download_dataset_version(self, version) -> None:
         self.version = version
         pre_result = self.pre_dataset_version_download()
         self.download_url = pre_result.get('result').get('source')
