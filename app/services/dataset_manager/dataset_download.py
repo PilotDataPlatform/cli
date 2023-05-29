@@ -8,6 +8,7 @@ import time
 from typing import Any
 from typing import Dict
 
+import requests
 from tqdm import tqdm
 
 import app.services.logger_services.log_functions as logger
@@ -93,7 +94,7 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
     def send_download_request(self) -> str:
         logger.info('start downloading...')
 
-        with resilient_session().get(self.download_url, stream=True, allow_redirects=True) as r:
+        with requests.get(self.download_url, stream=True, allow_redirects=True) as r:
             r.raise_for_status()
             # Since version zip file was created by our system, thus no need to consider filename contain '?'
             if not self.default_filename:
