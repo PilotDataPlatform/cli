@@ -5,7 +5,6 @@
 import datetime
 import os
 import time
-from urllib.parse import unquote
 
 import requests
 from tqdm import tqdm
@@ -69,23 +68,25 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
         except Exception:
             SrvErrorHandler.default_handle(response.content, True)
 
-    def generate_download_url(self):
-        if self.version:
-            download_url = AppConfig.Connections.url_dataset_v2download + f'/download/{self.hash_code}'
-        else:
-            download_url = AppConfig.Connections.url_download_core + f'v1/download/{self.hash_code}'
-        headers = {
-            'Authorization': 'Bearer ' + self.user.access_token,
-        }
-        res = requests.get(download_url, headers=headers)
-        res_json = res.json()
-        if self.version:
-            self.download_url = self.hash_code
-            default_filename = self.download_url.split('/')[-1].split('?')[0]
-            self.default_filename = unquote(default_filename)
-        else:
-            self.download_url = download_url
-            self.default_filename = res_json.get('error_msg').split('/')[-1].rstrip('.')
+    # def generate_download_url(self):
+    #     if self.version:
+    #         download_url = AppConfig.Connections.url_dataset_v2download + f'/download/{self.hash_code}'
+    #     else:
+    #         download_url = AppConfig.Connections.url_download_core + f'v1/download/{self.hash_code}'
+    #     headers = {
+    #         'Authorization': 'Bearer ' + self.user.access_token,
+    #     }
+    #     print(download_url)
+    #     res = requests.get(download_url, headers=headers)
+    #     res_json = res.json()
+    #     print(res_json)
+    #     if self.version:
+    #         self.download_url = self.hash_code
+    #         default_filename = self.download_url.split('/')[-1].split('?')[0]
+    #         self.default_filename = unquote(default_filename)
+    #     else:
+    #         self.download_url = download_url
+    #         self.default_filename = res_json.get('error_msg').split('/')[-1].rstrip('.')
 
     @require_valid_token()
     def download_status(self) -> EFileStatus:
@@ -109,13 +110,15 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
     @require_valid_token()
     def send_download_request(self):
         logger.info('start downloading...')
+
         with requests.get(self.download_url, stream=True, allow_redirects=True) as r:
             r.raise_for_status()
             # Since version zip file was created by our system, thus no need to consider filename contain '?'
             if not self.default_filename:
-                filename = f'{self.dataset_code}_{self.version}_{str(datetime.datetime.now())}'
+                filename = f'{self.dataset_code}_{self.version}_{str(datetime.datetime.now())}.zip'
             else:
                 filename = self.default_filename
+
             output_path = self.avoid_duplicate_file_name(self.output.rstrip('/') + '/' + filename)
             self.total_size = int(r.headers.get('Content-length'))
             with open(output_path, 'wb') as file, tqdm(
@@ -151,7 +154,12 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
     def download_dataset(self):
         pre_result = self.pre_dataset_download()
         self.hash_code = pre_result.get('result').get('payload').get('hash_code')
-        self.generate_download_url()
+        self.download_url = AppConfig.Connections.url_download_core + f'v1/download/{self.hash_code}'
+        # format the naming for the default filename
+        self.default_filename = pre_result.get('result').get('target_names')[0]
+        self.default_filename = self.default_filename.split('/')[-1]
+
+        # wait the download status to be ready
         status = self.check_download_preparing_status()
         SrvOutPutHandler.download_status(status)
         saved_filename = self.send_download_request()
@@ -164,8 +172,8 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
     def download_dataset_version(self, version):
         self.version = version
         pre_result = self.pre_dataset_version_download()
-        self.hash_code = pre_result.get('result').get('source')
-        self.generate_download_url()
+        self.download_url = pre_result.get('result').get('source')
+
         saved_filename = self.send_download_request()
         if os.path.isfile(saved_filename):
             SrvOutPutHandler.download_success(saved_filename)
