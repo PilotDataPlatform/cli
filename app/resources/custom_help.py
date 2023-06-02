@@ -6,7 +6,7 @@
 class HelpPage:
     page = {
         'update': {
-            'version': '2.4.0',
+            'version': '2.5.0',
             '1': 'The logic of normal upload and resumble are splited. '
             'add new command for resumable upload as `pilotcli file resume -r manifest.json`',
             '2': 'The manifest file will be output for both file/folder upload',
