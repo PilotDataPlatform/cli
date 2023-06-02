@@ -39,12 +39,12 @@ class SrvOutPutHandler(metaclass=MetaService):
     @staticmethod
     def check_login_device_validation():
         """Waiting validation finish."""
-        return logger.info('Waiting validation finish...')
+        return logger.info('Waiting for validation to finish...')
 
     @staticmethod
     def login_success():
         """Login succeed!"""
-        return logger.succeed('Welcome to the Command Line Tool!')
+        return logger.succeed('Welcome to the Pilot Command Line Interface!')
 
     @staticmethod
     def abort_if_false(ctx, param, value):
