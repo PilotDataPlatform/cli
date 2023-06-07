@@ -16,6 +16,9 @@ def test_hpc_list_partitions(httpx_mock, mocker):
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
         return_value=decoded_token(),
     )
+    user_config = UserConfig()
+    user_config.username = 'test-user'
+    user_config.hpc_token = 'test-hpc-token'
     httpx_mock.add_response(
         method='GET',
         url='http://bff_cli/v1/hpc/partitions?host=test_host&username=test-user&token=test-hpc-token',
@@ -38,12 +41,13 @@ def test_hpc_list_partitions(httpx_mock, mocker):
     assert partion == expected_partitions
 
 
-def test_hpc_list_partitions_no_token(mocker, capsys, monkeypatch):
+def test_hpc_list_partitions_no_token(mocker, capsys):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
         return_value=decoded_token(),
     )
-    monkeypatch.setattr(UserConfig, 'hpc_token', '')
+    user_config = UserConfig()
+    user_config.hpc_token = ''
     with pytest.raises(SystemExit):
         hpc_mgr = HPCPartitionManager()
         _ = hpc_mgr.list_partitions('test_host')

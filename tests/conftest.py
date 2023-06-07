@@ -17,7 +17,7 @@ def reset_singletons():
 
 
 @pytest.fixture(autouse=True)
-def mock_settings(monkeypatch):
+def mock_settings(monkeypatch, mocker):
     monkeypatch.setattr(AppConfig.Connections, 'url_authn', 'http://service_auth')
     monkeypatch.setattr(AppConfig.Connections, 'url_bff', 'http://bff_cli')
     monkeypatch.setattr(AppConfig.Connections, 'url_dataset', 'http://url_dataset')
@@ -31,6 +31,7 @@ def mock_settings(monkeypatch):
     monkeypatch.setattr(UserConfig, 'access_token', 'test-access-token')
     monkeypatch.setattr(UserConfig, 'refresh_token', 'test-refresh-token')
     monkeypatch.setattr(UserConfig, 'hpc_token', 'test-hpc-token')
+    mocker.patch('app.configs.user_config.UserConfig.save')  # Do not save config when running tests
 
 
 def decoded_token():
