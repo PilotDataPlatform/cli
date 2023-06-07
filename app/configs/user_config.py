@@ -7,7 +7,6 @@ import os
 import time
 
 from app.configs.app_config import AppConfig
-from app.models.enums import LoginMethod
 from app.models.singleton import Singleton
 from app.services.crypto.crypto import decryption
 from app.services.crypto.crypto import encryption
@@ -78,13 +77,6 @@ class UserConfig(metaclass=Singleton):
     @password.setter
     def password(self, val):
         self.config['USER']['password'] = encryption(val, self.secret)
-
-    @property
-    def login_method(self) -> LoginMethod:
-        if self.api_key:
-            return LoginMethod.API_KEY
-
-        return LoginMethod.DEVICE_CODE
 
     @property
     def api_key(self):
