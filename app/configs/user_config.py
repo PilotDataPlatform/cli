@@ -58,6 +58,9 @@ class UserConfig(metaclass=Singleton):
         }
         self.save()
 
+    def is_logged_in(self) -> bool:
+        return bool(self.access_token and self.refresh_token)
+
     @property
     def username(self):
         return decryption(self.config['USER']['username'], self.secret)
