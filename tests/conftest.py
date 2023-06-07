@@ -27,6 +27,7 @@ def mock_settings(monkeypatch):
     monkeypatch.setattr(AppConfig.Connections, 'url_upload_core', 'http://upload_core')
     monkeypatch.setattr(UserConfig, 'username', 'test-user')
     monkeypatch.setattr(UserConfig, 'password', 'test-password')
+    monkeypatch.setattr(UserConfig, 'api_key', 'test-api-key')
     monkeypatch.setattr(UserConfig, 'access_token', 'test-access-token')
     monkeypatch.setattr(UserConfig, 'refresh_token', 'test-refresh-token')
     monkeypatch.setattr(UserConfig, 'hpc_token', 'test-hpc-token')
@@ -61,3 +62,8 @@ def decoded_token():
         'group': ['sample-group'],
         'policy': ['project-admin', 'uma_authorization', 'test'],
     }
+
+
+pytest_plugins = [
+    'tests.fixtures.fake',
+]

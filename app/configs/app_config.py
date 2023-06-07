@@ -5,8 +5,8 @@
 from env import ConfigClass
 
 
-class AppConfig(object):
-    class Env(object):
+class AppConfig:
+    class Env:
         section = 'environment'
         project = ConfigClass.project
         user_config_path = ConfigClass.config_path
@@ -34,8 +34,9 @@ class AppConfig(object):
         greenroom_bucket_prefix = 'gr'
 
         keycloak_device_client_id = ConfigClass.keycloak_device_client_id
+        keycloak_api_key_audience = ConfigClass.keycloak_api_key_audience
 
-    class Connections(object):
+    class Connections:
         section = 'connections'
         url_harbor = ConfigClass.url_harbor
         url_authn = ConfigClass.url_authn
@@ -53,6 +54,7 @@ class AppConfig(object):
         url_validation = ConfigClass.url_validation
         url_keycloak = ConfigClass.url_keycloak
         url_keycloak_token = f'{ConfigClass.url_keycloak}/token'
+        url_keycloak_realm = ConfigClass.url_keycloak.rstrip('/').replace('/protocol/openid-connect', '')
         url_bff = ConfigClass.url_bff
         # add url_base to check if value exist
         url_base = ConfigClass.base_url

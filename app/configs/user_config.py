@@ -6,12 +6,12 @@ import configparser
 import os
 import time
 
+from app.configs.app_config import AppConfig
+from app.models.enums import LoginMethod
 from app.models.singleton import Singleton
 from app.services.crypto.crypto import decryption
 from app.services.crypto.crypto import encryption
 from app.services.crypto.crypto import generate_secret
-
-from .app_config import AppConfig
 
 
 class UserConfig(metaclass=Singleton):
@@ -32,6 +32,7 @@ class UserConfig(metaclass=Singleton):
             self.config['USER'] = {
                 'username': '',
                 'password': '',
+                'api_key': '',
                 'access_token': '',
                 'refresh_token': '',
                 'secret': generate_secret(),
@@ -49,6 +50,7 @@ class UserConfig(metaclass=Singleton):
         self.config['USER'] = {
             'username': '',
             'password': '',
+            'api_key': '',
             'access_token': '',
             'refresh_token': '',
             'hpc_token': '',
@@ -59,7 +61,7 @@ class UserConfig(metaclass=Singleton):
         self.save()
 
     def is_logged_in(self) -> bool:
-        return bool(self.access_token and self.refresh_token)
+        return bool(self.api_key or (self.access_token and self.refresh_token))
 
     @property
     def username(self):
@@ -76,6 +78,21 @@ class UserConfig(metaclass=Singleton):
     @password.setter
     def password(self, val):
         self.config['USER']['password'] = encryption(val, self.secret)
+
+    @property
+    def login_method(self) -> LoginMethod:
+        if self.api_key:
+            return LoginMethod.API_KEY
+
+        return LoginMethod.DEVICE_CODE
+
+    @property
+    def api_key(self):
+        return decryption(self.config['USER']['api_key'], self.secret)
+
+    @api_key.setter
+    def api_key(self, val):
+        self.config['USER']['api_key'] = encryption(val, self.secret)
 
     @property
     def access_token(self):
