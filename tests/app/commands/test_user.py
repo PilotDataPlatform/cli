@@ -2,8 +2,6 @@
 #
 # Contact Indoc Research for any questions regarding the use of this source code.
 
-import os
-
 import jwt
 
 from app.commands.user import login
@@ -31,9 +29,11 @@ def test_login_command_with_api_key_option_calls_keycloak_and_stores_response_in
     assert user.username == username
 
 
-def test_login_command_without_api_key_option_takes_value_from_environment_variable(mocker, cli_runner, fake):
+def test_login_command_without_api_key_option_takes_value_from_environment_variable(
+    monkeypatch, mocker, cli_runner, fake
+):
     api_key = fake.pystr(20)
-    mocker.patch.dict(os.environ, {'PILOT_API_KEY': api_key}, clear=True)
+    monkeypatch.setenv('PILOT_API_KEY', api_key)
     login_using_api_key_mock = mocker.patch('app.commands.user.login_using_api_key', return_value=True)
 
     result = cli_runner.invoke(login)
