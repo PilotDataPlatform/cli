@@ -27,6 +27,7 @@ class HelpPage:
             ),
             'USER_LOGIN_USERNAME': 'Specify username for login.',
             'USER_LOGIN_PASSWORD': 'Specify password for login.',
+            'USER_LOGIN_API_KEY': 'Specify API Key for login.',
         },
         'file': {
             'FILE_ATTRIBUTE_LIST': 'List attribute templates of a given Project.',
