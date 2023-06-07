@@ -17,33 +17,6 @@ from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.output_manager.message_handler import SrvOutPutHandler
 
 
-def user_login(username, password):
-    url = AppConfig.Connections.url_authn
-    user_config = UserConfig()
-    request_body = {'username': username, 'password': password}
-    headers = {'Content-Type': 'application/json'}
-    response = requests.post(url, json=request_body, headers=headers)
-    if response.status_code == 200:
-        res_to_dict = response.json()
-        user_config.username = username
-        user_config.password = password
-        user_config.access_token = res_to_dict['result']['access_token']
-        user_config.refresh_token = res_to_dict['result']['refresh_token']
-        user_config.last_active = str(int(time.time()))
-        user_config.hpc_token = ''
-        user_config.session_id = 'cli-' + str(uuid4())
-        user_config.save()
-    elif response.status_code == 401:
-        res_to_dict = []
-        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_CREDENTIALS, True)
-    else:
-        if response.text:
-            SrvErrorHandler.default_handle(response.text, True)
-        res_to_dict = response.json()
-        SrvErrorHandler.default_handle(response.content, True)
-    return res_to_dict
-
-
 def user_device_id_login() -> Dict[str, Any]:
     """Get device code URL for user login."""
 
@@ -104,10 +77,7 @@ def validate_user_device_login(device_code: str, expires: int, interval: int) ->
 
 def check_is_login(if_print: bool = True) -> bool:
     user_config = UserConfig()
-    has_username = user_config.config.has_option('USER', 'username')
-    has_access_token = user_config.config.has_option('USER', 'access_token')
-    has_refresh_token = user_config.config.has_option('USER', 'refresh_token')
-    if has_username and has_access_token and has_refresh_token and user_config.username != '':
+    if user_config.is_logged_in():
         return True
     else:
         SrvErrorHandler.customized_handle(ECustomizedError.LOGIN_SESSION_INVALID, if_print) if if_print else None

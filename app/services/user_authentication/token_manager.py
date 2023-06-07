@@ -16,13 +16,10 @@ from app.services.output_manager.error_handler import SrvErrorHandler
 class SrvTokenManager(metaclass=MetaService):
     def __init__(self):
         user_config = UserConfig()
-        has_user = user_config.config.has_section('USER')
-        has_access_token = user_config.config.has_option('USER', 'access_token')
-        has_refresh_token = user_config.config.has_option('USER', 'refresh_token')
-        if has_user and has_access_token and has_refresh_token:
+        if user_config.is_logged_in():
             self.config = user_config
         else:
-            raise (Exception('Login session not found, please login first.'))
+            raise Exception('Login session not found, please login first.')
 
     def update_token(self, access_token, refresh_token):
         self.config.access_token = access_token
