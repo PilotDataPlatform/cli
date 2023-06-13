@@ -3,6 +3,7 @@
 # Contact Indoc Research for any questions regarding the use of this source code.
 
 import os
+from typing import Set
 
 from dotenv import load_dotenv
 from pydantic import BaseSettings
@@ -25,6 +26,7 @@ class Settings(BaseSettings):
     url_keycloak: str = ''
 
     keycloak_device_client_id: str = 'cli_test2'
+    keycloak_api_key_audience: Set[str] = {'api-key'}
 
     VM_INFO: str = ''
 

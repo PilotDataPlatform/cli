@@ -7,10 +7,23 @@ import io
 import qrcode
 
 import app.services.logger_services.log_functions as logger
+from app.models.enums import LoginMethod
 from app.models.service_meta_class import MetaService
 
 
 class SrvOutPutHandler(metaclass=MetaService):
+    @staticmethod
+    def login_using_method(method: LoginMethod):
+        """Selected login method message."""
+        return logger.info(f'Trying to log in using "{method.value}" method.')
+
+    @staticmethod
+    def login_using_api_key_failed_error():
+        """Error when logging in with the API Key!"""
+        return logger.error(
+            f'Failed to log in using "{LoginMethod.API_KEY.value}" method, please make sure you are using a valid key!'
+        )
+
     @staticmethod
     def login_device_code_qrcode(url: str):
         """Print QRCode with login url!"""
@@ -39,12 +52,12 @@ class SrvOutPutHandler(metaclass=MetaService):
     @staticmethod
     def check_login_device_validation():
         """Waiting validation finish."""
-        return logger.info('Waiting validation finish...')
+        return logger.info('Waiting for validation to finish...')
 
     @staticmethod
     def login_success():
         """Login succeed!"""
-        return logger.succeed('Welcome to the Command Line Tool!')
+        return logger.succeed('Welcome to the Pilot Command Line Interface!')
 
     @staticmethod
     def abort_if_false(ctx, param, value):
