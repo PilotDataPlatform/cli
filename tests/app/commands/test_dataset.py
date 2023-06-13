@@ -6,7 +6,7 @@ from app.commands.dataset import dataset_download
 from app.configs.app_config import AppConfig
 
 
-def test_download_not_exited_dataset_version(requests_mock, mocker, cli_runner, capsys):
+def test_download_not_exited_dataset_version(requests_mock, httpx_mock, mocker, cli_runner, capsys):
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
     requests_mock.get(
         'http://bff_cli' + '/v1/dataset/testdataset',
@@ -39,8 +39,9 @@ def test_download_not_exited_dataset_version(requests_mock, mocker, cli_runner, 
         },
     )
 
-    requests_mock.get(
-        AppConfig.Connections.url_dataset + '/fake-id/download/pre',
+    httpx_mock.add_response(
+        method='GET',
+        url=AppConfig.Connections.url_dataset + '/fake-id/download/pre?version=1.0',
         json={'error': 'version does not exist'},
         status_code=404,
     )

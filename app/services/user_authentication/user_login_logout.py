@@ -5,10 +5,12 @@
 import time
 from typing import Any
 from typing import Dict
+from typing import Union
 from uuid import uuid4
 
 import jwt
 import requests
+from requests import RequestException
 
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
@@ -17,31 +19,40 @@ from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.output_manager.message_handler import SrvOutPutHandler
 
 
-def user_login(username, password):
-    url = AppConfig.Connections.url_authn
+def exchange_api_key(api_key: str) -> Union[str, None]:
+    """Exchange API Key with JWT token using Keycloak."""
+
+    url = f'{AppConfig.Connections.url_keycloak_realm}/api-key/{api_key}'
+    try:
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+    except RequestException:
+        return None
+
+    return response.json()['access_token']
+
+
+def login_using_api_key(api_key: str) -> bool:
+    """Try to log in using API Key and store results in user config."""
+
+    access_token = exchange_api_key(api_key)
+    if access_token is None:
+        return False
+
+    decoded_token = jwt.decode(access_token, verify=False)
+    username = decoded_token['preferred_username']
+
     user_config = UserConfig()
-    request_body = {'username': username, 'password': password}
-    headers = {'Content-Type': 'application/json'}
-    response = requests.post(url, json=request_body, headers=headers)
-    if response.status_code == 200:
-        res_to_dict = response.json()
-        user_config.username = username
-        user_config.password = password
-        user_config.access_token = res_to_dict['result']['access_token']
-        user_config.refresh_token = res_to_dict['result']['refresh_token']
-        user_config.last_active = str(int(time.time()))
-        user_config.hpc_token = ''
-        user_config.session_id = 'cli-' + str(uuid4())
-        user_config.save()
-    elif response.status_code == 401:
-        res_to_dict = []
-        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_CREDENTIALS, True)
-    else:
-        if response.text:
-            SrvErrorHandler.default_handle(response.text, True)
-        res_to_dict = response.json()
-        SrvErrorHandler.default_handle(response.content, True)
-    return res_to_dict
+    user_config.api_key = api_key
+    user_config.access_token = access_token
+    user_config.refresh_token = ''
+    user_config.username = username
+    user_config.last_active = str(int(time.time()))
+    user_config.hpc_token = ''
+    user_config.session_id = 'cli-' + str(uuid4())
+    user_config.save()
+
+    return True
 
 
 def user_device_id_login() -> Dict[str, Any]:
@@ -91,6 +102,7 @@ def validate_user_device_login(device_code: str, expires: int, interval: int) ->
     resp_dict = resp.json()
     decode_token = jwt.decode(resp_dict['access_token'], verify=False)
     user_config = UserConfig()
+    user_config.api_key = ''
     user_config.access_token = resp_dict['access_token']
     user_config.refresh_token = resp_dict['refresh_token']
     user_config.username = decode_token['preferred_username']
@@ -104,10 +116,7 @@ def validate_user_device_login(device_code: str, expires: int, interval: int) ->
 
 def check_is_login(if_print: bool = True) -> bool:
     user_config = UserConfig()
-    has_username = user_config.config.has_option('USER', 'username')
-    has_access_token = user_config.config.has_option('USER', 'access_token')
-    has_refresh_token = user_config.config.has_option('USER', 'refresh_token')
-    if has_username and has_access_token and has_refresh_token and user_config.username != '':
+    if user_config.is_logged_in():
         return True
     else:
         SrvErrorHandler.customized_handle(ECustomizedError.LOGIN_SESSION_INVALID, if_print) if if_print else None
