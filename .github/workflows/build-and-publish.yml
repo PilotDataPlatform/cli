@@ -64,31 +64,24 @@ jobs:
       - name: Build binary
         run: poetry run pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --paths=./.venv/lib/python3.9/site-packages ./app/pilotcli.py -n ${{ github.sha }}
 
+      - name: Rename output file
+        run: mv "./app/bundled_app/linux/${{ github.sha }}" "./app/bundled_app/linux/pilotcli_linux"
+
       - name: Set version in env
         run: poetry run echo "TAG_VERSION=`poetry version --short`" >> $GITHUB_ENV
 
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
           tag_name: ${{ env.TAG_VERSION }}
-          release_name: Release ${{ needs.extract-branch-name.outputs.branch }} ${{ env.TAG_VERSION }}
+          name: Release ${{ needs.extract-branch-name.outputs.branch }} ${{ env.TAG_VERSION }}
           body: ${{ github.event.head_commit.message }}
           draft: false
           prerelease: false
-
-      - name: Upload Release Binary
-        id: upload-release-binary
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: ./app/bundled_app/linux/${{ github.sha }}
-          asset_name: pilotcli_linux
-          asset_content_type: application/octet-stream
+          files: ./app/bundled_app/linux/pilotcli_linux
 
   push-binary-macos:
     needs: [ push-binary-linux ]
