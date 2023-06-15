@@ -68,6 +68,7 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
             response = resilient_session().post(url, headers=headers, json=payload)
             res = response.json()
             return res
+
         except Exception as e:
             SrvErrorHandler.default_handle(f'error when pre dataset download:{e}', True)
 
