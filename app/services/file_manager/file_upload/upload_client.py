@@ -55,6 +55,7 @@ class UploadClient:
         regular_file: str = True,
         tags: list = None,
         source_id: str = '',
+        attributes: dict = None,
     ):
         self.user = UserConfig()
         self.operator = self.user.username
@@ -80,6 +81,7 @@ class UploadClient:
         # tags and souce_id are only allowed in file uplaod
         self.tags = tags
         self.source_id = source_id
+        self.attributes = attributes
 
         # the flag to indicate if all upload process finished
         # then the token refresh loop will end
@@ -226,6 +228,7 @@ class UploadClient:
             'tags': self.tags,
             'upload_message': self.upload_message,
             'file_objects': {file_object.item_id: file_object.to_dict() for file_object in file_objects},
+            'attributes': self.attributes if self.attributes else {},
         }
 
         with open(output_path, 'w') as f:
