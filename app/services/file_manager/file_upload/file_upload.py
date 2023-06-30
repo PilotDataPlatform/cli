@@ -156,6 +156,7 @@ def simple_upload(  # noqa: C901
         tags=tags,
         source_id=source_id,
         upload_message=upload_message,
+        attributes=attribute,
     )
 
     # format the local path into object storage path for preupload
