@@ -49,11 +49,34 @@ def test_resumable_upload_command_success(mocker, cli_runner):
     # mock the open function
     mocked_open_data = mocker.mock_open(read_data='test')
     mocker.patch('builtins.open', mocked_open_data)
-    mocker.patch('json.load', return_value={'resumable_manifest': 'test.json', 'thread': 1})
+    mocker.patch('json.load', return_value={'file_objects': {'test_item_id': {'file_name': 'test.json'}}, 'zone': 1})
     mocker.patch('app.commands.file.resume_upload', return_value=None)
+    result = cli_runner.invoke(file_resume, ['--resumable-manifest', 'test.json', '--thread', 1])
+    assert result.exit_code == 0
+
+
+def test_resumable_upload_command_with_file_attribute_success(mocker, cli_runner):
+    mocker.patch('os.path.exists', return_value=True)
+    # mock the open function
+    mocked_open_data = mocker.mock_open(read_data='test')
+    mocker.patch('builtins.open', mocked_open_data)
+    mocker.patch(
+        'json.load',
+        return_value={
+            'file_objects': {'test_item_id': {'file_name': 'test.json'}},
+            'zone': 1,
+            'attributes': {'M1': {'attr1': '1'}},
+        },
+    )
+    mocker.patch('app.commands.file.resume_upload', return_value=None)
+
+    attribute_fun_mock = mocker.patch(
+        'app.services.file_manager.file_manifests.SrvFileManifests.attach_manifest', return_value=None
+    )
 
     result = cli_runner.invoke(file_resume, ['--resumable-manifest', 'test.json', '--thread', 1])
     assert result.exit_code == 0
+    attribute_fun_mock.assert_called_once()
 
 
 def test_resumable_upload_command_failed_with_file_not_exists(mocker, cli_runner):
