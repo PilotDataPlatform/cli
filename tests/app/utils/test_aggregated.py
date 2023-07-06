@@ -2,6 +2,8 @@
 #
 # Contact Indoc Research for any questions regarding the use of this source code.
 
+import pytest
+
 from app.utils.aggregated import search_item
 
 test_project_code = 'testproject'
@@ -55,3 +57,33 @@ def test_search_file_should_return_200(requests_mock, mocker):
     }
     res = search_item(test_project_code, 'zone', 'folder_relative_path', 'file', 'project')
     assert res['result'] == expected_result
+
+
+def test_search_file_error_handling_with_403(requests_mock, mocker, capsys):
+    mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
+    requests_mock.get(
+        f'http://bff_cli/v1/project/{test_project_code}/search',
+        json={},
+        status_code=403,
+    )
+    with pytest.raises(SystemExit):
+        search_item(test_project_code, 'zone', 'folder_relative_path', 'file', 'project')
+    out, _ = capsys.readouterr()
+    assert (
+        out.rstrip('\n')
+        == 'Permission denied. Please verify your role in the Project has permission to perform this action.'
+    )
+
+
+def test_search_file_error_handling_with_401(requests_mock, mocker, capsys):
+    mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
+    requests_mock.get(
+        f'http://bff_cli/v1/project/{test_project_code}/search',
+        text='Authentication failed.',
+        status_code=401,
+    )
+    with pytest.raises(SystemExit):
+        search_item(test_project_code, 'zone', 'folder_relative_path', 'file', 'project')
+    out, _ = capsys.readouterr()
+    out = out.rstrip('\n').replace('b\'', '').replace('\'', '')
+    assert out == 'Authentication failed.'
