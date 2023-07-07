@@ -11,7 +11,7 @@ class AppConfig:
         project = ConfigClass.project
         user_config_path = ConfigClass.config_path
         msg_path = ConfigClass.custom_path
-        user_config_file = f'{user_config_path}/config.ini'
+        user_config_file = 'config.ini'
         token_warn_need_refresh = 120  # refresh token if token is about to expire
         token_refresh_interval = 90  # auto refresh token every 40 seconds
 
