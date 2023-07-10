@@ -110,8 +110,3 @@ class SrvErrorHandler(metaclass=MetaService):
             logger.error(customized_error_msg(customized_error))
         if if_exit:
             sys.exit(0)
-
-
-class OverSizeError(Exception):
-    def __init__(self, message='File size is too large'):
-        super().__init__(message)

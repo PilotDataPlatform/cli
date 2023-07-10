@@ -89,16 +89,6 @@ def file_help_page(FileHELP: FileHELP):
     return helps.get(FileHELP.name)
 
 
-class KgResourceHELP(enum.Enum):
-    KG_IMPORT = 'KG_IMPORT'
-    KG_DATASET_CODE = 'KG_DATASET_CODE'
-
-
-def kg_resource_help_page(KgResourceHELP: KgResourceHELP):
-    helps = help_msg.get('knowledge_graph', 'default kg help')
-    return helps.get(KgResourceHELP.name)
-
-
 class ContainerRegistryHELP(enum.Enum):
     LIST_PROJECTS = 'LIST_PROJECTS'
     LIST_REPOSITORIES = 'LIST_REPOSITORIES'
@@ -108,5 +98,5 @@ class ContainerRegistryHELP(enum.Enum):
 
 
 def cr_help_page(ContainerRegistryHELP: ContainerRegistryHELP):
-    helps = help_msg.get('container_registry', 'default kg help')
+    helps = help_msg.get('container_registry', 'default container_registry help')
     return helps.get(ContainerRegistryHELP.name)

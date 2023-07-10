@@ -2,8 +2,6 @@
 #
 # Contact Indoc Research for any questions regarding the use of this source code.
 
-import os
-
 import click
 
 from app.services.user_authentication.decorator import require_config
@@ -25,19 +23,14 @@ from .file import file_put
 from .file import file_resume
 
 # Import custom commands
-from .kg_resource import kg_resource
 from .project import project_list_all
 from .use_config import set_env
 from .user import login
 from .user import logout
 
-kg_enabled = os.environ.get('PILOT_CLI_KG_ENABLED', 'false') == 'true'
-
 
 def command_groups():
     commands = ['file', 'user', 'use_config', 'project', 'dataset', 'container_registry']
-    if kg_enabled:
-        commands.append('kg_resource')
     return commands
 
 
@@ -104,10 +97,3 @@ cr_group.add_command(invite_member)
 config_group.add_command(set_env)
 
 # Custom commands
-if kg_enabled:
-
-    @entry_point.group(name='kg_resource')
-    def kg_resource_group():
-        pass
-
-    kg_resource_group.add_command(kg_resource)
