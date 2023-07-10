@@ -63,7 +63,6 @@ class UserConfig(metaclass=Singleton):
                 'access_token': '',
                 'refresh_token': '',
                 'secret': generate_secret(),
-                'hpc_token': '',
                 'last_active': int(time.time()),
                 'session_id': '',
             }
@@ -100,7 +99,6 @@ class UserConfig(metaclass=Singleton):
             'api_key': '',
             'access_token': '',
             'refresh_token': '',
-            'hpc_token': '',
             'secret': generate_secret(),
             'last_active': 0,
             'session_id': '',
@@ -157,14 +155,6 @@ class UserConfig(metaclass=Singleton):
     @secret.setter
     def secret(self, val):
         self.config['USER']['secret'] = val
-
-    @property
-    def hpc_token(self):
-        return decryption(self.config['USER']['hpc_token'], self.secret)
-
-    @hpc_token.setter
-    def hpc_token(self, val):
-        self.config['USER']['hpc_token'] = encryption(val, self.secret)
 
     @property
     def last_active(self):
