@@ -2,6 +2,8 @@
 #
 # Contact Indoc Research for any questions regarding the use of this source code.
 
+import os
+
 import click
 
 from app.services.user_authentication.decorator import require_config
@@ -28,9 +30,13 @@ from .use_config import set_env
 from .user import login
 from .user import logout
 
+container_registry_enabled = os.environ.get('PILOT_CLI_CONTAINER_REGISTRY_ENABLED', 'false') == 'true'
+
 
 def command_groups():
-    commands = ['file', 'user', 'use_config', 'project', 'dataset', 'container_registry']
+    commands = ['file', 'user', 'use_config', 'project', 'dataset']
+    if container_registry_enabled:
+        commands.append('container_registry')
     return commands
 
 
@@ -71,12 +77,6 @@ def config_group():
     pass
 
 
-@entry_point.group(name='container_registry')
-@require_config
-def cr_group():
-    pass
-
-
 file_group.add_command(file_put)
 file_group.add_command(file_check_manifest)
 file_group.add_command(file_export_manifest)
@@ -89,11 +89,18 @@ user_group.add_command(logout)
 dataset_group.add_command(dataset_list)
 dataset_group.add_command(dataset_show_detail)
 dataset_group.add_command(dataset_download)
-cr_group.add_command(list_projects)
-cr_group.add_command(list_repositories)
-cr_group.add_command(create_project)
-cr_group.add_command(get_secret)
-cr_group.add_command(invite_member)
 config_group.add_command(set_env)
 
 # Custom commands
+if container_registry_enabled:
+
+    @entry_point.group(name='container_registry')
+    @require_config
+    def cr_group():
+        pass
+
+    cr_group.add_command(list_projects)
+    cr_group.add_command(list_repositories)
+    cr_group.add_command(create_project)
+    cr_group.add_command(get_secret)
+    cr_group.add_command(invite_member)
