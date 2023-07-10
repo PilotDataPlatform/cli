@@ -119,6 +119,7 @@ class Error:
             'This cli has been configured already.'
             'If you want to re-config this cli please remove previous file first'
         ),
+        'CONFIG_INVALID_PERMISSIONS': 'Cannot proceed with current config permissions.\n%s',
         'CONTAINER_REGISTRY_NO_URL': (
             'Container registry has not yet been configured. Related commands cannot be used at this time.'
         ),
