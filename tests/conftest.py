@@ -13,7 +13,7 @@ from app.models.singleton import Singleton
 
 @pytest.fixture(autouse=True)
 def reset_singletons():
-    Singleton._instance = {}
+    Singleton._instances = {}
 
 
 @pytest.fixture(autouse=True)
