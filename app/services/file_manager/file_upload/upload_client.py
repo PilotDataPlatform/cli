@@ -16,10 +16,10 @@ from typing import Tuple
 
 import httpx
 
-import app.models.upload_form as uf
 import app.services.output_manager.message_handler as mhandler
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
+from app.models.upload_form import generate_on_success_form
 from app.services.file_manager.file_upload.models import FileObject
 from app.services.file_manager.file_upload.models import UploadType
 from app.services.output_manager.error_handler import ECustomizedError
@@ -363,7 +363,7 @@ class UploadClient:
 
         for i in range(AppConfig.Env.resilient_retry):
             url = self.base_url + '/v1/files'
-            payload = uf.generate_on_success_form(
+            payload = generate_on_success_form(
                 self.project_code,
                 self.operator,
                 file_object,
