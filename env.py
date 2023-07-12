@@ -43,7 +43,6 @@ class Settings(BaseSettings):
         settings.url_dataset_v2download = settings.base_url + 'portal/download/core/v2/dataset'
         settings.url_dataset = settings.base_url + 'portal/v1/dataset'
         settings.url_validation = settings.base_url + 'v1/files/validation'
-        settings.url_lineage = settings.url_bff + '/v1/lineage'
 
         return settings
 
