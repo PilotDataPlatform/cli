@@ -31,7 +31,6 @@ def mock_settings(monkeypatch, mocker):
     monkeypatch.setattr(UserConfig, 'api_key', 'test-api-key')
     monkeypatch.setattr(UserConfig, 'access_token', 'test-access-token')
     monkeypatch.setattr(UserConfig, 'refresh_token', 'test-refresh-token')
-    monkeypatch.setattr(UserConfig, 'hpc_token', 'test-hpc-token')
     mocker.patch('app.configs.user_config.UserConfig.save')  # Do not save config when running tests
 
 

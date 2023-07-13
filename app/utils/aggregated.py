@@ -2,7 +2,6 @@
 #
 # Contact Indoc Research for any questions regarding the use of this source code.
 
-import datetime
 import os
 import re
 import shutil
@@ -16,10 +15,6 @@ from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
 from env import ConfigClass
-
-
-def get_current_datetime():
-    return datetime.datetime.now().isoformat()
 
 
 def resilient_session():
