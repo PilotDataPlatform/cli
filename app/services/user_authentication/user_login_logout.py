@@ -48,7 +48,6 @@ def login_using_api_key(api_key: str) -> bool:
     user_config.refresh_token = ''
     user_config.username = username
     user_config.last_active = str(int(time.time()))
-    user_config.hpc_token = ''
     user_config.session_id = 'cli-' + str(uuid4())
     user_config.save()
 
@@ -107,7 +106,6 @@ def validate_user_device_login(device_code: str, expires: int, interval: int) ->
     user_config.refresh_token = resp_dict['refresh_token']
     user_config.username = decode_token['preferred_username']
     user_config.last_active = str(int(time.time()))
-    user_config.hpc_token = ''
     user_config.session_id = 'cli-' + str(uuid4())
     user_config.save()
 
