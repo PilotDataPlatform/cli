@@ -45,7 +45,7 @@ def search_item(project_code, zone, folder_relative_path, item_type, container_t
     if res.status_code == 403:
         SrvErrorHandler.customized_handle(ECustomizedError.PERMISSION_DENIED, project_code)
     elif res.status_code != 200:
-        SrvErrorHandler.default_handle(res.content, True)
+        SrvErrorHandler.default_handle(res.text, True)
 
     return res.json()
 

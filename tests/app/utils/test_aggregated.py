@@ -70,7 +70,7 @@ def test_search_file_error_handling_with_403(requests_mock, mocker, capsys):
         search_item(test_project_code, 'zone', 'folder_relative_path', 'file', 'project')
     out, _ = capsys.readouterr()
     assert (
-        out.rstrip('\n')
+        out.rstrip()
         == 'Permission denied. Please verify your role in the Project has permission to perform this action.'
     )
 
@@ -85,5 +85,5 @@ def test_search_file_error_handling_with_401(requests_mock, mocker, capsys):
     with pytest.raises(SystemExit):
         search_item(test_project_code, 'zone', 'folder_relative_path', 'file', 'project')
     out, _ = capsys.readouterr()
-    out = out.rstrip('\n').replace('b\'', '').replace('\'', '')
+    out = out.rstrip()
     assert out == 'Authentication failed.'
