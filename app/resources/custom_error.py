@@ -36,7 +36,6 @@ class Error:
         'INVALID_ATTRIBUTE': "Invalid attribute '%s'. Please verify and try again.",
         'INVALID_UPLOAD_REQUEST': 'Invalid upload request: %s',
         'INVALID_SOURCE_FILE': 'File does not exist or source file provided is invalid: %s',
-        'INVALID_LINEAGE': 'Create lineage failed: %s',
         'INVALID_PIPELINENAME': (
             'Invalid pipeline name. Pipeline names must be between 1 and 20 characters long and '
             'may only contain lowercase letters, numbers, and/or special characters of -_, .'
@@ -66,7 +65,7 @@ class Error:
             'It means the resumable file is not the same with previous one.\n'
             'Please to double check the file content.'
         ),
-        'UNSUPPORT_TAG_MANIFEST': 'Tagging, lineage and manifest attaching are not supported for folder type.',
+        'UNSUPPORT_TAG_MANIFEST': 'Tagging and manifest attaching are not supported for folder type.',
         'INVALID_INPUT': 'Invalid input. Please try again.',
         'UNSUPPORTED_PROJECT': 'This function is not supported in the given Project %s',
         'CREATE_FOLDER_IF_NOT_EXIST': 'Target folder does not exist. Would you like to create a new folder?',
