@@ -18,6 +18,7 @@ import httpx
 
 import app.services.output_manager.message_handler as mhandler
 from app.configs.app_config import AppConfig
+from app.configs.config import ConfigClass
 from app.configs.user_config import UserConfig
 from app.models.upload_form import generate_on_success_form
 from app.services.file_manager.file_upload.models import FileObject
@@ -413,7 +414,7 @@ class UploadClient:
     def set_finish_upload(self):
         self.finish_upload = True
 
-    def upload_token_refresh(self, azp: str = AppConfig.Env.keycloak_device_client_id):
+    def upload_token_refresh(self, azp: str = ConfigClass.keycloak_device_client_id):
         token_manager = SrvTokenManager()
         DEFAULT_INTERVAL = 2  # seconds to check if the upload is finished
         total_count = 0  # when total_count equals token_refresh_interval, refresh token

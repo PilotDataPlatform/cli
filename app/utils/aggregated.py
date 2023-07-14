@@ -10,16 +10,16 @@ import httpx
 import requests
 
 from app.configs.app_config import AppConfig
+from app.configs.config import ConfigClass
 from app.configs.user_config import UserConfig
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
-from env import ConfigClass
 
 
 def resilient_session():
     # each resilient session will
-    headers = {'VM-Info': ConfigClass.VM_INFO}
+    headers = {'VM-Info': ConfigClass.vm_info}
     client = httpx.Client(headers=headers, timeout=None)
     return client
 
