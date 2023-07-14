@@ -25,19 +25,18 @@ from .file import file_put
 from .file import file_resume
 
 # Import custom commands
-from .kg_resource import kg_resource
 from .project import project_list_all
 from .use_config import set_env
 from .user import login
 from .user import logout
 
-kg_enabled = os.environ.get('PILOT_CLI_KG_ENABLED', 'false') == 'true'
+container_registry_enabled = os.environ.get('PILOT_CLI_CONTAINER_REGISTRY_ENABLED', 'false') == 'true'
 
 
 def command_groups():
-    commands = ['file', 'user', 'use_config', 'project', 'dataset', 'container_registry']
-    if kg_enabled:
-        commands.append('kg_resource')
+    commands = ['file', 'user', 'use_config', 'project', 'dataset']
+    if container_registry_enabled:
+        commands.append('container_registry')
     return commands
 
 
@@ -78,12 +77,6 @@ def config_group():
     pass
 
 
-@entry_point.group(name='container_registry')
-@require_config
-def cr_group():
-    pass
-
-
 file_group.add_command(file_put)
 file_group.add_command(file_check_manifest)
 file_group.add_command(file_export_manifest)
@@ -96,18 +89,18 @@ user_group.add_command(logout)
 dataset_group.add_command(dataset_list)
 dataset_group.add_command(dataset_show_detail)
 dataset_group.add_command(dataset_download)
-cr_group.add_command(list_projects)
-cr_group.add_command(list_repositories)
-cr_group.add_command(create_project)
-cr_group.add_command(get_secret)
-cr_group.add_command(invite_member)
 config_group.add_command(set_env)
 
 # Custom commands
-if kg_enabled:
+if container_registry_enabled:
 
-    @entry_point.group(name='kg_resource')
-    def kg_resource_group():
+    @entry_point.group(name='container_registry')
+    @require_config
+    def cr_group():
         pass
 
-    kg_resource_group.add_command(kg_resource)
+    cr_group.add_command(list_projects)
+    cr_group.add_command(list_repositories)
+    cr_group.add_command(create_project)
+    cr_group.add_command(get_secret)
+    cr_group.add_command(invite_member)

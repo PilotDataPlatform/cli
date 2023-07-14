@@ -58,10 +58,6 @@ class HelpPage:
             'SET_CONFIG': 'Chose config file and set for cli.',
             'CONFIG_DESTINATION': 'The destination the config file goes to, default will be current cli directory.',
         },
-        'knowledge_graph': {
-            'KG_IMPORT': 'Import dataset schema into BlueBrainNexus ',
-            'KG_DATASET_CODE': 'The dataset code',
-        },
         'container_registry': {
             'LIST_PROJECTS': 'List all projects',
             'LIST_REPOSITORIES': 'List all repositories (optionally: in a given project)',
