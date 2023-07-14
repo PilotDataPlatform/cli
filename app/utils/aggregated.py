@@ -39,6 +39,8 @@ def search_item(project_code, zone, folder_relative_path, item_type, container_t
     res = requests.get(url, params=params, headers=headers)
     if res.status_code == 403:
         SrvErrorHandler.customized_handle(ECustomizedError.PERMISSION_DENIED, project_code)
+    elif res.status_code == 404:
+        pass
     elif res.status_code != 200:
         SrvErrorHandler.default_handle(res.text, True)
 
