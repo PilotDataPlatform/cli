@@ -75,6 +75,18 @@ def test_search_file_error_handling_with_403(requests_mock, mocker, capsys):
     )
 
 
+def test_search_file_error_handling_with_404(requests_mock, mocker, capsys):
+    mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
+    requests_mock.get(
+        f'http://bff_cli/v1/project/{test_project_code}/search',
+        json={},
+        status_code=404,
+    )
+
+    res = search_item(test_project_code, 'zone', 'folder_relative_path', 'file', 'project')
+    assert res == {}
+
+
 def test_search_file_error_handling_with_401(requests_mock, mocker, capsys):
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
     requests_mock.get(
