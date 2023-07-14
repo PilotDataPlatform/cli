@@ -6,7 +6,6 @@ import os
 
 import click
 
-from app.services.user_authentication.decorator import require_config
 from app.services.user_authentication.decorator import require_login_session
 
 from .container_registry import create_project
@@ -26,7 +25,6 @@ from .file import file_resume
 
 # Import custom commands
 from .project import project_list_all
-from .use_config import set_env
 from .user import login
 from .user import logout
 
@@ -34,7 +32,7 @@ container_registry_enabled = os.environ.get('PILOT_CLI_CONTAINER_REGISTRY_ENABLE
 
 
 def command_groups():
-    commands = ['file', 'user', 'use_config', 'project', 'dataset']
+    commands = ['file', 'user', 'project', 'dataset']
     if container_registry_enabled:
         commands.append('container_registry')
     return commands
@@ -46,34 +44,25 @@ def entry_point():
 
 
 @entry_point.group(name='project')
-@require_config
 @require_login_session
 def project_group():
     pass
 
 
 @entry_point.group(name='dataset')
-@require_config
 @require_login_session
 def dataset_group():
     pass
 
 
 @entry_point.group(name='file')
-@require_config
 @require_login_session
 def file_group():
     pass
 
 
 @entry_point.group(name='user')
-@require_config
 def user_group():
-    pass
-
-
-@entry_point.group(name='use_config')
-def config_group():
     pass
 
 
@@ -89,13 +78,11 @@ user_group.add_command(logout)
 dataset_group.add_command(dataset_list)
 dataset_group.add_command(dataset_show_detail)
 dataset_group.add_command(dataset_download)
-config_group.add_command(set_env)
 
 # Custom commands
 if container_registry_enabled:
 
     @entry_point.group(name='container_registry')
-    @require_config
     def cr_group():
         pass
 
