@@ -45,7 +45,6 @@ class AppConfig:
         url_upload_greenroom = ConfigClass.url_upload_greenroom
         url_upload_core = ConfigClass.url_upload_core
         url_status = ConfigClass.url_status
-        url_lineage = ConfigClass.url_lineage
         url_download_greenroom = ConfigClass.url_download_greenroom
         url_download_core = ConfigClass.url_download_core
         url_v2_download_pre = ConfigClass.url_v2_download_pre
