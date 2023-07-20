@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Iterable
 from typing import Union
 
-from app.configs.app_config import AppConfig
+from app.configs.config import ConfigClass
 from app.models.singleton import Singleton
 from app.services.crypto.crypto import decryption
 from app.services.crypto.crypto import encryption
@@ -28,9 +28,9 @@ class UserConfig(metaclass=Singleton):
 
     def __init__(self, config_path: Union[str, Path, None] = None, config_filename: Union[str, None] = None) -> None:
         if config_path is None:
-            config_path = AppConfig.Env.user_config_path
+            config_path = ConfigClass.config_path
         if config_filename is None:
-            config_filename = AppConfig.Env.user_config_file
+            config_filename = ConfigClass.config_file
 
         config_path = Path(config_path)
         if not config_path.exists():

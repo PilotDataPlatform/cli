@@ -13,6 +13,7 @@ import requests
 from requests import RequestException
 
 from app.configs.app_config import AppConfig
+from app.configs.config import ConfigClass
 from app.configs.user_config import UserConfig
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
@@ -22,7 +23,7 @@ from app.services.output_manager.message_handler import SrvOutPutHandler
 def exchange_api_key(api_key: str) -> Union[str, None]:
     """Exchange API Key with JWT token using Keycloak."""
 
-    url = f'{AppConfig.Connections.url_keycloak_realm}/api-key/{api_key}'
+    url = f'{ConfigClass.url_keycloak_realm}/api-key/{api_key}'
     try:
         response = requests.get(url, timeout=5)
         response.raise_for_status()
@@ -59,7 +60,7 @@ def user_device_id_login() -> Dict[str, Any]:
 
     url = f'{AppConfig.Connections.url_keycloak}/auth/device'
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-    data = {'client_id': AppConfig.Env.keycloak_device_client_id}
+    data = {'client_id': ConfigClass.keycloak_device_client_id}
     resp = requests.post(url, headers=headers, data=data)
     if resp.status_code == 200:
         device_data = resp.json()
@@ -80,7 +81,7 @@ def validate_user_device_login(device_code: str, expires: int, interval: int) ->
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
     data = {
         'device_code': device_code,
-        'client_id': AppConfig.Env.keycloak_device_client_id,
+        'client_id': ConfigClass.keycloak_device_client_id,
         'grant_type': 'urn:ietf:params:oauth:grant-type:device_code',
     }
     waiting_result = True
@@ -162,7 +163,7 @@ def request_harbor_tokens(username, password):
         'username': username,
         'password': password,
         'client_id': 'harbor',
-        'client_secret': AppConfig.Env.harbor_client_secret,
+        'client_secret': ConfigClass.harbor_client_secret,
     }
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
     response = requests.post(url, data=payload, headers=headers, verify=False)

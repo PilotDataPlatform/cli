@@ -8,6 +8,7 @@ import jwt
 import requests
 
 from app.configs.app_config import AppConfig
+from app.configs.config import ConfigClass
 from app.configs.user_config import UserConfig
 from app.models.enums import LoginMethod
 from app.models.service_meta_class import MetaService
@@ -44,7 +45,7 @@ class SrvTokenManager(metaclass=MetaService):
         audience = token['aud']
         if isinstance(audience, str):
             audience = [audience]
-        return AppConfig.Env.keycloak_api_key_audience.issubset(set(audience))
+        return ConfigClass.keycloak_api_key_audience.issubset(set(audience))
 
     def check_valid(self, required_azp):
         """
@@ -64,7 +65,7 @@ class SrvTokenManager(metaclass=MetaService):
             # ``kong`` is hardcoded in the decorator definition as default value.
             azp_token_condition = decoded_access_token['azp'] not in [
                 required_azp,
-                AppConfig.Env.keycloak_device_client_id,
+                ConfigClass.keycloak_device_client_id,
             ]
 
             if azp_token_condition or expiry_at <= now:
@@ -86,7 +87,7 @@ class SrvTokenManager(metaclass=MetaService):
         }
 
         if azp == 'harbor':
-            payload.update({'client_id': AppConfig.Env.harbor_client_secret})
+            payload.update({'client_id': ConfigClass.harbor_client_secret})
 
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         response = requests.post(url, data=payload, headers=headers)
