@@ -2,7 +2,7 @@
 name = "app"
 version = "2.5.2"
 description = "This service is designed to support pilot platform"
-authors = ["Indoc Research"]
+authors = ["Indoc Systems"]
 
 [tool.poetry.dependencies]
 python = ">=3.7,<3.11"
