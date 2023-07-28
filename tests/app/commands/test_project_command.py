@@ -46,6 +46,26 @@ def test_list_project_is_larger_than_page_size_with_page_0(mocker, cli_runner):
     assert clear_mock.call_count == 2
 
 
+def test_list_project_is_larger_than_page_size_with_page_1(mocker, cli_runner):
+    page_size = 10
+    project_list = list_fake_project(5)
+    mocker.patch('app.services.project_manager.project.SrvProjectManager.list_projects', return_value=project_list)
+    clear_mock = mocker.patch('click.clear', return_value=None)
+
+    question_mock = mocker.patch.object(questionary, 'select', return_value=questionary.select)
+    questionary.select.return_value.ask = Mock()
+    questionary.select.return_value.ask.side_effect = ['previous page', 'exit']
+
+    result = cli_runner.invoke(
+        project_list_all, ['--page', 1, '--page-size', page_size, '--order', 'desc', '--order-by', 'created_at']
+    )
+
+    assert result.exit_code == 0
+    assert '' == result.output
+    assert question_mock.call_count == 1
+    assert clear_mock.call_count == 1
+
+
 def test_list_project_with_detached(mocker, cli_runner):
     page_size = 10
     project_list = list_fake_project(10)

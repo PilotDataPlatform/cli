@@ -25,19 +25,20 @@ def test_entry_point():
         assert x in entry_point.commands.keys()
 
 
-def test_project_commands():
+def test_project_commands(user_login_true):
     assert 'project' in entry_point.commands.keys()
 
     func_map = {
         'list': project_list_all,
     }
     project_commands_object = entry_point.commands.get('project')
+    project_commands_object.callback()
 
     for x in project_commands_object.commands.keys():
         assert func_map.get(x) == project_commands_object.commands.get(x)
 
 
-def test_user_commands():
+def test_user_commands(user_login_true):
     assert 'user' in entry_point.commands.keys()
 
     func_map = {
@@ -45,12 +46,13 @@ def test_user_commands():
         'logout': logout,
     }
     user_commands_object = entry_point.commands.get('user')
+    user_commands_object.callback()
 
     for x in user_commands_object.commands.keys():
         assert func_map.get(x) == user_commands_object.commands.get(x)
 
 
-def test_file_commands():
+def test_file_commands(user_login_true):
     assert 'file' in entry_point.commands.keys()
 
     func_map = {
@@ -62,12 +64,13 @@ def test_file_commands():
         'resume': file_resume,
     }
     file_commands_object = entry_point.commands.get('file')
+    file_commands_object.callback()
 
     for x in file_commands_object.commands.keys():
         assert func_map.get(x) == file_commands_object.commands.get(x)
 
 
-def test_dataset_commands():
+def test_dataset_commands(user_login_true):
     assert 'dataset' in entry_point.commands.keys()
 
     func_map = {
@@ -76,6 +79,7 @@ def test_dataset_commands():
         'download': dataset_download,
     }
     dataset_commands_object = entry_point.commands.get('dataset')
+    dataset_commands_object.callback()
 
     for x in dataset_commands_object.commands.keys():
         assert func_map.get(x) == dataset_commands_object.commands.get(x)
