@@ -3,7 +3,11 @@
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
 import time
+from typing import Any
+from typing import Dict
+from typing import Tuple
 
+import jwt
 import pytest
 
 from app.configs.app_config import AppConfig
@@ -25,6 +29,8 @@ def mock_settings(monkeypatch, mocker):
     monkeypatch.setattr(AppConfig.Connections, 'url_dataset', 'http://url_dataset')
     monkeypatch.setattr(AppConfig.Connections, 'url_dataset_v2download', 'http://url_dataset_download_v2')
     monkeypatch.setattr(AppConfig.Connections, 'url_download_core', 'http://url_dataset_download_core')
+    monkeypatch.setattr(AppConfig.Connections, 'url_download_greenroom', 'http://url_url_download_greenroom')
+    monkeypatch.setattr(AppConfig.Connections, 'url_v2_download_pre', 'http://url_v2_download_pre/%s')
     monkeypatch.setattr(AppConfig.Connections, 'url_upload_greenroom', 'http://upload_gr')
     monkeypatch.setattr(AppConfig.Connections, 'url_upload_core', 'http://upload_core')
     monkeypatch.setattr(UserConfig, 'username', 'test-user')
@@ -38,6 +44,25 @@ def mock_settings(monkeypatch, mocker):
 @pytest.fixture
 def settings() -> Settings:
     return get_settings()
+
+
+@pytest.fixture
+def fake_download_hash() -> Tuple[str, Dict[str, Any]]:
+    fake_file_info = {
+        'file_path': 'test_file',
+        'issuer': 'SERVICE DATA DOWNLOAD',
+        'operator': 'admin',
+        'session_id': 'admin-50708fcb-e3ae-4dad-98b5-310d79390d80',
+        'job_id': '0992af70-b05c-440a-9425-4ba4f5b6d945',
+        'container_code': 'test0711',
+        'container_type': 'project',
+        'payload': {},
+        'iat': 1690576438,
+        'exp': 1695760438,
+    }
+
+    download_hash = jwt.encode(fake_file_info, key='test_key', algorithm='HS256')
+    return download_hash.decode('utf-8'), fake_file_info
 
 
 def decoded_token():

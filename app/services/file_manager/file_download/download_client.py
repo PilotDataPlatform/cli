@@ -5,6 +5,7 @@
 import concurrent.futures
 import os
 import time
+from typing import Tuple
 
 import click
 import httpx
@@ -52,8 +53,8 @@ class SrvFileDownload(metaclass=MetaService):
                 time.sleep(1)
                 click.secho(f"{message}{'.'*i}\r", fg='white', nl=False)
 
-    def get_download_url(self, zone):
-        if zone == 'greenroom':
+    def get_download_url(self):
+        if self.zone == 'greenroom':
             url = self.appconfig.Connections.url_download_greenroom
         else:
             url = self.appconfig.Connections.url_download_core
@@ -72,7 +73,7 @@ class SrvFileDownload(metaclass=MetaService):
         return pre_status, file_path
 
     @require_valid_token()
-    def prepare_download(self):
+    def prepare_download(self) -> Tuple[str, str]:
         files = []
         for f in self.file_geid:
             files.append({'id': f})
@@ -255,7 +256,7 @@ class SrvFileDownload(metaclass=MetaService):
                 self.zone = k.split('_')[1]
                 self.file_geid = v.get('files')
                 self.total_size = v.get('total_size')
-                self.url = self.get_download_url(self.zone)
+                self.url = self.get_download_url()
         return presigned_task, item_name
 
     @require_valid_token()
