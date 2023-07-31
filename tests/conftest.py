@@ -36,6 +36,12 @@ def mock_settings(monkeypatch, mocker):
 
 
 @pytest.fixture
+def user_login_true(mocker):
+    mocker.patch('app.services.user_authentication.decorator.check_is_login', return_value=True)
+    mocker.patch('app.services.user_authentication.decorator.check_is_active', return_value=True)
+
+
+@pytest.fixture
 def settings() -> Settings:
     return get_settings()
 
