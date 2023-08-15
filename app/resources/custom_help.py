@@ -1,6 +1,6 @@
-# Copyright (C) 2022-2023 Indoc Research
+# Copyright (C) 2022-2023 Indoc Systems
 #
-# Contact Indoc Research for any questions regarding the use of this source code.
+# Contact Indoc Systems for any questions regarding the use of this source code.
 
 
 class HelpPage:
@@ -57,23 +57,6 @@ class HelpPage:
         'config': {
             'SET_CONFIG': 'Chose config file and set for cli.',
             'CONFIG_DESTINATION': 'The destination the config file goes to, default will be current cli directory.',
-        },
-        'hpc': {
-            'HPC_AUTH': 'Authorize user to HPC with access token.',
-            'HPC_LOGIN_HOST': 'The host address for login HPC.',
-            'HPC_LOGIN_USERNAME': 'The username for login HPC.',
-            'HPC_LOGIN_PASSWORD': 'The password for login HPC.',
-            'HPC_TOKEN': 'The HPC token',
-            'HPC_SUBMIT': 'Submit a job to HPC',
-            'HPC_JOB_INFO': 'Get a job information',
-            'HPC_NODES': 'Get a list of nodes',
-            'HPC_GET_NODE': 'Get node information by node name',
-            'HPC_PARTITIONS': 'Get a list of partitions',
-            'HPC_GET_PARTITION': 'Get partition information by partition name',
-        },
-        'knowledge_graph': {
-            'KG_IMPORT': 'Import dataset schema into BlueBrainNexus ',
-            'KG_DATASET_CODE': 'The dataset code',
         },
         'container_registry': {
             'LIST_PROJECTS': 'List all projects',

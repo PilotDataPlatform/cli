@@ -1,6 +1,6 @@
-# Copyright (C) 2022-2023 Indoc Research
+# Copyright (C) 2022-2023 Indoc Systems
 #
-# Contact Indoc Research for any questions regarding the use of this source code.
+# Contact Indoc Systems for any questions regarding the use of this source code.
 
 from app.configs.app_config import AppConfig
 from app.services.file_manager.file_upload.file_upload import assemble_path
@@ -109,7 +109,7 @@ def test_assemble_path_at_non_existing_folder(mocker):
     assert create_folder_flag is True
 
 
-def test_file_upload_skip_empty_file(mocker):
+def test_file_upload_skip_empty_file(mocker, tmp_path):
     file_name = 'test'
     upload_event = {
         'file': file_name,
@@ -120,7 +120,7 @@ def test_file_upload_skip_empty_file(mocker):
     mocker.patch('os.path.isdir', return_value=False)
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(0, 0))
 
-    item_ids = simple_upload(upload_event, output_path='./test')
+    item_ids = simple_upload(upload_event, output_path=str(tmp_path / 'test'))
     assert len(item_ids) == 0
 
 

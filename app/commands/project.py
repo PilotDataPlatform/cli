@@ -1,6 +1,6 @@
-# Copyright (C) 2022-2023 Indoc Research
+# Copyright (C) 2022-2023 Indoc Systems
 #
-# Contact Indoc Research for any questions regarding the use of this source code.
+# Contact Indoc Systems for any questions regarding the use of this source code.
 
 import click
 import questionary
@@ -47,12 +47,12 @@ def cli():
 )
 @doc(project_help.project_help_page(project_help.ProjectHELP.PROJECT_LIST))
 def project_list_all(page, page_size, order, order_by, detached):
+    project_mgr = SrvProjectManager()
+
     if detached:
-        project_mgr = SrvProjectManager()
         projects = project_mgr.list_projects(page, page_size, order, order_by)
     else:
         while True:
-            project_mgr = SrvProjectManager()
             projects = project_mgr.list_projects(page, page_size, order, order_by)
             if len(projects) < page_size and page == 0:
                 break
@@ -62,6 +62,7 @@ def project_list_all(page, page_size, order, order_by, detached):
                 choice = ['next page', 'exit']
             else:
                 choice = ['previous page', 'next page', 'exit']
+
             val = questionary.select('\nWhat do you want?', qmark='', choices=choice).ask()
             if val == 'exit':
                 mhandler.SrvOutPutHandler.list_success('Project')

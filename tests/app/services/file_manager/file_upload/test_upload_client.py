@@ -1,6 +1,6 @@
-# Copyright (C) 2022-2023 Indoc Research
+# Copyright (C) 2022-2023 Indoc Systems
 #
-# Contact Indoc Research for any questions regarding the use of this source code.
+# Contact Indoc Systems for any questions regarding the use of this source code.
 
 import re
 from functools import wraps
@@ -153,13 +153,13 @@ def test_resumable_pre_upload_failed_with_404(httpx_mock, mocker):
         AssertionError('SystemExit not raised')
 
 
-def test_output_manifest_success(mocker):
+def test_output_manifest_success(mocker, tmp_path):
     upload_client = UploadClient('project_code', 'parent_folder_id')
     json_dump_mocker = mocker.patch('json.dump', return_value=None)
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
     test_obj = FileObject('object/path', 'local_path', 'resumable_id', 'job_id', 'item_id')
 
-    res = upload_client.output_manifest([test_obj], 'test')
+    res = upload_client.output_manifest([test_obj], output_path=str(tmp_path / 'test'))
 
     assert res.get('project_code') == 'project_code'
     assert res.get('parent_folder_id') == 'parent_folder_id'

@@ -1,6 +1,6 @@
-# Copyright (C) 2022-2023 Indoc Research
+# Copyright (C) 2022-2023 Indoc Systems
 #
-# Contact Indoc Research for any questions regarding the use of this source code.
+# Contact Indoc Systems for any questions regarding the use of this source code.
 
 import hashlib
 import json
@@ -16,10 +16,11 @@ from typing import Tuple
 
 import httpx
 
-import app.models.upload_form as uf
 import app.services.output_manager.message_handler as mhandler
 from app.configs.app_config import AppConfig
+from app.configs.config import ConfigClass
 from app.configs.user_config import UserConfig
+from app.models.upload_form import generate_on_success_form
 from app.services.file_manager.file_upload.models import FileObject
 from app.services.file_manager.file_upload.models import UploadType
 from app.services.output_manager.error_handler import ECustomizedError
@@ -55,6 +56,7 @@ class UploadClient:
         regular_file: str = True,
         tags: list = None,
         source_id: str = '',
+        attributes: dict = None,
     ):
         self.user = UserConfig()
         self.operator = self.user.username
@@ -80,6 +82,7 @@ class UploadClient:
         # tags and souce_id are only allowed in file uplaod
         self.tags = tags
         self.source_id = source_id
+        self.attributes = attributes
 
         # the flag to indicate if all upload process finished
         # then the token refresh loop will end
@@ -226,6 +229,7 @@ class UploadClient:
             'tags': self.tags,
             'upload_message': self.upload_message,
             'file_objects': {file_object.item_id: file_object.to_dict() for file_object in file_objects},
+            'attributes': self.attributes if self.attributes else {},
         }
 
         with open(output_path, 'w') as f:
@@ -360,7 +364,7 @@ class UploadClient:
 
         for i in range(AppConfig.Env.resilient_retry):
             url = self.base_url + '/v1/files'
-            payload = uf.generate_on_success_form(
+            payload = generate_on_success_form(
                 self.project_code,
                 self.operator,
                 file_object,
@@ -410,7 +414,7 @@ class UploadClient:
     def set_finish_upload(self):
         self.finish_upload = True
 
-    def upload_token_refresh(self, azp: str = AppConfig.Env.keycloak_device_client_id):
+    def upload_token_refresh(self, azp: str = ConfigClass.keycloak_device_client_id):
         token_manager = SrvTokenManager()
         DEFAULT_INTERVAL = 2  # seconds to check if the upload is finished
         total_count = 0  # when total_count equals token_refresh_interval, refresh token

@@ -47,7 +47,7 @@ jobs:
         uses: pre-commit/action@v3.0.0
 
       - name: Run tests
-        run: poetry run pytest -vvv --exitfirst --cov=app --cov-report=term --cov-report=xml --cov-fail-under=54
+        run: poetry run pytest -vvv --exitfirst --cov=app --cov-report=term --cov-report=xml --cov-fail-under=60
 
       - name: Coverage report comment
         uses: mishakav/pytest-coverage-comment@v1.1.42
