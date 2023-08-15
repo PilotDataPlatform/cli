@@ -1,10 +1,9 @@
-# Copyright (C) 2023 Indoc Research
+# Copyright (C) 2023 Indoc Systems
 #
-# Contact Indoc Research for any questions regarding the use of this source code.
+# Contact Indoc Systems for any questions regarding the use of this source code.
 
 import jwt
 
-from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.services.user_authentication.token_manager import SrvTokenManager
 
@@ -27,11 +26,11 @@ class TestSrvTokenManager:
 
         refresh_api_key_mock.assert_called_once()
 
-    def test_refresh_api_key_calls_keycloak_and_stores_access_token_in_config(self, requests_mock):
+    def test_refresh_api_key_calls_keycloak_and_stores_access_token_in_config(self, requests_mock, settings):
         manager = SrvTokenManager()
         access_token = jwt.encode({}, key='').decode()
         requests_mock.get(
-            f'{AppConfig.Connections.url_keycloak_realm}/api-key/{manager.config.api_key}',
+            f'{settings.url_keycloak_realm}/api-key/{manager.config.api_key}',
             json={'access_token': access_token},
         )
 

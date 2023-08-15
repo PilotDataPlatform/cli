@@ -1,16 +1,22 @@
-# Copyright (C) 2022-2023 Indoc Research
+# Copyright (C) 2022-2023 Indoc Systems
 #
-# Contact Indoc Research for any questions regarding the use of this source code.
+# Contact Indoc Systems for any questions regarding the use of this source code.
 
 import configparser
 import os
+import stat
 import time
+from pathlib import Path
+from typing import Iterable
+from typing import Union
 
-from app.configs.app_config import AppConfig
+from app.configs.config import ConfigClass
 from app.models.singleton import Singleton
 from app.services.crypto.crypto import decryption
 from app.services.crypto.crypto import encryption
 from app.services.crypto.crypto import generate_secret
+from app.services.output_manager.error_handler import ECustomizedError
+from app.services.output_manager.error_handler import SrvErrorHandler
 
 
 class UserConfig(metaclass=Singleton):
@@ -20,13 +26,35 @@ class UserConfig(metaclass=Singleton):
     This user config is global.
     """
 
-    def __init__(self):
-        if not os.path.exists(AppConfig.Env.user_config_path):
-            os.makedirs(AppConfig.Env.user_config_path)
-        if not os.path.exists(AppConfig.Env.user_config_file):
-            os.system(r'touch {}'.format(AppConfig.Env.user_config_file))
+    def __init__(self, config_path: Union[str, Path, None] = None, config_filename: Union[str, None] = None) -> None:
+        if config_path is None:
+            config_path = ConfigClass.config_path
+        if config_filename is None:
+            config_filename = ConfigClass.config_file
+
+        config_path = Path(config_path)
+        if not config_path.exists():
+            config_path.mkdir(mode=0o0700, exist_ok=False)
+
+        current_user_id = os.geteuid()
+
+        error = self._check_user_permissions(config_path, current_user_id, (0o0500, 0o0700))
+        if error:
+            SrvErrorHandler.customized_handle(ECustomizedError.CONFIG_INVALID_PERMISSIONS, True, error)
+            return
+
+        config_file = config_path / config_filename
+        if not config_file.exists():
+            config_file.touch(mode=0o0600, exist_ok=False)
+
+        error = self._check_user_permissions(config_file, current_user_id, (0o0400, 0o0600))
+        if error:
+            SrvErrorHandler.customized_handle(ECustomizedError.CONFIG_INVALID_PERMISSIONS, True, error)
+            return
+
+        self.config_file = config_file
         self.config = configparser.ConfigParser()
-        self.config.read(AppConfig.Env.user_config_file)
+        self.config.read(self.config_file)
         if not self.config.has_section('USER'):
             self.config['USER'] = {
                 'username': '',
@@ -35,14 +63,33 @@ class UserConfig(metaclass=Singleton):
                 'access_token': '',
                 'refresh_token': '',
                 'secret': generate_secret(),
-                'hpc_token': '',
                 'last_active': int(time.time()),
                 'session_id': '',
             }
             self.save()
 
+    def _check_user_permissions(self, path: Path, expected_uid: int, expected_bits: Iterable[int]) -> Union[str, None]:
+        """Check if file or folder is owned by the user and has proper access mode."""
+
+        path_stat = path.stat()
+
+        path_uid = path_stat.st_uid
+        if path_uid != expected_uid:
+            return f'"{path}" is owned by the user id {path_uid}. Expected user id is {expected_uid}.'
+
+        path_protection_bits = stat.S_IMODE(path_stat.st_mode)
+        if path_protection_bits not in expected_bits:
+            existing_permissions = oct(path_protection_bits).replace('0o', '')
+            expected_permissions = ', '.join(map(oct, expected_bits)).replace('0o', '')
+            return (
+                f'Permissions {existing_permissions} for "{path}" are too open. '
+                f'Expected permissions are {expected_permissions}.'
+            )
+
+        return None
+
     def save(self):
-        with open(AppConfig.Env.user_config_file, 'w') as configfile:
+        with open(self.config_file, 'w') as configfile:
             self.config.write(configfile)
 
     def clear(self):
@@ -52,7 +99,6 @@ class UserConfig(metaclass=Singleton):
             'api_key': '',
             'access_token': '',
             'refresh_token': '',
-            'hpc_token': '',
             'secret': generate_secret(),
             'last_active': 0,
             'session_id': '',
@@ -109,14 +155,6 @@ class UserConfig(metaclass=Singleton):
     @secret.setter
     def secret(self, val):
         self.config['USER']['secret'] = val
-
-    @property
-    def hpc_token(self):
-        return decryption(self.config['USER']['hpc_token'], self.secret)
-
-    @hpc_token.setter
-    def hpc_token(self, val):
-        self.config['USER']['hpc_token'] = encryption(val, self.secret)
 
     @property
     def last_active(self):

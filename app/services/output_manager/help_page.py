@@ -1,6 +1,6 @@
-# Copyright (C) 2022-2023 Indoc Research
+# Copyright (C) 2022-2023 Indoc Systems
 #
-# Contact Indoc Research for any questions regarding the use of this source code.
+# Contact Indoc Systems for any questions regarding the use of this source code.
 
 import enum
 
@@ -35,16 +35,6 @@ class ProjectHELP(enum.Enum):
 def project_help_page(ProjectHELP: ProjectHELP):
     helps = help_msg.get('project', 'default project help')
     return helps.get(ProjectHELP.name)
-
-
-class ConfigHELP(enum.Enum):
-    SET_CONFIG = 'SET_CONFIG'
-    CONFIG_DESTINATION = 'CONFIG_DESTINATION'
-
-
-def config_help_page(ConfigHELP: ConfigHELP):
-    helps = help_msg.get('config', 'default config help')
-    return helps.get(ConfigHELP.name)
 
 
 class UserHELP(enum.Enum):
@@ -89,35 +79,6 @@ def file_help_page(FileHELP: FileHELP):
     return helps.get(FileHELP.name)
 
 
-class HpcHELP(enum.Enum):
-    HPC_AUTH = 'HPC_AUTH'
-    HPC_LOGIN_HOST = 'HPC_LOGIN_HOST'
-    HPC_LOGIN_USERNAME = 'HPC_LOGIN_USERNAME'
-    HPC_LOGIN_PASSWORD = 'HPC_LOGIN_PASSWORD'
-    HPC_TOKEN = 'HPC_TOKEN'
-    HPC_SUBMIT = 'HPC_SUBMIT'
-    HPC_JOB_INFO = 'HPC_JOB_INFO'
-    HPC_NODES = 'HPC_NODES'
-    HPC_GET_NODE = 'HPC_GET_NODE'
-    HPC_PARTITIONS = 'HPC_PARTITIONS'
-    HPC_GET_PARTITION = 'HPC_GET_PARTITION'
-
-
-def hpc_help_page(HpcHELP: HpcHELP):
-    helps = help_msg.get('hpc', 'default hpc help')
-    return helps.get(HpcHELP.name)
-
-
-class KgResourceHELP(enum.Enum):
-    KG_IMPORT = 'KG_IMPORT'
-    KG_DATASET_CODE = 'KG_DATASET_CODE'
-
-
-def kg_resource_help_page(KgResourceHELP: KgResourceHELP):
-    helps = help_msg.get('knowledge_graph', 'default kg help')
-    return helps.get(KgResourceHELP.name)
-
-
 class ContainerRegistryHELP(enum.Enum):
     LIST_PROJECTS = 'LIST_PROJECTS'
     LIST_REPOSITORIES = 'LIST_REPOSITORIES'
@@ -127,5 +88,5 @@ class ContainerRegistryHELP(enum.Enum):
 
 
 def cr_help_page(ContainerRegistryHELP: ContainerRegistryHELP):
-    helps = help_msg.get('container_registry', 'default kg help')
+    helps = help_msg.get('container_registry', 'default container_registry help')
     return helps.get(ContainerRegistryHELP.name)

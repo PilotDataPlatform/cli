@@ -1,6 +1,6 @@
-# Copyright (C) 2022-2023 Indoc Research
+# Copyright (C) 2022-2023 Indoc Systems
 #
-# Contact Indoc Research for any questions regarding the use of this source code.
+# Contact Indoc Systems for any questions regarding the use of this source code.
 
 import math
 import os
@@ -156,6 +156,7 @@ def simple_upload(  # noqa: C901
         tags=tags,
         source_id=source_id,
         upload_message=upload_message,
+        attributes=attribute,
     )
 
     # format the local path into object storage path for preupload

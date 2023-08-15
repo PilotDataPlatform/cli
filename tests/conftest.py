@@ -1,19 +1,21 @@
-# Copyright (C) 2022-2023 Indoc Research
+# Copyright (C) 2022-2023 Indoc Systems
 #
-# Contact Indoc Research for any questions regarding the use of this source code.
+# Contact Indoc Systems for any questions regarding the use of this source code.
 
 import time
 
 import pytest
 
 from app.configs.app_config import AppConfig
+from app.configs.config import Settings
+from app.configs.config import get_settings
 from app.configs.user_config import UserConfig
 from app.models.singleton import Singleton
 
 
 @pytest.fixture(autouse=True)
 def reset_singletons():
-    Singleton._instance = {}
+    Singleton._instances = {}
 
 
 @pytest.fixture(autouse=True)
@@ -25,14 +27,23 @@ def mock_settings(monkeypatch, mocker):
     monkeypatch.setattr(AppConfig.Connections, 'url_download_core', 'http://url_dataset_download_core')
     monkeypatch.setattr(AppConfig.Connections, 'url_upload_greenroom', 'http://upload_gr')
     monkeypatch.setattr(AppConfig.Connections, 'url_upload_core', 'http://upload_core')
-    monkeypatch.setattr(AppConfig.Connections, 'url_keycloak_realm', 'http://keycloak_realm')
     monkeypatch.setattr(UserConfig, 'username', 'test-user')
     monkeypatch.setattr(UserConfig, 'password', 'test-password')
     monkeypatch.setattr(UserConfig, 'api_key', 'test-api-key')
     monkeypatch.setattr(UserConfig, 'access_token', 'test-access-token')
     monkeypatch.setattr(UserConfig, 'refresh_token', 'test-refresh-token')
-    monkeypatch.setattr(UserConfig, 'hpc_token', 'test-hpc-token')
     mocker.patch('app.configs.user_config.UserConfig.save')  # Do not save config when running tests
+
+
+@pytest.fixture
+def user_login_true(mocker):
+    mocker.patch('app.services.user_authentication.decorator.check_is_login', return_value=True)
+    mocker.patch('app.services.user_authentication.decorator.check_is_active', return_value=True)
+
+
+@pytest.fixture
+def settings() -> Settings:
+    return get_settings()
 
 
 def decoded_token():
@@ -46,7 +57,7 @@ def decoded_token():
         'aud': 'account',
         'sub': 'a8b728f6-c95a-4999-b98e-0ccf7492a9b4',
         'typ': 'Bearer',
-        'azp': AppConfig.Env.keycloak_device_client_id,
+        'azp': 'cli',
         'nonce': 'a3cb03d0-b00a-480d-8fd2-e06f80898cf1',
         'session_state': 'b92a3847-a485-4060-91fd-83300b09acb6',
         'acr': '1',

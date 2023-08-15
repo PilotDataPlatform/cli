@@ -1,6 +1,6 @@
-# Copyright (C) 2022-2023 Indoc Research
+# Copyright (C) 2022-2023 Indoc Systems
 #
-# Contact Indoc Research for any questions regarding the use of this source code.
+# Contact Indoc Systems for any questions regarding the use of this source code.
 
 import enum
 import sys
@@ -29,7 +29,6 @@ class ECustomizedError(enum.Enum):
     MISSING_REQUIRED_ATTRIBUTE = 'MISSING_REQUIRED_ATTRIBUTE'
     INVALID_UPLOAD_REQUEST = 'INVALID_UPLOAD_REQUEST'
     INVALID_SOURCE_FILE = 'INVALID_SOURCE_FILE'
-    INVALID_LINEAGE = 'INVALID_LINEAGE'
     INVALID_PIPELINENAME = 'INVALID_PIPELINENAME'
     INVALID_PATHS = 'INVALID_PATHS'
     INVALID_RESUMABLE = 'INVALID_RESUMABLE'
@@ -67,8 +66,6 @@ class ECustomizedError(enum.Enum):
     DATASET_NOT_EXIST = 'DATASET_NOT_EXIST'
     DATASET_PERMISSION = 'DATASET_PERMISSION'
     USER_DISABLED = 'USER_DISABLED'
-    CANNOT_AUTH_HPC = 'CANNOT_AUTH_HPC'
-    CANNOT_PROCESS_HPC_JOB = 'CANNOT_PROCESS_HPC_JOB'
     OVER_SIZE = 'OVER_SIZE'
     CONTAINER_REGISTRY_HOST_INVALID = 'CONTAINER_REGISTRY_HOST_INVALID'
     CONTAINER_REGISTRY_401 = 'CONTAINER_REGISTRY_401'
@@ -79,8 +76,7 @@ class ECustomizedError(enum.Enum):
     USER_NOT_FOUND = 'USER_NOT_FOUND'
     CONTAINER_REGISTRY_OTHER = 'CONTAINER_REGISTRY_OTHER'
     CONTAINER_REGISTRY_NO_URL = 'CONTAINER_REGISTRY_NO_URL'
-    CONFIG_NOT_FOUND = 'CONFIG_NOT_FOUND'
-    CONFIG_EXIST = 'CONFIG_EXIST'
+    CONFIG_INVALID_PERMISSIONS = 'CONFIG_INVALID_PERMISSIONS'
 
 
 def customized_error_msg(customized_error: ECustomizedError):
@@ -111,8 +107,3 @@ class SrvErrorHandler(metaclass=MetaService):
             logger.error(customized_error_msg(customized_error))
         if if_exit:
             sys.exit(0)
-
-
-class OverSizeError(Exception):
-    def __init__(self, message='File size is too large'):
-        super().__init__(message)

@@ -1,8 +1,7 @@
-# Copyright (C) 2022-2023 Indoc Research
+# Copyright (C) 2022-2023 Indoc Systems
 #
-# Contact Indoc Research for any questions regarding the use of this source code.
+# Contact Indoc Systems for any questions regarding the use of this source code.
 
-import datetime
 import os
 import re
 import shutil
@@ -11,20 +10,16 @@ import httpx
 import requests
 
 from app.configs.app_config import AppConfig
+from app.configs.config import ConfigClass
 from app.configs.user_config import UserConfig
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
-from env import ConfigClass
-
-
-def get_current_datetime():
-    return datetime.datetime.now().isoformat()
 
 
 def resilient_session():
     # each resilient session will
-    headers = {'VM-Info': ConfigClass.VM_INFO}
+    headers = {'VM-Info': ConfigClass.vm_info}
     client = httpx.Client(headers=headers, timeout=None)
     return client
 
@@ -44,6 +39,10 @@ def search_item(project_code, zone, folder_relative_path, item_type, container_t
     res = requests.get(url, params=params, headers=headers)
     if res.status_code == 403:
         SrvErrorHandler.customized_handle(ECustomizedError.PERMISSION_DENIED, project_code)
+    elif res.status_code == 404:
+        pass
+    elif res.status_code != 200:
+        SrvErrorHandler.default_handle(res.text, True)
 
     return res.json()
 

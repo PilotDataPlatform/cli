@@ -1,6 +1,6 @@
-# Copyright (C) 2022-2023 Indoc Research
+# Copyright (C) 2022-2023 Indoc Systems
 #
-# Contact Indoc Research for any questions regarding the use of this source code.
+# Contact Indoc Systems for any questions regarding the use of this source code.
 
 import json
 import os
@@ -245,8 +245,15 @@ def file_resume(**kwargs):  # noqa: C901
         # are rather similar with the input
         validate_upload_event(resumable_manifest)
 
-    # print(resumable_manifest)
     resume_upload(resumable_manifest, thread)
+
+    # since only file upload can attach manifest, take the first file object
+    srv_manifest = SrvFileManifests()
+    item_id = next(iter(resumable_manifest.get('file_objects')))
+    attribute = resumable_manifest.get('attributes')
+    zone = resumable_manifest.get('zone')
+    srv_manifest.attach_manifest(attribute, item_id, zone) if attribute else None
+    message_handler.SrvOutPutHandler.all_file_uploaded()
 
 
 def validate_upload_event(event):
