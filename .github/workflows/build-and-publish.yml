@@ -11,7 +11,6 @@ on:
   push:
     branches:
       - main
-      - rc/staging-release-15082023
 
 jobs:
   extract-branch-name:
@@ -26,7 +25,7 @@ jobs:
 
   push-binary-linux:
     needs: [ extract-branch-name ]
-    if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop' || needs.extract-branch-name.outputs.branch == 'rc/staging-release-15082023'}}
+    if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop'}}
     runs-on: ubuntu-20.04
     outputs:
       upload_url: ${{steps.create_release.outputs.upload_url}}
