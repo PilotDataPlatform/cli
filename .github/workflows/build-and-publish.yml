@@ -5,6 +5,7 @@ on:
     workflows: [ "Run Tests" ]
     branches:
       - develop
+      - rc/staging-release-15082023
     types:
       - completed
   push:
