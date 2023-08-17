@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "app"
-version = "2.5.2"
+version = "2.6.0"
 description = "This service is designed to support pilot platform"
 authors = ["Indoc Systems"]
 
