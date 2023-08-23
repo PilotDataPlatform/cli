@@ -262,13 +262,13 @@ class UploadClient:
         while True:
             chunk = f.read(self.chunk_size)
             chunk_etag = file_object.uploaded_chunks.get(str(count + 1))
+            local_chunk_etag = hashlib.md5(chunk).hexdigest()
             if not chunk:
                 break
             # if current chunk has been uploaded to object storage
             # only check the md5 if the file is same. If ture,
             # skip current chunk, if not, raise the error.
             elif chunk_etag:
-                local_chunk_etag = hashlib.md5(chunk).hexdigest()
                 if chunk_etag != local_chunk_etag:
                     SrvErrorHandler.customized_handle(ECustomizedError.INVALID_CHUNK_UPLOAD, value=count + 1)
                     raise INVALID_CHUNK_ETAG(count + 1)
@@ -276,7 +276,7 @@ class UploadClient:
             else:
                 res = pool.apply_async(
                     self.upload_chunk,
-                    args=(file_object, count + 1, chunk),
+                    args=(file_object, count + 1, chunk, local_chunk_etag),
                 )
                 chunk_result.append(res)
 
@@ -286,7 +286,7 @@ class UploadClient:
 
         return chunk_result
 
-    def upload_chunk(self, file_object: FileObject, chunk_number: int, chunk: str) -> None:
+    def upload_chunk(self, file_object: FileObject, chunk_number: int, chunk: str, etag: str) -> None:
         """
         Summary:
             The function is to upload a chunk directly into minio storage.
@@ -295,6 +295,7 @@ class UploadClient:
                 information for chunk uploading.
             - chunk_number(int): the number of current chunk.
             - chunk(str): the chunk data.
+            - etag(str): the md5 of chunk data.
         return:
             - None
         """
@@ -313,7 +314,11 @@ class UploadClient:
                 'upload_id': file_object.resumable_id,
                 'chunk_number': chunk_number,
             }
-            headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
+            headers = {
+                'Authorization': 'Bearer ' + self.user.access_token,
+                'Session-ID': self.user.session_id,
+                'Content-MD5': etag,
+            }
             response = httpx.get(
                 self.base_url + '/v1/files/chunks/presigned',
                 params=params,
@@ -326,7 +331,7 @@ class UploadClient:
                 presigned_chunk_url = response.json().get('result')
                 res = httpx.put(presigned_chunk_url, data=chunk, timeout=None)
 
-                if res.status_code != 200:
+                if res.status_code not in [200, 201]:
                     error_msg = 'Fail to upload the chunck %s: %s' % (chunk_number, str(res.text))
                     raise Exception(error_msg)
 
