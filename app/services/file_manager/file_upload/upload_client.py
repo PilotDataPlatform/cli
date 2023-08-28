@@ -148,6 +148,37 @@ class UploadClient:
         return unfinished_file_objects
 
     @require_valid_token()
+    def check_upload_duplication(self, file_objects: List[FileObject]) -> Tuple[List[FileObject], List[str]]:
+        """
+        Summary:
+            The function will call the api to check if the file has been uploaded.
+            if yes, it will skip the file.
+        Parameter:
+            - file_objects(List[FileObject]): the file will be uploaded.
+        """
+        headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
+        url = AppConfig.Connections.url_base + '/portal/v1/files/exists'
+
+        # generate a list of locations for uploaded files to check duplication
+        # at same time, generate a dict of mapping with object_path: FileObject
+        locations = [x.object_path for x in file_objects]
+        object_path_file_object_map = {x.object_path: x for x in file_objects}
+
+        payload = {'locations': locations, 'container_code': self.project_code, 'container_type': 'project', 'zone': 0}
+        response = resilient_session().post(url, json=payload, headers=headers)
+
+        # pop the file object if the file has been uploaded
+        # return the file objects that need to be uploaded
+        if response.status_code == 200:
+            exist_files = response.json().get('result', [])
+            for exist_file_path in exist_files:
+                object_path_file_object_map.pop(exist_file_path)
+        else:
+            SrvErrorHandler.default_handle('Error when checking file duplication', if_exit=True)
+
+        return list(object_path_file_object_map.values()), exist_files
+
+    @require_valid_token()
     def pre_upload(self, file_objects: List[FileObject], output_path: str) -> List[FileObject]:
         """
         Summary:

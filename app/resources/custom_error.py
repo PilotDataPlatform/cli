@@ -53,6 +53,8 @@ class Error:
         ),
         'UPLOAD_CANCEL': 'Upload task was cancelled.',
         'UPLOAD_FAIL': 'Upload task was failed. Please check the console output.',
+        'UPLOAD_SKIP_DUPLICATION': 'Following file/folder with the same '
+        'name already exist in the Project. Skip uploading: %s \n',
         'UPLOAD_ID_NOT_EXIST': (
             'The specified multipart upload does not exist. '
             'The upload ID may be invalid, or the upload may have been aborted or completed.'
