@@ -160,7 +160,7 @@ class UploadClient:
             - exist_files(List[str]): the file that has been uploaded. will be skipped
         """
         headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
-        url = AppConfig.Connections.url_bff + '/v1/files/exists'
+        url = AppConfig.Connections.url_base + '/portal/v1/files/exists'
 
         # generate a list of locations for uploaded files to check duplication
         # at same time, generate a dict of mapping with object_path: FileObject
@@ -213,7 +213,7 @@ class UploadClient:
             ],
         }
 
-        response = resilient_session().post(url, json=payload, headers=headers, timeout=None)
+        response = resilient_session().post(url, json=payload, headers=headers)
         if response.status_code == 200:
             result = response.json().get('result')
             file_mapping = {x.object_path: x for x in file_objects}
