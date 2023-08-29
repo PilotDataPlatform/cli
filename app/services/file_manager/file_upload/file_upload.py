@@ -24,6 +24,7 @@ from app.services.file_manager.file_upload.upload_client import UploadClient
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.output_manager.error_handler import customized_error_msg
+from app.utils.aggregated import batch_generator
 from app.utils.aggregated import get_file_in_folder
 from app.utils.aggregated import get_file_info_by_geid
 from app.utils.aggregated import search_item
@@ -176,10 +177,6 @@ def simple_upload(  # noqa: C901
         else:
             file_objects.append(file_object)
 
-    # here add the batch of <batch> per loop, the pre upload api cannot
-    # process very large amount of file at same time. otherwise it will timeout
-    num_of_batchs = math.ceil(len(file_objects) / AppConfig.Env.upload_batch_size)
-
     # make the file duplication check to allow folde merging
     non_duplicate_file_objects = []
     if create_folder_flag is True:
@@ -187,11 +184,7 @@ def simple_upload(  # noqa: C901
     else:
         mhandler.SrvOutPutHandler.file_duplication_check()
         duplicated_file = []
-        for batch in range(0, num_of_batchs):
-            start_index = batch * AppConfig.Env.upload_batch_size
-            end_index = (batch + 1) * AppConfig.Env.upload_batch_size
-            file_batchs = file_objects[start_index:end_index]
-
+        for file_batchs in batch_generator(file_objects, batch_size=AppConfig.Env.upload_batch_size):
             non_duplicates, duplicate_path = upload_client.check_upload_duplication(file_batchs)
             non_duplicate_file_objects.extend(non_duplicates)
             duplicated_file.extend(duplicate_path)
@@ -207,11 +200,7 @@ def simple_upload(  # noqa: C901
 
     # here is list of pre upload result. We decided to call pre upload api by batch
     pre_upload_infos = []
-    for batch in range(0, num_of_batchs):
-        start_index = batch * AppConfig.Env.upload_batch_size
-        end_index = (batch + 1) * AppConfig.Env.upload_batch_size
-        file_batchs = non_duplicate_file_objects[start_index:end_index]
-
+    for file_batchs in batch_generator(non_duplicate_file_objects, batch_size=AppConfig.Env.upload_batch_size):
         # sending the pre upload request to generate
         # the placeholder in object storage
         pre_upload_infos.extend(upload_client.pre_upload(file_batchs, output_path))
