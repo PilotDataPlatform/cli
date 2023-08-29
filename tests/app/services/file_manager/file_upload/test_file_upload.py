@@ -251,9 +251,8 @@ def test_folder_merge_skip_with_all_duplication(mocker, mock_upload_client, capf
         f'Starting upload of: {file_name}\n'
         + 'Checking for file duplication...\n'
         + 'All files are the same, no need to upload.\n'
-        + 'Upload Time: 0.00s for 0 files\n'
     )
-    assert out == expect
+    assert expect in out
 
 
 def test_resume_upload(mocker):

@@ -163,7 +163,7 @@ def test_check_upload_duplication_success(httpx_mock, mocker):
     dup_obj = FileObject('object/duplicate', 'local_path', 'resumable_id', 'job_id', 'item_id')
     not_dup_object = FileObject('object/not_duplicate', 'local_path', 'resumable_id', 'job_id', 'item_id')
 
-    url = AppConfig.Connections.url_bff + '/v1/files/exists'
+    url = AppConfig.Connections.url_base + '/portal/v1/files/exists'
     httpx_mock.add_response(
         method='POST',
         url=url,
@@ -182,7 +182,7 @@ def test_check_upload_duplication_fail_with_500(httpx_mock, mocker, capfd):
     )
     upload_client = UploadClient('project_code', 'parent_folder_id')
 
-    url = AppConfig.Connections.url_bff + '/v1/files/exists'
+    url = AppConfig.Connections.url_base + '/portal/v1/files/exists'
     httpx_mock.add_response(
         method='POST',
         url=url,
