@@ -2,7 +2,6 @@
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
-import math
 import os
 import time
 import zipfile
@@ -191,7 +190,7 @@ def simple_upload(  # noqa: C901
 
         if len(non_duplicate_file_objects) == 0:
             mhandler.SrvOutPutHandler.file_duplication_check_warning_with_all_same()
-        else:
+        elif len(duplicated_file) > 0:
             mhandler.SrvOutPutHandler.file_duplication_check_success()
             duplicate_warning_format = '\n'.join(duplicated_file)
             click.confirm(
@@ -281,12 +280,8 @@ def resume_upload(
 
     # here add the batch of 500 per loop, the pre upload api cannot
     # process very large amount of file at same time. otherwise it will timeout
-    num_of_batchs = math.ceil(len(all_files) / AppConfig.Env.upload_batch_size)
     # here is list of pre upload result. We decided to call pre upload api by batch
-    for batch in range(0, num_of_batchs):
-        start_index = batch * AppConfig.Env.upload_batch_size
-        end_index = (batch + 1) * AppConfig.Env.upload_batch_size
-        file_batchs = item_ids[start_index:end_index]
+    for file_batchs in batch_generator(item_ids, batch_size=AppConfig.Env.upload_batch_size):
         items = get_file_info_by_geid(file_batchs)
 
         # get the detail of item to see if the file is already uploaded

@@ -155,9 +155,12 @@ class UploadClient:
             if yes, it will skip the file.
         Parameter:
             - file_objects(List[FileObject]): the file will be uploaded.
+        return:
+            - non_exist_file_objects(List[FileObject]): the file that need to be uploaded.
+            - exist_files(List[str]): the file that has been uploaded. will be skipped
         """
         headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
-        url = AppConfig.Connections.url_base + '/portal/v1/files/exists'
+        url = AppConfig.Connections.url_bff + '/v1/files/exists'
 
         # generate a list of locations for uploaded files to check duplication
         # at same time, generate a dict of mapping with object_path: FileObject

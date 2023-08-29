@@ -174,6 +174,88 @@ def test_dont_allow_attribute_attaching_when_folder_upload(mocker, capfd):
         AssertionError('SystemExit not raised')
 
 
+def test_folder_merge_succuss_with_no_duplication(mocker, mock_upload_client):
+    file_name = 'test'
+    upload_event = {
+        'file': file_name,
+        'project_code': 'test_project',
+        'zone': 'greenroom',
+        'create_folder_flag': False,
+    }
+
+    mocker.patch('os.path.isdir', return_value=False)
+    mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
+
+    non_dup_list = [FileObject('object/path', 'local_path', 'resumable_id', 'job_id', 'item_id')]
+    mocker.patch(
+        'app.services.file_manager.file_upload.file_upload.UploadClient.check_upload_duplication',
+        return_value=(non_dup_list, []),
+    )
+
+    item_ids = simple_upload(upload_event)
+    assert len(item_ids) == 1
+    assert item_ids[0] == non_dup_list[0].item_id
+
+
+def test_folder_merge_succuss_with_duplication(mocker, mock_upload_client):
+    file_name = 'test'
+    upload_event = {
+        'file': file_name,
+        'project_code': 'test_project',
+        'zone': 'greenroom',
+        'create_folder_flag': False,
+    }
+
+    mocker.patch('os.path.isdir', return_value=False)
+    mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
+    click_yes_mock = mocker.patch('app.services.file_manager.file_upload.file_upload.click.confirm', return_value=None)
+
+    non_dup_list = [FileObject('object/path', 'local_path', 'resumable_id', 'job_id', 'item_id')]
+    dup_list = ['object/dup']
+    mocker.patch(
+        'app.services.file_manager.file_upload.file_upload.UploadClient.check_upload_duplication',
+        return_value=(non_dup_list, dup_list),
+    )
+
+    item_ids = simple_upload(upload_event)
+    assert len(item_ids) == 1
+    assert item_ids[0] == non_dup_list[0].item_id
+    assert click_yes_mock.call_count == 1
+
+
+def test_folder_merge_skip_with_all_duplication(mocker, mock_upload_client, capfd):
+    file_name = 'test'
+    upload_event = {
+        'file': file_name,
+        'project_code': 'test_project',
+        'zone': 'greenroom',
+        'create_folder_flag': False,
+    }
+
+    mocker.patch('os.path.isdir', return_value=False)
+    mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
+    click_yes_mock = mocker.patch('app.services.file_manager.file_upload.file_upload.click.confirm', return_value=None)
+
+    dup_list = ['object/dup']
+    mocker.patch(
+        'app.services.file_manager.file_upload.file_upload.UploadClient.check_upload_duplication',
+        return_value=([], dup_list),
+    )
+
+    item_ids = simple_upload(upload_event)
+    assert len(item_ids) == 0
+    assert click_yes_mock.call_count == 0
+
+    out, _ = capfd.readouterr()
+    expect = (
+        f'Starting upload of: {file_name}\n'
+        + 'Checking for file duplication...\n'
+        + 'All files are the same, no need to upload.\n'
+        + 'Upload Time: 0.00s for 0 files\n'
+    )
+    assert out == expect
+
+
 def test_resume_upload(mocker):
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
     test_obj = FileObject('object/path', 'local_path', 'resumable_id', 'job_id', 'item_id')

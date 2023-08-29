@@ -175,7 +175,7 @@ def test_check_upload_duplication_success(httpx_mock, mocker):
     assert dup_list == [dup_obj.object_path]
 
 
-def test_check_upload_duplication_fail_with_500(httpx_mock, mocker):
+def test_check_upload_duplication_fail_with_500(httpx_mock, mocker, capfd):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
         return_value=decoded_token(),
@@ -193,7 +193,10 @@ def test_check_upload_duplication_fail_with_500(httpx_mock, mocker):
     try:
         upload_client.check_upload_duplication([])
     except SystemExit:
-        pass
+        out, _ = capfd.readouterr()
+
+        expect = 'Error when checking file duplication\n'
+        assert out == expect
     else:
         AssertionError('SystemExit not raised')
 
