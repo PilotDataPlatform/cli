@@ -81,6 +81,7 @@ jobs:
           body: ${{ github.event.head_commit.message }}
           draft: false
           prerelease: false
+          target_commitish: ${{ needs.extract-branch-name.outputs.branch }}
           files: ./app/bundled_app/linux/pilotcli_linux
 
   push-binary-macos:
