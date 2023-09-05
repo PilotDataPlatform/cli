@@ -161,9 +161,10 @@ def simple_upload(  # noqa: C901
     # format the local path into object storage path for preupload
     file_objects = []
     target_folder = upload_event.get('target_folder', '')
+    input_path = os.path.dirname(input_path)
     for file in upload_file_path:
         # first remove the input path from the file path
-        file_path_sub = file.replace(input_path + '/', '')
+        file_path_sub = file.replace(input_path + '/', '') if input_path else file
         object_path = os.path.join(target_folder, file_path_sub)
         file_objects.append(FileObject(object_path, file))
 
