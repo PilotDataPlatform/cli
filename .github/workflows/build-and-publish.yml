@@ -5,6 +5,7 @@ on:
     workflows: [ "Run Tests" ]
     branches:
       - develop
+      - hdc
     types:
       - completed
   push:

@@ -117,7 +117,7 @@ def simple_upload(  # noqa: C901
     tags = upload_event.get('tags')
     zone = upload_event.get('zone')
     # process_pipeline = upload_event.get('process_pipeline', None)
-    # upload_message = upload_event.get('upload_message')
+    upload_message = upload_event.get('upload_message')
     current_folder_node = upload_event.get('current_folder_node', '')
     parent_folder_id = upload_event.get('parent_folder_id', '')
     create_folder_flag = upload_event.get('create_folder_flag', False)
@@ -156,14 +156,16 @@ def simple_upload(  # noqa: C901
         parent_folder_id=parent_folder_id,
         regular_file=regular_file,
         tags=tags,
+        upload_message=upload_message,
     )
 
     # format the local path into object storage path for preupload
     file_objects = []
     target_folder = upload_event.get('target_folder', '')
+    input_path = os.path.dirname(input_path)
     for file in upload_file_path:
         # first remove the input path from the file path
-        file_path_sub = file.replace(input_path + '/', '')
+        file_path_sub = file.replace(input_path + '/', '') if input_path else file
         object_path = os.path.join(target_folder, file_path_sub)
         file_objects.append(FileObject(object_path, file))
 
