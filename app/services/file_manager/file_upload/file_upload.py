@@ -117,7 +117,7 @@ def simple_upload(  # noqa: C901
     tags = upload_event.get('tags')
     zone = upload_event.get('zone')
     # process_pipeline = upload_event.get('process_pipeline', None)
-    # upload_message = upload_event.get('upload_message')
+    upload_message = upload_event.get('upload_message')
     current_folder_node = upload_event.get('current_folder_node', '')
     parent_folder_id = upload_event.get('parent_folder_id', '')
     create_folder_flag = upload_event.get('create_folder_flag', False)
@@ -156,6 +156,7 @@ def simple_upload(  # noqa: C901
         parent_folder_id=parent_folder_id,
         regular_file=regular_file,
         tags=tags,
+        upload_message=upload_message,
     )
 
     # format the local path into object storage path for preupload
