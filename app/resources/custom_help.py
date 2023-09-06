@@ -6,7 +6,7 @@
 class HelpPage:
     page = {
         'update': {
-            'version': '2.2.4',
+            'version': '2.2.4-hdc',
             '1': 'CLI supports to perform multi-threading upload for file/folders',
             '2': 'CLI supports to perform resumable upload for single file',
         },
