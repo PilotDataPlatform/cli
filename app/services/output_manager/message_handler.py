@@ -142,6 +142,21 @@ class SrvOutPutHandler(metaclass=MetaService):
         return logger.info('Pre-upload complete.')
 
     @staticmethod
+    def file_duplication_check():
+        """e.g. file duplication check."""
+        return logger.info('Checking for file duplication...')
+
+    @staticmethod
+    def file_duplication_check_success():
+        """e.g. file duplication check succeed."""
+        return logger.info('File duplication check complete.')
+
+    @staticmethod
+    def file_duplication_check_warning_with_all_same():
+        """e.g. file duplication check warning with all same."""
+        return logger.warning('All files are the same, no need to upload.')
+
+    @staticmethod
     def resume_check_success():
         """e.g. notify the resumable check succeed."""
         return logger.info('Resumable upload check complete.')
