@@ -11,6 +11,7 @@ on:
   push:
     branches:
       - main
+      - hdc
 
 jobs:
   extract-branch-name:
