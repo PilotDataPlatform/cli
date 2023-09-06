@@ -4,6 +4,7 @@
 
 import os
 import stat
+import sys
 
 import pytest
 
@@ -73,3 +74,42 @@ class TestUserConfig:
         )
 
         error_log.assert_called_with(expected_message)
+
+    def test__init__does_not_exit_with_error_when_config_folder_has_invalid_access_mode_and_is_cloud_mode_set_to_true(
+        self, tmp_path, fake
+    ):
+        config_folder = tmp_path / fake.pystr()
+        config_folder.mkdir(mode=0o0755)
+
+        UserConfig(config_folder, is_cloud_mode=True)
+
+    def test__init__does_not_exit_with_error_when_config_file_has_invalid_access_mode_and_is_cloud_mode_set_to_true(
+        self, tmp_path, fake
+    ):
+        config_folder = tmp_path / fake.pystr()
+        file_name = fake.pystr()
+        config_file = config_folder / file_name
+        config_folder.mkdir(mode=0o0700)
+        config_file.touch(mode=0o0644)
+
+        UserConfig(config_folder, file_name, is_cloud_mode=True)
+
+    def test__init__sets_is_cloud_mode_to_false_by_default(self, tmp_path, fake):
+        config_folder = tmp_path / fake.pystr()
+
+        user_config = UserConfig(config_folder)
+
+        assert user_config.is_cloud_mode is False
+
+    def test__init__sets_is_cloud_mode_to_true_when_pyinstaller_bundle_params_are_set_and_cloud_mode_file_is_present(
+        self, tmp_path, monkeypatch
+    ):
+        monkeypatch.setattr(sys, 'frozen', True, raising=False)
+        monkeypatch.setattr(sys, '_MEIPASS', str(tmp_path), raising=False)
+
+        cloud_mode_file = tmp_path / 'ENABLE_CLOUD_MODE'
+        cloud_mode_file.touch()
+
+        user_config = UserConfig()
+
+        assert user_config.is_cloud_mode is True
