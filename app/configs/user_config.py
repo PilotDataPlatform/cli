@@ -5,6 +5,7 @@
 import configparser
 import os
 import time
+from pathlib import Path
 
 from app.models.singleton import Singleton
 from app.services.crypto.crypto import decryption
@@ -25,7 +26,7 @@ class UserConfig(metaclass=Singleton):
         if not os.path.exists(AppConfig.Env.user_config_path):
             os.makedirs(AppConfig.Env.user_config_path)
         if not os.path.exists(AppConfig.Env.user_config_file):
-            os.system(r'touch {}'.format(AppConfig.Env.user_config_file))
+            Path.touch(Path(AppConfig.Env.user_config_file))
         self.config = configparser.ConfigParser()
         self.config.read(AppConfig.Env.user_config_file)
         if not self.config.has_section('USER'):
