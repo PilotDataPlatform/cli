@@ -153,6 +153,54 @@ def test_resumable_pre_upload_failed_with_404(httpx_mock, mocker):
         AssertionError('SystemExit not raised')
 
 
+def test_check_upload_duplication_success(httpx_mock, mocker):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+    upload_client = UploadClient('project_code', 'parent_folder_id')
+    mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
+    dup_obj = FileObject('object/duplicate', 'local_path', 'resumable_id', 'job_id', 'item_id')
+    not_dup_object = FileObject('object/not_duplicate', 'local_path', 'resumable_id', 'job_id', 'item_id')
+
+    url = AppConfig.Connections.url_base + '/portal/v1/files/exists'
+    httpx_mock.add_response(
+        method='POST',
+        url=url,
+        json={'result': [dup_obj.object_path]},
+    )
+
+    not_dup_list, dup_list = upload_client.check_upload_duplication([dup_obj, not_dup_object])
+    assert not_dup_list == [not_dup_object]
+    assert dup_list == [dup_obj.object_path]
+
+
+def test_check_upload_duplication_fail_with_500(httpx_mock, mocker, capfd):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+    upload_client = UploadClient('project_code', 'parent_folder_id')
+
+    url = AppConfig.Connections.url_base + '/portal/v1/files/exists'
+    httpx_mock.add_response(
+        method='POST',
+        url=url,
+        json={'result': []},
+        status_code=500,
+    )
+
+    try:
+        upload_client.check_upload_duplication([])
+    except SystemExit:
+        out, _ = capfd.readouterr()
+
+        expect = 'Error when checking file duplication\n'
+        assert out == expect
+    else:
+        AssertionError('SystemExit not raised')
+
+
 def test_output_manifest_success(mocker, tmp_path):
     upload_client = UploadClient('project_code', 'parent_folder_id')
     json_dump_mocker = mocker.patch('json.dump', return_value=None)

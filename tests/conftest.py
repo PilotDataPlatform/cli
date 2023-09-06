@@ -42,11 +42,23 @@ def user_login_true(mocker):
 
 
 @pytest.fixture
+def mock_upload_client(monkeypatch):
+    from app.services.file_manager.file_upload.upload_client import UploadClient
+
+    monkeypatch.setattr(UploadClient, 'pre_upload', lambda *args, **kwargs: args[1])
+    monkeypatch.setattr(UploadClient, 'stream_upload', lambda *args, **kwargs: [])
+    monkeypatch.setattr(UploadClient, 'on_succeed', lambda *args, **kwargs: None)
+    monkeypatch.setattr(UploadClient, 'output_manifest', lambda *args, **kwargs: {})
+    monkeypatch.setattr(UploadClient, 'check_status', lambda *args, **kwargs: True)
+
+
+@pytest.fixture
 def settings() -> Settings:
     return get_settings()
 
 
 def decoded_token():
+    setting = get_settings()
     current_time = int(time.time()) + 1000
     return {
         'exp': current_time + 100,
@@ -57,7 +69,7 @@ def decoded_token():
         'aud': 'account',
         'sub': 'a8b728f6-c95a-4999-b98e-0ccf7492a9b4',
         'typ': 'Bearer',
-        'azp': 'cli',
+        'azp': setting.keycloak_device_client_id,
         'nonce': 'a3cb03d0-b00a-480d-8fd2-e06f80898cf1',
         'session_state': 'b92a3847-a485-4060-91fd-83300b09acb6',
         'acr': '1',
