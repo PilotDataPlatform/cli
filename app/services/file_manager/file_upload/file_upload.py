@@ -73,13 +73,10 @@ def assemble_path(
     if zipping:
         result_file = result_file + '.zip'
 
-    # set name folder as first parent folder
     name_folder = target_folder.split('/')[0]
     parent_folder = search_item(project_code, zone, name_folder, 'name_folder')
     parent_folder = parent_folder.get('result')
 
-    # if f input is a file then current_folder_node is target_folder
-    # otherwise it is target_folder + f input name
     current_folder_node = target_folder if os.path.isfile(f) else current_file_path
     create_folder_flag = False
     if len(current_file_path.split('/')) > 2:
@@ -88,8 +85,6 @@ def assemble_path(
             folder_path = '/'.join(sub_path[0 : 2 + index])
             res = search_item(project_code, zone, folder_path, 'folder')
 
-            # find the longest existing folder as parent folder
-            # if user input a path that need to create some folders
             if not res.get('result'):
                 current_folder_node = folder_path
                 click.confirm(customized_error_msg(ECustomizedError.CREATE_FOLDER_IF_NOT_EXIST), abort=True)
@@ -98,8 +93,6 @@ def assemble_path(
             else:
                 parent_folder = res.get('result')
 
-    # error check if the user dont have permission to see the folder
-    # because the name folder will always be there if user has correct permission
     if not parent_folder:
         SrvErrorHandler.customized_handle(ECustomizedError.PERMISSION_DENIED, True)
 
@@ -116,8 +109,6 @@ def simple_upload(  # noqa: C901
     project_code = upload_event.get('project_code')
     tags = upload_event.get('tags')
     zone = upload_event.get('zone')
-    # process_pipeline = upload_event.get('process_pipeline', None)
-    upload_message = upload_event.get('upload_message')
     current_folder_node = upload_event.get('current_folder_node', '')
     parent_folder_id = upload_event.get('parent_folder_id', '')
     create_folder_flag = upload_event.get('create_folder_flag', False)
@@ -127,8 +118,6 @@ def simple_upload(  # noqa: C901
     attribute = upload_event.get('attribute')
 
     mhandler.SrvOutPutHandler.start_uploading(input_path)
-    # if the input request zip folder then process the path as single file
-    # otherwise read throught the folder to get path underneath
     if os.path.isdir(input_path):
         job_type = UploadType.AS_FILE if compress_zip else UploadType.AS_FOLDER
         if job_type == UploadType.AS_FILE:
@@ -143,7 +132,7 @@ def simple_upload(  # noqa: C901
 
         if create_folder_flag:
             job_type = UploadType.AS_FOLDER
-            input_path = os.path.dirname(input_path)  # update the path as folder
+            input_path = os.path.dirname(input_path)
         else:
             job_type = UploadType.AS_FILE
 
@@ -159,51 +148,34 @@ def simple_upload(  # noqa: C901
         upload_message=upload_message,
     )
 
-    # format the local path into object storage path for preupload
     file_objects = []
     target_folder = upload_event.get('target_folder', '')
     input_path = os.path.dirname(input_path)
     for file in upload_file_path:
-        # first remove the input path from the file path
-        file_path_sub = file.replace(input_path + '/', '') if input_path else file
+        file_path_sub = file.replace(input_path + '/', '')
         object_path = os.path.join(target_folder, file_path_sub)
         file_objects.append(FileObject(object_path, file))
 
-    # here add the batch of 500 per loop, the pre upload api cannot
-    # process very large amount of file at same time. otherwise it will timeout
     num_of_batchs = math.ceil(len(file_objects) / AppConfig.Env.upload_batch_size)
-    # here is list of pre upload result. We decided to call pre upload api by batch
     pre_upload_infos = []
     for batch in range(0, num_of_batchs):
         start_index = batch * AppConfig.Env.upload_batch_size
         end_index = (batch + 1) * AppConfig.Env.upload_batch_size
         file_batchs = file_objects[start_index:end_index]
 
-        # sending the pre upload request to generate
-        # the placeholder in object storage
         pre_upload_infos.extend(upload_client.pre_upload(file_batchs, output_path))
-
-    # now loop over each file under the folder and start
-    # the chunk upload
-
-    # thread number +1 reserve one thread to refresh token
-    # and remove the token decorator in functions
 
     pool = ThreadPool(num_of_thread + 1)
     pool.apply_async(upload_client.upload_token_refresh)
     on_success_res = []
     for file_object in pre_upload_infos:
         chunk_res = upload_client.stream_upload(file_object, pool)
-        # NOTE: if there is some racing error make the combine chunks
-        # out of thread pool.
         res = pool.apply_async(
             upload_client.on_succeed,
             args=(file_object, tags, chunk_res),
         )
         on_success_res.append(res)
 
-    # finish the upload once all on success api return
-    # otherwise wait for 1 second and check again
     [res.wait() for res in on_success_res]
     upload_client.set_finish_upload()
 
@@ -213,7 +185,6 @@ def simple_upload(  # noqa: C901
     if source_file or attribute:
         continue_loop = True
         while continue_loop:
-            # the last uploaded file
             succeed = upload_client.check_status(file_object)
             continue_loop = not succeed
             time.sleep(0.5)
@@ -250,7 +221,6 @@ def resume_upload(
         tags=manifest_json.get('tags'),
     )
 
-    # check files in manifest if some of them are already uploaded
     item_ids = []
     all_files = manifest_json.get('file_objects')
     for item_id in all_files:
@@ -271,28 +241,19 @@ def resume_upload(
                 )
             )
 
-    # then for the rest of the files, check if any chunks are already uploaded
     unfinished_items = upload_client.resume_upload(unfinished_items)
-
-    # lastly, start resumable upload for the rest of the chunks
-    # thread number +1 reserve one thread to refresh token
-    # and remove the token decorator in functions
 
     pool = ThreadPool(num_of_thread + 1)
     pool.apply_async(upload_client.upload_token_refresh)
     on_success_res = []
     for file_object in unfinished_items:
         chunk_res = upload_client.stream_upload(file_object, pool)
-        # NOTE: if there is some racing error make the combine chunks
-        # out of thread pool.
         res = pool.apply_async(
             upload_client.on_succeed,
             args=(file_object, manifest_json.get('tags'), chunk_res),
         )
         on_success_res.append(res)
 
-    # finish the upload once all on success api return
-    # otherwise wait for 1 second and check again
     [res.wait() for res in on_success_res]
     upload_client.set_finish_upload()
 

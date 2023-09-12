@@ -46,7 +46,6 @@ def cli():
     default=None,
     required=False,
     help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_A),
-    # type=click.Path(exists=True),
     show_default=True,
 )
 @click.option(
@@ -130,18 +129,15 @@ def file_put(**kwargs):  # noqa: C901
     output_path = kwargs.get('output_path')
 
     user = UserConfig()
-    # Check zone and upload-message
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
 
     toc = customized_error_msg(ECustomizedError.TOU_CONTENT).replace(' ', '...')
     if zone.lower() == AppConfig.Env.core_zone.lower() and click.confirm(fit_terminal_width(toc), abort=True):
         pass
 
-    # check if user input at least one file/folder
     if len(paths) == 0:
         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_PATHS, True)
 
-    # check if the manifest file exists
     if os.path.exists(output_path):
         click.confirm(customized_error_msg(ECustomizedError.MANIFEST_OF_FOLDER_FILE_EXIST) % (output_path), abort=True)
 
@@ -163,7 +159,6 @@ def file_put(**kwargs):  # noqa: C901
     attribute = validated_fieds['attribute']
     if zone == AppConfig.Env.core_zone.lower():
         if not pipeline:
-            # after validation, if not pipeline, provide default value
             pipeline = AppConfig.Env.pipeline_straight_upload
         else:
             if not bool(re.match(r'^[a-z0-9_-]{1,20}$', pipeline)):
@@ -171,24 +166,8 @@ def file_put(**kwargs):  # noqa: C901
         if not upload_message:
             upload_message = AppConfig.Env.default_upload_message
 
-    # for the path formating there will be following cases:
-    # - file:
-    #   1. the project path exist, then will be AS_FILE. nothing will be changed.
-    #      current_folder_node will be empty string.
-    #   2. the project path not exist, then will be AS_FOLDER. the current_folder_node will
-    #      be the parent folder node + the shortest non-exist folder. (like one level down).
-    # - folder:
-    #   1. the project path exist, then will be AS_FOLDER. the current folder node will be
-    #      the one that user input.
-    #   2. the project path not exist, then will be AS_FOLDER. the current folder node will
-    #      be the parent folder node + the shortest non-exist folder. (like one level down).
-
-    # Unique Paths
     paths = set(paths)
-    # the loop will read all input path(folder or files)
-    # and process them one by one
     for f in paths:
-        # so this function will always return the furthest folder node as current_folder_node+parent_folder_id
         current_folder_node, parent_folder, create_folder_flag, result_file = assemble_path(
             f,
             target_folder,
@@ -200,7 +179,7 @@ def file_put(**kwargs):  # noqa: C901
         upload_event = {
             'project_code': project_code,
             'target_folder': target_folder,
-            'file': f.rstrip('/'),  # remove the ending slash
+            'file': f.rstrip('/'),
             'tags': tag if tag else [],
             'zone': zone,
             'upload_message': upload_message,
@@ -217,7 +196,6 @@ def file_put(**kwargs):  # noqa: C901
 
         simple_upload(upload_event, num_of_thread=thread, output_path=output_path)
 
-        # since only file upload can attach manifest, take the first file object
         srv_manifest.attach_manifest(attribute, result_file, zone) if attribute else None
         message_handler.SrvOutPutHandler.all_file_uploaded()
 
@@ -253,17 +231,13 @@ def file_resume(**kwargs):  # noqa: C901
     thread = kwargs.get('thread')
     resumable_manifest_file = kwargs.get('resumable_manifest')
 
-    # check if manifest file exist then read the manifest file as json
     if not os.path.exists(resumable_manifest_file):
         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_RESUMABLE, True)
 
     with open(resumable_manifest_file, 'r') as f:
         resumable_manifest = json.load(f)
-        # use the same validator with upload. because resumable and normal upload
-        # are rather similar with the input
         validate_upload_event(resumable_manifest)
 
-    # print(resumable_manifest)
     resume_upload(resumable_manifest, thread)
 
 
@@ -305,7 +279,6 @@ def file_check_manifest(project_code):
         message_handler.SrvOutPutHandler.project_has_no_manifest(project_code)
 
 
-# to ignore unsupported option: context_settings=dict(ignore_unknown_options=True,  allow_extra_args=True,)
 @click.command(name='attribute-export')
 @click.option(
     '-p', '--project-code', prompt='ProjectCode', help=file_help.file_help_page(file_help.FileHELP.FILE_ATTRIBUTE_P)
@@ -401,11 +374,9 @@ def file_download(**kwargs):
     geid = kwargs.get('geid')
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone
     interactive = False if len(paths) > 1 else True
-    # void_validate_zone('download', zone)
 
     if len(paths) == 0:
         SrvErrorHandler.customized_handle(ECustomizedError.MISSING_PROJECT_CODE, interactive)
-    # Query file information and collecting errors
     if geid:
         item_res = get_file_info_by_geid(paths)
     else:
@@ -426,10 +397,8 @@ def file_download(**kwargs):
                 item_status = 'File Not Exist'
                 item_result = {}
                 item_geid = path
-            # when file not exist there will be no response, the geid will be input geid for error handling
             item_res.append({'status': item_status, 'result': item_result, 'geid': item_geid})
 
-    # Downloading by batch or single
     if zipping and len(paths) > 1:
         srv_download = SrvFileDownload(zone, interactive)
         srv_download.batch_download_file(output_path, item_res)

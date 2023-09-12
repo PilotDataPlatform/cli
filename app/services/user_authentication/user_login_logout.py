@@ -30,7 +30,6 @@ def user_login(username, password):
         user_config.access_token = res_to_dict['result']['access_token']
         user_config.refresh_token = res_to_dict['result']['refresh_token']
         user_config.last_active = str(int(time.time()))
-        user_config.hpc_token = ''
         user_config.session_id = 'cli-' + str(uuid4())
         user_config.save()
     elif response.status_code == 401:
@@ -95,7 +94,6 @@ def validate_user_device_login(device_code: str, expires: int, interval: int) ->
     user_config.refresh_token = resp_dict['refresh_token']
     user_config.username = decode_token['preferred_username']
     user_config.last_active = str(int(time.time()))
-    user_config.hpc_token = ''
     user_config.session_id = 'cli-' + str(uuid4())
     user_config.save()
 

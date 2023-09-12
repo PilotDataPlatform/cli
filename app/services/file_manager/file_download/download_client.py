@@ -60,12 +60,6 @@ class SrvFileDownload(metaclass=MetaService):
         return url
 
     def pre_download(self):
-        # with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-        #     f1 = executor.submit(self.print_prepare_msg, 'preparing')
-        #     f2 = executor.submit(self.prepare_download)
-        #     for _ in concurrent.futures.wait([f1, f2], return_when='FIRST_COMPLETED'):
-        #         pre_status, file_path = f2.result()
-        # self.print_prepare_msg('preparing')
         pre_status, file_path = self.prepare_download()
 
         self.check_point = False
@@ -94,7 +88,6 @@ class SrvFileDownload(metaclass=MetaService):
         self.check_point = True
 
         if res.status_code == 200:
-            # fetch the info from hash token
             self.hash_code = res_json.get('payload', {}).get('hash_code')
             download_info = jwt.decode(self.hash_code, options={'verify_signature': False})
             file_path = download_info.get('file_path')

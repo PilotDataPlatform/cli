@@ -12,16 +12,13 @@ class AppConfig(object):
         user_config_path = ConfigClass.config_path
         msg_path = ConfigClass.custom_path
         user_config_file = f'{user_config_path}/config.ini'
-        token_warn_need_refresh = 250  # refresh token if token is about to expire
-        token_refresh_interval = 120  # auto refresh token every 2 minutes
+        token_warn_need_refresh = 250
+        token_refresh_interval = 120
 
-        # NOTE: there is a limitation on minio that
-        # the multipart number is 10000. so we set
-        # the chunk_size as 20MB -> total 200GB
         chunk_size = 1024 * 1024 * 20  # MB
         resilient_retry = 3
         resilient_backoff = 1
-        resilient_retry_interval = 1  # seconds
+        resilient_retry_interval = 1
         resilient_retry_code = [502, 503, 504, 404, 401]
         pipeline_straight_upload = f'{project}cli_upload'
         default_upload_message = f'{project}cli straight uploaded'
@@ -54,5 +51,4 @@ class AppConfig(object):
         url_keycloak = ConfigClass.url_keycloak
         url_keycloak_token = f'{ConfigClass.url_keycloak}/token'
         url_bff = ConfigClass.url_bff
-        # add url_base to check if value exist
         url_base = ConfigClass.base_url

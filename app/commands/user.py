@@ -8,7 +8,6 @@ import app.services.output_manager.help_page as user_help
 import app.services.output_manager.message_handler as mhandler
 from app.services.user_authentication.decorator import require_login_session
 
-# from app.services.user_authentication.user_login_logout import user_login
 from app.services.user_authentication.user_login_logout import user_device_id_login
 from app.services.user_authentication.user_login_logout import user_logout
 from app.services.user_authentication.user_login_logout import validate_user_device_login
@@ -19,24 +18,6 @@ from app.utils.aggregated import doc
 def cli():
     """User Actions."""
     pass
-
-
-# COMMENT user password login temporally.
-# @click.command()
-# @click.option(
-#     '-U', '--username', prompt='Username', help=(user_help.user_help_page(user_help.UserHELP.USER_LOGIN_USERNAME))
-# )
-# @click.option(
-#     '-P',
-#     '--password',
-#     prompt='Password',
-#     help=(user_help.user_help_page(user_help.UserHELP.USER_LOGIN_PASSWORD)),
-#     hide_input=True,
-# )
-# @doc(user_help.user_help_page(user_help.UserHELP.USER_LOGIN))
-# def login(username, password):
-#     user_login(username, password)
-#     mhandler.SrvOutPutHandler.login_success()
 
 
 @click.command()

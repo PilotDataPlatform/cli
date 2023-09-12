@@ -20,7 +20,6 @@ def generate_secret():
     """
     secret = os.urandom(16)
     secret_token = base64.b64encode(secret).decode('utf-8')
-    # convert byte to string
     return secret_token
 
 
@@ -35,17 +34,15 @@ def encryption(message_to_encrypt, secret):
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
         length=32,
-        salt=base64.b64decode(secret),  # input binary string secret key
+        salt=base64.b64decode(secret),
         iterations=100000,
         backend=default_backend(),
     )
-    # generate key to involve current device information
     key = base64.urlsafe_b64encode(kdf.derive('SECRETKEYPASSWORD'.encode()))
     message_encode = message_to_encrypt.encode()
     f = Fernet(key)
     encrypt_message = f.encrypt(message_encode)
     encrypted = base64.b64encode(encrypt_message).decode('utf-8')
-    # convert byte to string
     return encrypted
 
 
@@ -65,7 +62,6 @@ def decryption(encrypted_message, secret, interactive=True):
                 iterations=100000,
                 backend=default_backend(),
             )
-            # use the key from current device information
             key = base64.urlsafe_b64encode(kdf.derive('SECRETKEYPASSWORD'.encode()))
             f = Fernet(key)
             decrypted = f.decrypt(base64.b64decode(encrypted_message))

@@ -105,13 +105,10 @@ class SrvFileManifests(metaclass=MetaService):
 
     def export_template(self, project_code, manifest_def):
         manifest_name = manifest_def.get('name')
-        # will export 2 files: manifest_template and manifest_definition
         manifest_template_path = '{}_{}_template.json'.format(project_code, manifest_name)
         manifest_definition_path = '{}_{}_definition.json'.format(project_code, manifest_name)
-        # export definition
         with open(manifest_definition_path, 'w') as outfile1:
             json.dump(manifest_def, outfile1, indent=4, sort_keys=False)
-        # export template
         converted_template = self.convert_export(manifest_def)
         with open(manifest_template_path, 'w') as outfile2:
             json.dump(converted_template, outfile2, indent=4, sort_keys=False)

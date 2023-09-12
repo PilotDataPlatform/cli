@@ -26,7 +26,6 @@ def mock_settings(monkeypatch):
     monkeypatch.setattr(UserConfig, 'password', 'test-password')
     monkeypatch.setattr(UserConfig, 'access_token', 'test-access-token')
     monkeypatch.setattr(UserConfig, 'refresh_token', 'test-refresh-token')
-    monkeypatch.setattr(UserConfig, 'hpc_token', 'test-hpc-token')
 
 
 def decoded_token():

@@ -47,22 +47,18 @@ class FileObject:
         The class contains file infomation
     """
 
-    # object storage info
     resumable_id: str
     job_id: str
     item_id: str
     parent_path: str
     file_name: str
 
-    # local file info
     local_path: str
     total_size: int
     total_chunks: int
 
-    # resumable info
     uploaded_chunks: List[dict]
 
-    # progress bar object
     progress_bar = None
 
     def __init__(
@@ -73,18 +69,15 @@ class FileObject:
         job_id: str = None,
         item_id: str = None,
     ) -> None:
-        # object storage info
         self.resumable_id = resumable_id
         self.job_id = job_id
         self.item_id = item_id
         self.object_path = object_path
         self.parent_path, self.file_name = dirname(object_path), basename(object_path)
 
-        # local file info
         self.local_path = local_path
         self.total_size, self.total_chunks = self.generate_meta(local_path)
 
-        # resumable info
         self.uploaded_chunks = {}
 
     def generate_meta(self, local_path: str) -> Tuple[int, int]:

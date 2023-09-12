@@ -64,7 +64,7 @@ class UploadClient:
         self.operator = self.user.username
         self.input_path = input_path
         self.upload_message = upload_message
-        self.chunk_size = AppConfig.Env.chunk_size  # remove
+        self.chunk_size = AppConfig.Env.chunk_size
         self.base_url = {
             AppConfig.Env.green_zone: AppConfig.Connections.url_upload_greenroom,
             AppConfig.Env.core_zone: AppConfig.Connections.url_upload_core,
@@ -85,8 +85,6 @@ class UploadClient:
         self.regular_file = regular_file
         self.tags = tags
 
-        # the flag to indicate if all upload process finished
-        # then the token refresh loop will end
         self.finish_upload = False
 
     def generate_meta(self, local_path: str) -> Tuple[int, int]:
@@ -140,11 +138,9 @@ class UploadClient:
         if response.status_code == 404:
             SrvErrorHandler.customized_handle(ECustomizedError.UPLOAD_ID_NOT_EXIST, True)
 
-        # make the response into file objects
         uploaded_infos = response.json().get('result', [])
         for uploaded_info in uploaded_infos:
             file_obj = rid_file_object_map.get(uploaded_info.get('resumable_id'))
-            # update the chunk info
             file_obj.uploaded_chunks = uploaded_info.get('chunks_info')
         mhandler.SrvOutPutHandler.resume_check_success()
 
