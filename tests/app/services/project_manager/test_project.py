@@ -1,6 +1,7 @@
 # Copyright (C) 2022-2023 Indoc Systems
 #
-# Contact Indoc Systems for any questions regarding the use of this source code.
+# Licensed under the GNU AFFERO GENERAL PUBLIC LICENSE, Version 3.0 (the "License") available at https://www.gnu.org/licenses/agpl-3.0.en.html.
+# You may not use this file except in compliance with the License.
 
 from app.services.project_manager.project import SrvProjectManager
 
