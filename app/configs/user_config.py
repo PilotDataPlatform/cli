@@ -5,6 +5,7 @@
 import configparser
 import os
 import stat
+import sys
 import time
 from pathlib import Path
 from typing import Iterable
@@ -26,11 +27,27 @@ class UserConfig(metaclass=Singleton):
     This user config is global.
     """
 
-    def __init__(self, config_path: Union[str, Path, None] = None, config_filename: Union[str, None] = None) -> None:
+    def __init__(
+        self,
+        config_path: Union[str, Path, None] = None,
+        config_filename: Union[str, None] = None,
+        is_cloud_mode: Union[bool, None] = None,
+    ) -> None:
+        """When `is_cloud_mode` is enabled, it omits the checks for file or folder ownership and correct access mode for
+        the user.
+
+        This adjustment is made to prevent complications with mounted NFS volumes where all files have root ownership.
+        """
+
         if config_path is None:
             config_path = ConfigClass.config_path
         if config_filename is None:
             config_filename = ConfigClass.config_file
+        if is_cloud_mode is None:
+            # Check when code is bundled using pyinstaller
+            # https://pyinstaller.org/en/stable/runtime-information.html#run-time-information
+            is_bundled = getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
+            is_cloud_mode = is_bundled and (Path(sys._MEIPASS) / 'ENABLE_CLOUD_MODE').is_file()
 
         config_path = Path(config_path)
         if not config_path.exists():
@@ -39,7 +56,7 @@ class UserConfig(metaclass=Singleton):
         current_user_id = os.geteuid()
 
         error = self._check_user_permissions(config_path, current_user_id, (0o0500, 0o0700))
-        if error:
+        if error and not is_cloud_mode:
             SrvErrorHandler.customized_handle(ECustomizedError.CONFIG_INVALID_PERMISSIONS, True, error)
             return
 
@@ -48,10 +65,11 @@ class UserConfig(metaclass=Singleton):
             config_file.touch(mode=0o0600, exist_ok=False)
 
         error = self._check_user_permissions(config_file, current_user_id, (0o0400, 0o0600))
-        if error:
+        if error and not is_cloud_mode:
             SrvErrorHandler.customized_handle(ECustomizedError.CONFIG_INVALID_PERMISSIONS, True, error)
             return
 
+        self.is_cloud_mode = is_cloud_mode
         self.config_file = config_file
         self.config = configparser.ConfigParser()
         self.config.read(self.config_file)

@@ -5,6 +5,8 @@
 import os
 import re
 import shutil
+from typing import Any
+from typing import List
 
 import httpx
 import requests
@@ -132,3 +134,9 @@ def identify_target_folder(project_path):
         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_NAMEFOLDER, True)
         target_folder = ''
     return project_code, target_folder
+
+
+def batch_generator(iterable: List[Any], batch_size=1):
+    max_size = len(iterable)
+    for start_index in range(0, max_size, batch_size):
+        yield iterable[start_index : min(start_index + batch_size, max_size)]
