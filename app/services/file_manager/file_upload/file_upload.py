@@ -2,7 +2,6 @@
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
-import math
 import os
 import time
 import zipfile
@@ -24,6 +23,7 @@ from app.services.file_manager.file_upload.upload_client import UploadClient
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.output_manager.error_handler import customized_error_msg
+from app.utils.aggregated import batch_generator
 from app.utils.aggregated import get_file_in_folder
 from app.utils.aggregated import get_file_info_by_geid
 from app.utils.aggregated import search_item
@@ -174,18 +174,32 @@ def simple_upload(  # noqa: C901
         if file_object.total_size == 0:
             logger.warning(f'Skip the file with 0 size: {file_object.file_name}')
         else:
-            file_objects.append(FileObject(object_path, file))
+            file_objects.append(file_object)
 
-    # here add the batch of 500 per loop, the pre upload api cannot
-    # process very large amount of file at same time. otherwise it will timeout
-    num_of_batchs = math.ceil(len(file_objects) / AppConfig.Env.upload_batch_size)
+    # make the file duplication check to allow folde merging
+    non_duplicate_file_objects = []
+    if create_folder_flag is True:
+        non_duplicate_file_objects = file_objects
+    else:
+        mhandler.SrvOutPutHandler.file_duplication_check()
+        duplicated_file = []
+        for file_batchs in batch_generator(file_objects, batch_size=AppConfig.Env.upload_batch_size):
+            non_duplicates, duplicate_path = upload_client.check_upload_duplication(file_batchs)
+            non_duplicate_file_objects.extend(non_duplicates)
+            duplicated_file.extend(duplicate_path)
+
+        if len(non_duplicate_file_objects) == 0:
+            mhandler.SrvOutPutHandler.file_duplication_check_warning_with_all_same()
+        elif len(duplicated_file) > 0:
+            mhandler.SrvOutPutHandler.file_duplication_check_success()
+            duplicate_warning_format = '\n'.join(duplicated_file)
+            click.confirm(
+                customized_error_msg(ECustomizedError.UPLOAD_SKIP_DUPLICATION) % (duplicate_warning_format), abort=True
+            )
+
     # here is list of pre upload result. We decided to call pre upload api by batch
     pre_upload_infos = []
-    for batch in range(0, num_of_batchs):
-        start_index = batch * AppConfig.Env.upload_batch_size
-        end_index = (batch + 1) * AppConfig.Env.upload_batch_size
-        file_batchs = file_objects[start_index:end_index]
-
+    for file_batchs in batch_generator(non_duplicate_file_objects, batch_size=AppConfig.Env.upload_batch_size):
         # sending the pre upload request to generate
         # the placeholder in object storage
         pre_upload_infos.extend(upload_client.pre_upload(file_batchs, output_path))
@@ -266,12 +280,8 @@ def resume_upload(
 
     # here add the batch of 500 per loop, the pre upload api cannot
     # process very large amount of file at same time. otherwise it will timeout
-    num_of_batchs = math.ceil(len(all_files) / AppConfig.Env.upload_batch_size)
     # here is list of pre upload result. We decided to call pre upload api by batch
-    for batch in range(0, num_of_batchs):
-        start_index = batch * AppConfig.Env.upload_batch_size
-        end_index = (batch + 1) * AppConfig.Env.upload_batch_size
-        file_batchs = item_ids[start_index:end_index]
+    for file_batchs in batch_generator(item_ids, batch_size=AppConfig.Env.upload_batch_size):
         items = get_file_info_by_geid(file_batchs)
 
         # get the detail of item to see if the file is already uploaded

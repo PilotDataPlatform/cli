@@ -61,11 +61,20 @@ jobs:
       - name: Install dependencies
         run: poetry install --no-interaction --no-root
 
-      - name: Build binary
+      - name: Build default binary
         run: poetry run pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --paths=./.venv/lib/python3.9/site-packages ./app/pilotcli.py -n ${{ github.sha }}
 
-      - name: Rename output file
+      - name: Rename default output file
         run: mv "./app/bundled_app/linux/${{ github.sha }}" "./app/bundled_app/linux/pilotcli_linux"
+
+      - name: Enable cloud mode
+        run: touch ./app/ENABLE_CLOUD_MODE
+
+      - name: Build cloud binary
+        run: poetry run pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --paths=./.venv/lib/python3.9/site-packages --add-binary=$(pwd)/app/ENABLE_CLOUD_MODE:. ./app/pilotcli.py -n ${{ github.sha }}
+
+      - name: Rename cloud output file
+        run: mv "./app/bundled_app/linux/${{ github.sha }}" "./app/bundled_app/linux/pilotcli_cloud"
 
       - name: Set version in env
         run: poetry run echo "TAG_VERSION=`poetry version --short`" >> $GITHUB_ENV
@@ -82,7 +91,9 @@ jobs:
           draft: false
           prerelease: false
           target_commitish: ${{ needs.extract-branch-name.outputs.branch }}
-          files: ./app/bundled_app/linux/pilotcli_linux
+          files: |
+            ./app/bundled_app/linux/pilotcli_linux
+            ./app/bundled_app/linux/pilotcli_cloud
 
   push-binary-macos:
     needs: [ push-binary-linux ]
