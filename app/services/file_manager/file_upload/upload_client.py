@@ -161,13 +161,19 @@ class UploadClient:
         """
         headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
         url = AppConfig.Connections.url_base + '/portal/v1/files/exists'
+        zone_int = 0 if self.zone == 'greenroom' else 1
 
         # generate a list of locations for uploaded files to check duplication
         # at same time, generate a dict of mapping with object_path: FileObject
         locations = [x.object_path for x in file_objects]
         object_path_file_object_map = {x.object_path: x for x in file_objects}
 
-        payload = {'locations': locations, 'container_code': self.project_code, 'container_type': 'project', 'zone': 0}
+        payload = {
+            'locations': locations,
+            'container_code': self.project_code,
+            'container_type': 'project',
+            'zone': zone_int,
+        }
         response = resilient_session().post(url, json=payload, headers=headers)
 
         # pop the file object if the file has been uploaded
