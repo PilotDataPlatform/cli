@@ -53,8 +53,11 @@ class Error:
         ),
         'UPLOAD_CANCEL': 'Upload task was cancelled.',
         'UPLOAD_FAIL': 'Upload task was failed. Please check the console output.',
-        'UPLOAD_SKIP_DUPLICATION': 'Following files with the same '
-        'name already exist in the Project: \n%s.\nDo you want to skip uploading',
+        'UPLOAD_SKIP_DUPLICATION': (
+            '\nSome of the selected files cannot be uploaded.\n\n'
+            'The following files already exist in the upload destination: \n%s\n'
+            'Do you want to cancel the upload [N] or skip duplicates and continue uploading [y]?'
+        ),
         'UPLOAD_ID_NOT_EXIST': (
             'The specified multipart upload does not exist. '
             'The upload ID may be invalid, or the upload may have been aborted or completed.'
