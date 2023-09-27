@@ -6,7 +6,7 @@
 class HelpPage:
     page = {
         'update': {
-            'version': '2.7.2',
+            'version': '2.8.0a0',
             '1': 'Add new feature for folder merging',
             '2': 'Secure the config file',
             '3': 'Optimize logic, input and error message',
