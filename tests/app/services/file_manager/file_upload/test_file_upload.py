@@ -109,7 +109,7 @@ def test_assemble_path_at_non_existing_folder(mocker):
     assert create_folder_flag is True
 
 
-def test_file_upload_skip_empty_file(mocker, tmp_path):
+def test_file_upload_skip_empty_file(mocker, tmp_path, capfd):
     file_name = 'test'
     upload_event = {
         'file': file_name,
@@ -120,8 +120,23 @@ def test_file_upload_skip_empty_file(mocker, tmp_path):
     mocker.patch('os.path.isdir', return_value=False)
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(0, 0))
 
-    item_ids = simple_upload(upload_event, output_path=str(tmp_path / 'test'))
-    assert len(item_ids) == 0
+    try:
+        simple_upload(upload_event, output_path=str(tmp_path / 'test'))
+    except SystemExit:
+        out, _ = capfd.readouterr()
+
+        expect = (
+            f'Starting upload of: {file_name}\n'
+            + 'Skip the file with 0 size: test\n'
+            + 'Checking for file duplication...\n'
+            + '\nAll files already exist in the upload destination.\n\n'
+            + customized_error_msg(ECustomizedError.UPLOAD_CANCEL)
+            + '\n'
+        )
+
+        assert out == expect
+    else:
+        AssertionError('SystemExit not raised')
 
 
 def test_dont_allow_tagging_when_folder_upload(mocker, capfd):
@@ -242,17 +257,23 @@ def test_folder_merge_skip_with_all_duplication(mocker, mock_upload_client, capf
         return_value=([], dup_list),
     )
 
-    item_ids = simple_upload(upload_event)
-    assert len(item_ids) == 0
-    assert click_yes_mock.call_count == 0
+    try:
+        simple_upload(upload_event)
 
-    out, _ = capfd.readouterr()
-    expect = (
-        f'Starting upload of: {file_name}\n'
-        + 'Checking for file duplication...\n'
-        + 'All files are the same, no need to upload.\n'
-    )
-    assert expect in out
+    except SystemExit:
+        assert click_yes_mock.call_count == 0
+
+        out, _ = capfd.readouterr()
+        expect = (
+            f'Starting upload of: {file_name}\n'
+            + 'Checking for file duplication...\n'
+            + '\nAll files already exist in the upload destination.\n\n'
+            + customized_error_msg(ECustomizedError.UPLOAD_CANCEL)
+            + '\n'
+        )
+        assert expect in out
+    else:
+        AssertionError('SystemExit not raised')
 
 
 def test_resume_upload(mocker):
