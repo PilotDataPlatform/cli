@@ -190,6 +190,7 @@ def simple_upload(  # noqa: C901
 
         if len(non_duplicate_file_objects) == 0:
             mhandler.SrvOutPutHandler.file_duplication_check_warning_with_all_same()
+            SrvErrorHandler.customized_handle(ECustomizedError.UPLOAD_CANCEL, if_exit=True)
         elif len(duplicated_file) > 0:
             mhandler.SrvOutPutHandler.file_duplication_check_success()
             duplicate_warning_format = '\n'.join(duplicated_file)

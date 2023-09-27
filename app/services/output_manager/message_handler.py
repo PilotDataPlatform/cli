@@ -154,7 +154,7 @@ class SrvOutPutHandler(metaclass=MetaService):
     @staticmethod
     def file_duplication_check_warning_with_all_same():
         """e.g. file duplication check warning with all same."""
-        return logger.warning('All files are the same, no need to upload.')
+        return logger.warning('\nAll files already exist in the upload destination.\n')
 
     @staticmethod
     def resume_check_success():
