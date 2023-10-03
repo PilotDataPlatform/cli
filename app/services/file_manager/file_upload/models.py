@@ -86,6 +86,9 @@ class FileObject:
 
         # resumable info
         self.uploaded_chunks = {}
+        # this the number of chunks need to be uploaded, it is tracked for progress bar
+        # when the last chunk is finished earlier than the others, the progress bar will be closed
+        self.to_upload_count = self.total_chunks - len(self.uploaded_chunks)
 
     def generate_meta(self, local_path: str) -> Tuple[int, int]:
         """
@@ -131,7 +134,11 @@ class FileObject:
             self.progress_bar = tqdm(
                 total=self.total_size,
                 leave=True,
-                bar_format='{desc} |{bar:30} {percentage:3.0f}% {remaining}',
+                unit_scale=True,
+                unit='B',
+                unit_divisor=1024,
+                position=0,
+                # bar_format='{desc} |{bar:30} {percentage:3.0f}% {remaining}',
             )
             self.progress_bar.set_description(f'Uploading {self.file_name}')
 
@@ -144,6 +151,6 @@ class FileObject:
             The function is to close the progress bar
         """
         if self.progress_bar is not None:
-            self.progress_bar.clear()
+            # self.progress_bar.clear()
             self.progress_bar.close()
             self.progress_bar = None

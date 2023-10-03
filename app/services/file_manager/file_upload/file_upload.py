@@ -230,6 +230,7 @@ def simple_upload(  # noqa: C901
 
     # finish the upload once all on success api return
     # otherwise wait for 1 second and check again
+
     [res.wait() for res in on_success_res]
     upload_client.set_finish_upload()
 
