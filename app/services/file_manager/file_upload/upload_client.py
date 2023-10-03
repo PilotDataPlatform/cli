@@ -350,7 +350,7 @@ class UploadClient:
             # request upload service to generate presigned url for the chunk
             params = {
                 'bucket': self.bucket,
-                'key': file_object.object_path,
+                'key': file_object.item_id,
                 'upload_id': file_object.resumable_id,
                 'chunk_number': chunk_number,
             }
