@@ -70,7 +70,7 @@ def test_chunk_upload(httpx_mock, mocker):
     url = re.compile('^' + upload_client.base_url + '/v1/files/chunks/presigned.*$')
     httpx_mock.add_response(method='GET', url=url, json={'result': test_presigned_url})
     httpx_mock.add_response(method='PUT', url=test_presigned_url, json={'result': ''})
-    mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
+    mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(2, 2))
 
     test_obj = FileObject('test', 'test', 'test', 'test', 'test')
     res = upload_client.upload_chunk(test_obj, 0, b'1', 'test_etag')

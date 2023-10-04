@@ -377,7 +377,6 @@ class UploadClient:
 
                 # update the progress bar
                 file_object.update_progress(len(chunk))
-                # file_object.to_upload_count -= 1
 
                 return res
             else:
@@ -405,9 +404,6 @@ class UploadClient:
 
         # check if all the chunks have been uploaded
         [res.wait() for res in chunk_result]
-
-        # if file_object.to_upload_count == 0:
-        #     file_object.close_progress()
 
         for i in range(AppConfig.Env.resilient_retry):
             url = self.base_url + '/v1/files'
