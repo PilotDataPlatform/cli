@@ -143,7 +143,10 @@ class FileObject:
             self.progress_bar.set_description(f'Uploading {self.file_name}')
 
         self.progress_bar.update(chunk_size)
+        self.to_upload_count -= 1
         self.progress_bar.refresh()
+        if self.to_upload_count == 0:
+            self.close_progress()
 
     def close_progress(self) -> None:
         """
