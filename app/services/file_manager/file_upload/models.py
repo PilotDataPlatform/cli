@@ -29,13 +29,15 @@ class ItemStatus(str, Enum):
         Enum type for item status where:
             - REGISTERED means file is created by upload service but not complete yet. either in progress or fail.
             - ACTIVE means file uploading is complete.
-            - TRASHED means the file has been deleted
+            - TRASHED means the file has been moved to the trash bin.
+            - DELETED means the file has been permanently deleted.
         The status will be stored at metadata table.
     """
 
     REGISTERED = 'REGISTERED'
     ACTIVE = 'ACTIVE'
     TRASHED = 'TRASHED'
+    DELETED = 'DELETED'
 
     def __str__(self):
         return self.name
