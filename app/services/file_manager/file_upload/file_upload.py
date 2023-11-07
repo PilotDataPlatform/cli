@@ -12,6 +12,7 @@ from typing import List
 from typing import Tuple
 
 import click
+from click.exceptions import Abort
 
 import app.services.logger_services.log_functions as logger
 import app.services.output_manager.message_handler as mhandler
@@ -194,9 +195,14 @@ def simple_upload(  # noqa: C901
         elif len(duplicated_file) > 0:
             mhandler.SrvOutPutHandler.file_duplication_check_success()
             duplicate_warning_format = '\n'.join(duplicated_file)
-            click.confirm(
-                customized_error_msg(ECustomizedError.UPLOAD_SKIP_DUPLICATION) % (duplicate_warning_format), abort=True
-            )
+            try:
+                click.confirm(
+                    customized_error_msg(ECustomizedError.UPLOAD_SKIP_DUPLICATION) % (duplicate_warning_format),
+                    abort=True,
+                )
+            except Abort:
+                mhandler.SrvOutPutHandler.cancel_upload()
+                exit(1)
 
     # here is list of pre upload result. We decided to call pre upload api by batch
     pre_upload_infos = []
