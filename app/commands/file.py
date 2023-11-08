@@ -349,7 +349,7 @@ def file_list(paths, zone, page, page_size, detached):
         srv_list.list_files_with_pagination(paths, zone, page, page_size)
 
 
-@click.command(name='sync')
+@click.command(name='download')
 @click.argument('paths', type=click.STRING, nargs=-1)
 @click.argument('output_path', type=click.Path(exists=True), nargs=1)
 @click.option(

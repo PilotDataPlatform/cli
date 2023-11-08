@@ -192,6 +192,10 @@ class SrvOutPutHandler(metaclass=MetaService):
         logger.info(f'Starting upload of: {filename}')
 
     @staticmethod
+    def cancel_upload():
+        logger.warning('Upload cancelled.')
+
+    @staticmethod
     def start_requests():
         """e.g. start requests."""
         logger.info('Starting request...')
