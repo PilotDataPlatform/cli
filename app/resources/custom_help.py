@@ -2,11 +2,13 @@
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
+import pkg_resources
+
 
 class HelpPage:
     page = {
         'update': {
-            'version': '2.8.0a0',
+            'version': pkg_resources.get_distribution('app').version,
             '1': 'Add new feature for folder merging',
             '2': 'Secure the config file',
             '3': 'Optimize logic, input and error message',
