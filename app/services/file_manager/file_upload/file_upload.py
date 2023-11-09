@@ -6,6 +6,7 @@ import os
 import time
 import zipfile
 from multiprocessing.pool import ThreadPool
+from sys import exit
 from typing import Any
 from typing import Dict
 from typing import List
