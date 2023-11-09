@@ -77,7 +77,7 @@ def assemble_path(
 
     # set name folder as first parent folder
     name_folder = target_folder.split('/')[0]
-    parent_folder = search_item(project_code, zone, name_folder, 'name_folder')
+    parent_folder = search_item(project_code, zone, name_folder)
     parent_folder = parent_folder.get('result')
 
     # if f input is a file then current_folder_node is target_folder
@@ -88,7 +88,7 @@ def assemble_path(
         sub_path = target_folder.split('/')
         for index in range(len(sub_path) - 1):
             folder_path = '/'.join(sub_path[0 : 2 + index])
-            res = search_item(project_code, zone, folder_path, 'folder')
+            res = search_item(project_code, zone, folder_path)
 
             # find the longest existing folder as parent folder
             # if user input a path that need to create some folders

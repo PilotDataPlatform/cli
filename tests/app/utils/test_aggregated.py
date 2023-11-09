@@ -55,7 +55,7 @@ def test_search_file_should_return_200(requests_mock, mocker):
         'storage': {'id': 'storage-id', 'location_uri': 'minio-path', 'version': 'version-id'},
         'extended': {'id': 'extended-id', 'extra': {'tags': [], 'system_tags': [], 'attributes': {}}},
     }
-    res = search_item(test_project_code, 'zone', 'folder_relative_path', 'file', 'project')
+    res = search_item(test_project_code, 'zone', 'folder_relative_path', 'project')
     assert res['result'] == expected_result
 
 
@@ -68,7 +68,7 @@ def test_search_item_returns_response_when_status_code_is_404(requests_mock, moc
         status_code=404,
     )
 
-    response = search_item(test_project_code, 'zone', 'folder_relative_path', 'file', 'project')
+    response = search_item(test_project_code, 'zone', 'folder_relative_path', 'project')
 
     assert response == expected_response
 
@@ -81,7 +81,7 @@ def test_search_file_error_handling_with_403(requests_mock, mocker, capsys):
         status_code=403,
     )
     with pytest.raises(SystemExit):
-        search_item(test_project_code, 'zone', 'folder_relative_path', 'file', 'project')
+        search_item(test_project_code, 'zone', 'folder_relative_path', 'project')
     out, _ = capsys.readouterr()
     assert (
         out.rstrip()
@@ -97,6 +97,6 @@ def test_search_file_error_handling_with_401(requests_mock, mocker, capsys):
         status_code=401,
     )
     with pytest.raises(SystemExit):
-        search_item(test_project_code, 'zone', 'folder_relative_path', 'file', 'project')
+        search_item(test_project_code, 'zone', 'folder_relative_path', 'project')
     out, _ = capsys.readouterr()
     assert out.rstrip() == 'Authentication failed.'

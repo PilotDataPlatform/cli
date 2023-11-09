@@ -399,7 +399,7 @@ def file_download(**kwargs):
         for path in paths:
             project_code = path.strip('/').split('/')[0]
             target_path = '/'.join(path.split('/')[1::])
-            item = search_item(project_code, zone, target_path, '')
+            item = search_item(project_code, zone, target_path)
             if item.get('code') == 200 and item.get('result'):
                 item_status = 'success'
                 item_result = item.get('result')

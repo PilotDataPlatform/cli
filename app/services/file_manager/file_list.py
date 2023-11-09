@@ -29,7 +29,7 @@ class SrvFileList(metaclass=MetaService):
             source_type = 'project'
         else:
             source_type = 'project'
-            res = search_item(project_code, zone, folder_rel_path, 'folder')
+            res = search_item(project_code, zone, folder_rel_path)
         get_url = AppConfig.Connections.url_bff + f'/v1/{project_code}/files/query'
         headers = {
             'Authorization': 'Bearer ' + self.user.access_token,
