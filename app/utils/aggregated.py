@@ -34,7 +34,7 @@ def search_item(project_code, zone, folder_relative_path, item_type, container_t
         'zone': zone,
         'project_code': project_code,
         'path': folder_relative_path,
-        # 'item_type': item_type,
+        'item_type': item_type,
         'container_type': container_type,
     }
     headers = {'Authorization': 'Bearer ' + token}
