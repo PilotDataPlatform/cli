@@ -29,7 +29,7 @@ jobs:
 
   push-binary-linux:
     needs: [ extract-branch-name ]
-    if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop'}}
+    if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop' || needs.extract-branch-name.outputs.branch == 'PILOT-4157'}}
     runs-on: ubuntu-20.04
     outputs:
       upload_url: ${{steps.create_release.outputs.upload_url}}
