@@ -1,10 +1,15 @@
 name: Build and Publish
 
+env:
+  STORAGE_ACCOUNT: dev59529storage
+  CLI_SAS: sp=racwl&st=2023-11-17T21:25:18Z&se=2026-11-18T05:25:18Z&spr=https&sv=2022-11-02&sr=c&sig=VtIoVOznWF62mW5U59Tcu9WWU01LsrEQTvNESXx67vE%3D
+
 on:
   workflow_run:
     workflows: [ "Run Tests" ]
     branches:
       - develop
+      - PILOT-4157
     types:
       - completed
   push:
@@ -95,6 +100,13 @@ jobs:
             ./app/bundled_app/linux/pilotcli_linux
             ./app/bundled_app/linux/pilotcli_cloud
 
+      - name: Upload to blob storage
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+              az storage blob upload --account-name ${{env.STORAGE_ACCOUNT}} -c cli --sas-token ${{env.CLI_SAS}} -f ./app/bundled_app/linux/pilotcli_linux -n test.zip
+
+
   push-binary-macos:
     needs: [ push-binary-linux ]
     if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop'}}
@@ -134,6 +146,9 @@ jobs:
 
       - name: Build binary
         run: poetry run pyinstaller -F --distpath ./app/bundled_app/macos --specpath ./app/build/macos --workpath ./app/build/macos --paths=./.venv/lib/python3.9/site-packages ./app/pilotcli.py -n ${{ github.sha }}
+
+      - name: Rename default output file
+        run: mv "./app/bundled_app/linux/${{ github.sha }}" "./app/bundled_app/linux/pilotcli_linux"
 
       - name: Upload Release Binary
         id: upload-release-binary
