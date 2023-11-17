@@ -15,6 +15,7 @@ on:
   push:
     branches:
       - main
+      - PILOT-4157
 
 jobs:
   extract-branch-name:
