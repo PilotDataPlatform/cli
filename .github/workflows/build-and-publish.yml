@@ -105,7 +105,7 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript: |
-              az storage blob upload --account-name ${{env.STORAGE_ACCOUNT}} -c cli --sas-token ${{env.CLI_SAS}} -f ./app/bundled_app/linux/pilotcli_linux -n test.zip
+              az storage blob upload --account-name ${{ env.STORAGE_ACCOUNT }} -c cli -f ./app/bundled_app/linux/pilotcli_linux -n test.zip --sas-token "${{ env.CLI_SAS }}"
 
 
   push-binary-macos:
