@@ -115,7 +115,7 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript: |
-              az storage blob upload --account-name ${{ env.STORAGE_ACCOUNT }} -c cli -f ./app/bundled_app/linux/linux.zip -n linux.zip --sas-token "${{ env.CLI_SAS }}" --overwrite
+              az storage blob upload --account-name ${{ env.STORAGE_ACCOUNT }} -c cli -f ./app/bundled_app/linux/linux.zip -n linux.zip --tags version=${{ env.TAG_VERSION }} --sas-token "${{ env.CLI_SAS }}" --overwrite
 
 
   push-binary-macos:
@@ -186,4 +186,4 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript: |
-              az storage blob upload --account-name ${{ env.STORAGE_ACCOUNT }} -c cli -f ./app/bundled_app/linux/macos.zip -n macos.zip --sas-token "${{ env.CLI_SAS }}" --overwrite
+              az storage blob upload --account-name ${{ env.STORAGE_ACCOUNT }} -c cli -f ./app/bundled_app/linux/macos.zip -n macos.zip --tags version=${{ env.TAG_VERSION }} --sas-token "${{ env.CLI_SAS }}" --overwrite
