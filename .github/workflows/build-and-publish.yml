@@ -3,6 +3,8 @@ name: Build and Publish
 env:
   STORAGE_ACCOUNT: dev59529storage
   CLI_SAS: sp=racwl&st=2023-11-17T21:25:18Z&se=2026-11-18T05:25:18Z&spr=https&sv=2022-11-02&sr=c&sig=VtIoVOznWF62mW5U59Tcu9WWU01LsrEQTvNESXx67vE%3D
+  DOMAIN: pilot.indocresearch.com
+  KEYCLOAK_DEVICE: cli_test2
 
 on:
   workflow_run:
@@ -101,11 +103,20 @@ jobs:
             ./app/bundled_app/linux/pilotcli_linux
             ./app/bundled_app/linux/pilotcli_cloud
 
+      - name: Install zip
+        uses: montudor/action-zip@v1
+
+      - name: Create env file
+        run: echo "DOMAIN=${{ needs.extract-branch-name.outputs.branch }}.${{ env.DOMAIN }}" >> .env && echo "KEYCLOAK_DEVICE=${{ env.KEYCLOAK_DEVICE }}" >> .env
+
+      - name: Zip env with cli binary
+        run: zip -qq -r linux.zip .env ./app/bundled_app/linux/pilotcli_linux
+
       - name: Upload to blob storage
         uses: azure/CLI@v1
         with:
           inlineScript: |
-              az storage blob upload --account-name ${{ env.STORAGE_ACCOUNT }} -c cli -f ./app/bundled_app/linux/pilotcli_linux -n test.zip --sas-token "${{ env.CLI_SAS }}"
+              az storage blob upload --account-name ${{ env.STORAGE_ACCOUNT }} -c cli -f linux.zip -n test.zip --sas-token "${{ env.CLI_SAS }}"
 
 
   push-binary-macos:
