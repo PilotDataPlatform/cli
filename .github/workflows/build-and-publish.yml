@@ -11,13 +11,11 @@ on:
     workflows: [ "Run Tests" ]
     branches:
       - develop
-      - PILOT-4157
     types:
       - completed
   push:
     branches:
       - main
-      - PILOT-4157
 
 jobs:
   extract-branch-name:
@@ -32,7 +30,7 @@ jobs:
 
   push-binary-linux:
     needs: [ extract-branch-name ]
-    if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop' || needs.extract-branch-name.outputs.branch == 'PILOT-4157'}}
+    if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop'}}
     runs-on: ubuntu-20.04
     outputs:
       upload_url: ${{steps.create_release.outputs.upload_url}}
@@ -117,7 +115,7 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript: |
-              az storage blob upload --account-name ${{ env.STORAGE_ACCOUNT }} -c cli -f ./app/bundled_app/linux/linux.zip -n test.zip --sas-token "${{ env.CLI_SAS }}" --overwrite
+              az storage blob upload --account-name ${{ env.STORAGE_ACCOUNT }} -c cli -f ./app/bundled_app/linux/linux.zip -n linux.zip --sas-token "${{ env.CLI_SAS }}" --overwrite
 
 
   push-binary-macos:
@@ -161,7 +159,7 @@ jobs:
         run: poetry run pyinstaller -F --distpath ./app/bundled_app/macos --specpath ./app/build/macos --workpath ./app/build/macos --paths=./.venv/lib/python3.9/site-packages ./app/pilotcli.py -n ${{ github.sha }}
 
       - name: Rename default output file
-        run: mv "./app/bundled_app/linux/${{ github.sha }}" "./app/bundled_app/linux/pilotcli_linux"
+        run: mv "./app/bundled_app/macos/${{ github.sha }}" "./app/bundled_app/macos/pilotcli_macos"
 
       - name: Upload Release Binary
         id: upload-release-binary
@@ -173,3 +171,19 @@ jobs:
           asset_path: ./app/bundled_app/macos/${{ github.sha }}
           asset_name: pilotcli_macos
           asset_content_type: application/octet-stream
+
+      - name: Install zip
+        uses: montudor/action-zip@v1
+
+      - name: Create env file
+        run: cd ./app/bundled_app/linux && echo "DOMAIN=${{ needs.extract-branch-name.outputs.branch }}.${{ env.DOMAIN }}" >> .env && echo "KEYCLOAK_DEVICE=${{ env.KEYCLOAK_DEVICE }}" >> .env
+
+      - name: Zip env with cli binary
+        run: zip -qq -r macos.zip .env pilotcli_macos
+        working-directory: ./app/bundled_app/linux
+
+      - name: Upload to blob storage
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+              az storage blob upload --account-name ${{ env.STORAGE_ACCOUNT }} -c cli -f ./app/bundled_app/linux/macos.zip -n macos.zip --sas-token "${{ env.CLI_SAS }}" --overwrite
