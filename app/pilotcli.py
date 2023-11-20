@@ -40,5 +40,5 @@ def cli():
 
 
 if __name__ == '__main__':
-    freeze_support()
+    freeze_support()  # Add support for multiprocessing after bundling with PyInstaller
     cli()
