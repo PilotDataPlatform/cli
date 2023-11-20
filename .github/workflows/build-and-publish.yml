@@ -107,16 +107,17 @@ jobs:
         uses: montudor/action-zip@v1
 
       - name: Create env file
-        run: echo "DOMAIN=${{ needs.extract-branch-name.outputs.branch }}.${{ env.DOMAIN }}" >> .env && echo "KEYCLOAK_DEVICE=${{ env.KEYCLOAK_DEVICE }}" >> .env
+        run: cd ./app/bundled_app/linux && echo "DOMAIN=${{ needs.extract-branch-name.outputs.branch }}.${{ env.DOMAIN }}" >> .env && echo "KEYCLOAK_DEVICE=${{ env.KEYCLOAK_DEVICE }}" >> .env
 
       - name: Zip env with cli binary
-        run: zip -qq -r linux.zip .env ./app/bundled_app/linux/pilotcli_linux
+        run: zip -qq -r linux.zip .env pilotcli_linux
+        working-directory: ./app/bundled_app/linux
 
       - name: Upload to blob storage
         uses: azure/CLI@v1
         with:
           inlineScript: |
-              az storage blob upload --account-name ${{ env.STORAGE_ACCOUNT }} -c cli -f linux.zip -n test.zip --sas-token "${{ env.CLI_SAS }}"
+              az storage blob upload --account-name ${{ env.STORAGE_ACCOUNT }} -c cli -f linux.zip --sas-token "${{ env.CLI_SAS }}"
 
 
   push-binary-macos:
