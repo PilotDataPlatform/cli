@@ -6,6 +6,7 @@ import os
 import time
 import zipfile
 from multiprocessing.pool import ThreadPool
+from sys import exit
 from typing import Any
 from typing import Dict
 from typing import List
@@ -92,8 +93,14 @@ def assemble_path(
             # find the longest existing folder as parent folder
             # if user input a path that need to create some folders
             if not res.get('result'):
+                try:
+                    click.confirm(customized_error_msg(ECustomizedError.CREATE_FOLDER_IF_NOT_EXIST), abort=True)
+                except Abort:
+                    mhandler.SrvOutPutHandler.cancel_upload()
+                    exit(1)
+
+                # stop scaning and use the current folder as parent folder
                 current_folder_node = folder_path
-                click.confirm(customized_error_msg(ECustomizedError.CREATE_FOLDER_IF_NOT_EXIST), abort=True)
                 create_folder_flag = True
                 break
             else:
