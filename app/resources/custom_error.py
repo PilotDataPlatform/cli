@@ -109,10 +109,10 @@ class Error:
         'USER_NOT_FOUND': 'User not found.',
         'CONTAINER_REGISTRY_OTHER': 'Encountered an error when interacting with container registry.',
         'TOU_CONTENT': (
-            'You are about to transfer data directly to the PILOT Core! '
-            'In accordance with the PILOT Terms of Use, please confirm that you have made your best efforts '
+            'You are about to transfer data directly to the Pilot Core. '
+            'In accordance with the Pilot Terms of Use, please confirm that you have made your best efforts '
             'to pseudonymize or anonymize the data and that you have the legal authority to transfer and make this '
-            'data available for dissemination and use within the PILOT. If you need to process the data to remove '
+            'data available for dissemination and use within Pilot. If you need to process the data to remove '
             'sensitive identifiers, please cancel this transfer and upload the data to the Green Room to perform '
             'these actions.'
         ),
