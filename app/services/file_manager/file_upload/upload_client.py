@@ -61,7 +61,7 @@ class UploadClient:
         self.user = UserConfig()
         self.operator = self.user.username
         self.upload_message = upload_message
-        self.chunk_size = AppConfig.Env.chunk_size  # remove
+        self.chunk_size = AppConfig.Env.chunk_size
         self.base_url = {
             AppConfig.Env.green_zone: AppConfig.Connections.url_upload_greenroom,
             AppConfig.Env.core_zone: AppConfig.Connections.url_upload_core,
@@ -111,7 +111,7 @@ class UploadClient:
         Parameter:
             - unfinished_file_objects(List[FileObject]): the unfinished items that need to be resumed.
         return:
-            - list of FileObject: the infomation retrieved from backend.
+            - list of FileObject: the information retrieved from backend.
                 - resumable_id(str): the unique identifier for multipart upload.
                 - object_path(str): the path in the object storage.
                 - local_path(str): the local path of file.
@@ -121,6 +121,7 @@ class UploadClient:
         headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
         url = AppConfig.Connections.url_bff + f'/v1/project/{self.project_code}/files/resumable'
         rid_file_object_map = {x.resumable_id: x for x in unfinished_file_objects}
+
         payload = {
             'bucket': self.bucket,
             'zone': self.zone,
@@ -129,6 +130,9 @@ class UploadClient:
                     'object_path': file_object.object_path,
                     'item_id': file_object.item_id,
                     'resumable_id': file_object.resumable_id,
+                    'chunks_info': {
+                        '<chunk_size>': {'etag': file_object.get('ETag'), 'chunk_size': file_object.get('ChunkSize')}
+                    },
                 }
                 for file_object in unfinished_file_objects
             ],
@@ -353,6 +357,7 @@ class UploadClient:
                 'key': file_object.item_id,
                 'upload_id': file_object.resumable_id,
                 'chunk_number': chunk_number,
+                'chunk_size': self.chunk_size,
             }
             headers = {
                 'Authorization': 'Bearer ' + self.user.access_token,
