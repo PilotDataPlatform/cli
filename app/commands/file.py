@@ -16,6 +16,7 @@ from app.configs.user_config import UserConfig
 from app.services.file_manager.file_download.download_client import SrvFileDownload
 from app.services.file_manager.file_list import SrvFileList
 from app.services.file_manager.file_manifests import SrvFileManifests
+from app.services.file_manager.file_metadata.file_metadata_client import FileMetaClient
 from app.services.file_manager.file_upload.file_upload import assemble_path
 from app.services.file_manager.file_upload.file_upload import resume_upload
 from app.services.file_manager.file_upload.file_upload import simple_upload
@@ -438,7 +439,7 @@ def file_download(**kwargs):
 
 
 @click.command(name='metadata')
-@click.argument('file_path', type=click.STRING, nargs=-1)
+@click.argument('file_path', type=click.STRING)
 @click.option(
     '-z',
     '--zone',
@@ -471,7 +472,7 @@ def file_download(**kwargs):
     help=file_help.file_help_page(file_help.FileHELP.FILE_META_T),
     show_default=True,
 )
-# @require_valid_token()
+@require_valid_token()
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_META))
 def file_metadata_download(**kwargs):
     '''
@@ -479,7 +480,7 @@ def file_metadata_download(**kwargs):
         Download metadata of a file including general, attribute and tag.
     '''
 
-    # file_path = kwargs.get('file_path')
+    file_path = kwargs.get('file_path')
     zone = kwargs.get('zone')
     general_location = kwargs.get('general')
     attribute_location = kwargs.get('attribute')
@@ -489,15 +490,23 @@ def file_metadata_download(**kwargs):
     # Check zone and upload-message
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
 
-    # check if the manifest file exists
+    # check if the manifest file exists and ask user whether to overwrite
     try:
-        _ = {os.path.exists(x) for x in [general_location, attribute_location, tag_location]}
-        # print(files_exist)
+        duplicate_error = customized_error_msg(ECustomizedError.LOCAL_METADATA_FILE_EXISTS)
+        overwrite_check = False
+        for x in ['general', 'attribute', 'tag']:
+            if os.path.exists(kwargs.get(x)):
+                overwrite_check = True
+                duplicate_error = duplicate_error + f'\n - {x}: {kwargs.get(x)}'
 
-        # if os.path.exists(output_path):
-        #     click.confirm(
-        #         customized_error_msg(ECustomizedError.MANIFEST_OF_FOLDER_FILE_EXIST) % (output_path), abort=True
-        #     )
+        if overwrite_check:
+            duplicate_error = duplicate_error + '\nDo you want to overwrite the existing file?'
+            click.confirm(duplicate_error, abort=True)
     except Abort:
-        message_handler.SrvOutPutHandler.cancel_upload()
+        message_handler.SrvOutPutHandler.cancel_metadata_download()
         exit(1)
+
+    file_meta_client = FileMetaClient(zone, file_path, general_location, attribute_location, tag_location)
+    file_meta_client.download_file_metadata()
+
+    message_handler.SrvOutPutHandler.metadata_download_success()
