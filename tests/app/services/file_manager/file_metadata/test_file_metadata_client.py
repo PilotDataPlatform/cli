@@ -20,6 +20,10 @@ def test_file_metadata_client_get_detail_success(mocker):
         'app.services.file_manager.file_metadata.file_metadata_client.search_item',
         return_value={'result': {**item_info, 'extended': {'extra': {'tags': tags, 'attributes': attributes}}}},
     )
+    mocker.patch(
+        'app.services.file_manager.file_metadata.file_metadata_client.FileMetaClient.save_file_metadata',
+        return_value=None,
+    )
 
     file_meta_client = FileMetaClient('zone', 'project_code/object_path', 'general', 'attr', 'tag')
     assert file_meta_client.project_code == 'project_code'
