@@ -3,6 +3,9 @@
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
 import json
+from typing import Any
+from typing import Dict
+from typing import List
 from typing import Union
 
 from app.utils.aggregated import search_item
@@ -52,10 +55,14 @@ class FileMetaClient:
         with open(file_loc, 'w') as f:
             json.dump(metadata, f, indent=4)
 
-    def download_file_metadata(self) -> None:
+    def download_file_metadata(self) -> List[Dict[str, Any]]:
         """
         Summary:
             Download file metadata from metadata service, including.
+        Returns:
+            item_res (Dict[str, Any]): general metadata of file.
+            attribute_detail (Dict[str, Any]): attribute metadata of file.
+            tags (List[str]): tags metadata of file.
         """
 
         project_code, object_path = self.file_path.split('/', 1)
@@ -70,3 +77,5 @@ class FileMetaClient:
         self.save_file_metadata(self.general_location, item_res)
         self.save_file_metadata(self.attribute_location, attribute_detail)
         self.save_file_metadata(self.tag_location, tags)
+
+        return item_res, attribute_detail, tags

@@ -1,0 +1,8 @@
+{
+    "id": "test",
+    "parent_id": "test_parent",
+    "parent_path": "",
+    "name": "admin",
+    "zone": 0,
+    "status": "ACTIVE"
+}

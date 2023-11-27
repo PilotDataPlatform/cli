@@ -6,6 +6,7 @@ import click
 import questionary
 
 from app.commands.file import file_list
+from app.commands.file import file_metadata_download
 from app.commands.file import file_put
 from app.commands.file import file_resume
 from app.services.file_manager.file_upload.models import FileObject
@@ -125,3 +126,97 @@ def test_empty_file_list_with_pagination(requests_mock, mocker, cli_runner):
     result = cli_runner.invoke(file_list, ['testproject/admin', '-z', 'greenroom'])
     outputs = result.output.split('\n')
     assert outputs[0] == ' '
+
+
+def test_download_file_metadata_file_duplicate_success(mocker, cli_runner):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+
+    donwload_metadata_mock = mocker.patch(
+        'app.services.file_manager.file_metadata.file_metadata_client.FileMetaClient.download_file_metadata',
+        return_value=None,
+    )
+
+    general_loc = 'test_g.txt'
+    attribute_loc = 'test_a.txt'
+    tag_loc = 'test_t.txt'
+    # create a test file
+    runner = click.testing.CliRunner()
+    with runner.isolated_filesystem():
+        # create all file to make duplicationn
+        with open(general_loc, 'w') as f:
+            f.write(general_loc)
+        with open(attribute_loc, 'w') as f:
+            f.write(attribute_loc)
+        with open(tag_loc, 'w') as f:
+            f.write(tag_loc)
+
+        result = cli_runner.invoke(
+            file_metadata_download,
+            ['test08171/admin/test20231115_9/test.log', '-g', 'test_g.txt', '-a', 'test_a.txt', '-t', 'test_t.txt'],
+            input='y',
+        )
+
+    assert result.exit_code == 0
+
+    outputs = result.output
+    excepted_output = (
+        customized_error_msg(ECustomizedError.LOCAL_METADATA_FILE_EXISTS)
+        + f'\n - general: {general_loc}'
+        + f'\n - attribute: {attribute_loc}'
+        + f'\n - tag: {tag_loc}\n'
+        + 'Do you want to overwrite the existing file? [y/N]: y\n'
+        + 'Metadata download complete.\n'
+    )
+    assert outputs == excepted_output
+
+    donwload_metadata_mock.assert_called_once()
+
+
+def test_download_file_metadata_file_duplicate_abort(mocker, cli_runner):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+
+    donwload_metadata_mock = mocker.patch(
+        'app.services.file_manager.file_metadata.file_metadata_client.FileMetaClient.download_file_metadata',
+        return_value=None,
+    )
+
+    general_loc = 'test_g.txt'
+    attribute_loc = 'test_a.txt'
+    tag_loc = 'test_t.txt'
+    # create a test file
+    runner = click.testing.CliRunner()
+    with runner.isolated_filesystem():
+        # create all file to make duplicationn
+        with open(general_loc, 'w') as f:
+            f.write(general_loc)
+        with open(attribute_loc, 'w') as f:
+            f.write(attribute_loc)
+        with open(tag_loc, 'w') as f:
+            f.write(tag_loc)
+
+        result = cli_runner.invoke(
+            file_metadata_download,
+            ['test08171/admin/test20231115_9/test.log', '-g', 'test_g.txt', '-a', 'test_a.txt', '-t', 'test_t.txt'],
+            input='n',
+        )
+
+    assert result.exit_code == 1
+
+    outputs = result.output
+    excepted_output = (
+        customized_error_msg(ECustomizedError.LOCAL_METADATA_FILE_EXISTS)
+        + f'\n - general: {general_loc}'
+        + f'\n - attribute: {attribute_loc}'
+        + f'\n - tag: {tag_loc}\n'
+        + 'Do you want to overwrite the existing file? [y/N]: n\n'
+        + 'Metadata download cancelled.\n'
+    )
+    assert outputs == excepted_output
+
+    assert donwload_metadata_mock.call_count == 0
