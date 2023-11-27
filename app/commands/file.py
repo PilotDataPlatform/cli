@@ -435,3 +435,69 @@ def file_download(**kwargs):
         for item in item_res:
             srv_download = SrvFileDownload(zone, interactive)
             srv_download.simple_download_file(output_path, [item])
+
+
+@click.command(name='metadata')
+@click.argument('file_path', type=click.STRING, nargs=-1)
+@click.option(
+    '-z',
+    '--zone',
+    default=AppConfig.Env.green_zone,
+    required=True,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_META_Z),
+    show_default=False,
+)
+@click.option(
+    '-g',
+    '--general',
+    default=None,
+    required=True,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_META_G),
+    show_default=True,
+)
+@click.option(
+    '-a',
+    '--attribute',
+    default=None,
+    required=True,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_META_A),
+    show_default=True,
+)
+@click.option(
+    '-t',
+    '--tag',
+    default=None,
+    required=True,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_META_T),
+    show_default=True,
+)
+# @require_valid_token()
+@doc(file_help.file_help_page(file_help.FileHELP.FILE_META))
+def file_metadata_download(**kwargs):
+    '''
+    Summary:
+        Download metadata of a file including general, attribute and tag.
+    '''
+
+    # file_path = kwargs.get('file_path')
+    zone = kwargs.get('zone')
+    general_location = kwargs.get('general')
+    attribute_location = kwargs.get('attribute')
+    tag_location = kwargs.get('tag')
+
+    # user = UserConfig()
+    # Check zone and upload-message
+    zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
+
+    # check if the manifest file exists
+    try:
+        _ = {os.path.exists(x) for x in [general_location, attribute_location, tag_location]}
+        # print(files_exist)
+
+        # if os.path.exists(output_path):
+        #     click.confirm(
+        #         customized_error_msg(ECustomizedError.MANIFEST_OF_FOLDER_FILE_EXIST) % (output_path), abort=True
+        #     )
+    except Abort:
+        message_handler.SrvOutPutHandler.cancel_upload()
+        exit(1)
