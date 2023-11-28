@@ -60,7 +60,7 @@ def get_file_info_by_geid(geid: list):
 
 
 def fit_terminal_width(string_to_format):
-    string_to_format = string_to_format.split('...')
+    string_to_format = string_to_format.rsplit('...')
     current_len = 0
     sentence = ''
     terminal_width = shutil.get_terminal_size().columns

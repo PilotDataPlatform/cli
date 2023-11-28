@@ -2,6 +2,8 @@
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
+from multiprocessing import freeze_support
+
 import click
 import requests
 
@@ -38,4 +40,5 @@ def cli():
 
 
 if __name__ == '__main__':
+    freeze_support()  # Add support for multiprocessing after bundling with PyInstaller
     cli()
