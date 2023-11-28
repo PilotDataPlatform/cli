@@ -2,6 +2,9 @@
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
+from os import makedirs
+from os.path import dirname
+
 import click
 import questionary
 
@@ -9,6 +12,7 @@ from app.commands.file import file_list
 from app.commands.file import file_metadata_download
 from app.commands.file import file_put
 from app.commands.file import file_resume
+from app.services.file_manager.file_metadata.file_metadata_client import FileMetaClient
 from app.services.file_manager.file_upload.models import FileObject
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import customized_error_msg
@@ -139,23 +143,26 @@ def test_download_file_metadata_file_duplicate_success(mocker, cli_runner):
         return_value=None,
     )
 
-    general_loc = 'test_g.txt'
-    attribute_loc = 'test_a.txt'
-    tag_loc = 'test_t.txt'
+    metadata_loc = './test'
+    file_path = 'project_code/admin/test.py'
     # create a test file
     runner = click.testing.CliRunner()
     with runner.isolated_filesystem():
+        file_meta_client = FileMetaClient('zone', file_path, metadata_loc, metadata_loc, metadata_loc)
         # create all file to make duplicationn
-        with open(general_loc, 'w') as f:
-            f.write(general_loc)
-        with open(attribute_loc, 'w') as f:
-            f.write(attribute_loc)
-        with open(tag_loc, 'w') as f:
-            f.write(tag_loc)
+        makedirs(dirname(file_meta_client.general_location), exist_ok=True)
+        with open(file_meta_client.general_location, 'w') as f:
+            f.write(file_meta_client.general_location)
+        makedirs(dirname(file_meta_client.attribute_location), exist_ok=True)
+        with open(file_meta_client.attribute_location, 'w') as f:
+            f.write(file_meta_client.attribute_location)
+        makedirs(dirname(file_meta_client.tag_location), exist_ok=True)
+        with open(file_meta_client.tag_location, 'w') as f:
+            f.write(file_meta_client.tag_location)
 
         result = cli_runner.invoke(
             file_metadata_download,
-            ['test08171/admin/test20231115_9/test.log', '-g', 'test_g.txt', '-a', 'test_a.txt', '-t', 'test_t.txt'],
+            [file_path, '-g', metadata_loc, '-a', metadata_loc, '-t', metadata_loc],
             input='y',
         )
 
@@ -164,9 +171,9 @@ def test_download_file_metadata_file_duplicate_success(mocker, cli_runner):
     outputs = result.output
     excepted_output = (
         customized_error_msg(ECustomizedError.LOCAL_METADATA_FILE_EXISTS)
-        + f'\n - general: {general_loc}'
-        + f'\n - attribute: {attribute_loc}'
-        + f'\n - tag: {tag_loc}\n'
+        + f'\n - general: {file_meta_client.general_location}'
+        + f'\n - attribute: {file_meta_client.attribute_location}'
+        + f'\n - tag: {file_meta_client.tag_location}\n'
         + 'Do you want to overwrite the existing file? [y/N]: y\n'
         + 'Metadata download complete.\n'
     )
@@ -186,23 +193,26 @@ def test_download_file_metadata_file_duplicate_abort(mocker, cli_runner):
         return_value=None,
     )
 
-    general_loc = 'test_g.txt'
-    attribute_loc = 'test_a.txt'
-    tag_loc = 'test_t.txt'
+    metadata_loc = './test'
+    file_path = 'project_code/admin/test.py'
     # create a test file
     runner = click.testing.CliRunner()
     with runner.isolated_filesystem():
+        file_meta_client = FileMetaClient('zone', file_path, metadata_loc, metadata_loc, metadata_loc)
         # create all file to make duplicationn
-        with open(general_loc, 'w') as f:
-            f.write(general_loc)
-        with open(attribute_loc, 'w') as f:
-            f.write(attribute_loc)
-        with open(tag_loc, 'w') as f:
-            f.write(tag_loc)
+        makedirs(dirname(file_meta_client.general_location), exist_ok=True)
+        with open(file_meta_client.general_location, 'w') as f:
+            f.write(file_meta_client.general_location)
+        makedirs(dirname(file_meta_client.attribute_location), exist_ok=True)
+        with open(file_meta_client.attribute_location, 'w') as f:
+            f.write(file_meta_client.attribute_location)
+        makedirs(dirname(file_meta_client.tag_location), exist_ok=True)
+        with open(file_meta_client.tag_location, 'w') as f:
+            f.write(file_meta_client.tag_location)
 
         result = cli_runner.invoke(
             file_metadata_download,
-            ['test08171/admin/test20231115_9/test.log', '-g', 'test_g.txt', '-a', 'test_a.txt', '-t', 'test_t.txt'],
+            [file_path, '-g', metadata_loc, '-a', metadata_loc, '-t', metadata_loc],
             input='n',
         )
 
@@ -211,9 +221,9 @@ def test_download_file_metadata_file_duplicate_abort(mocker, cli_runner):
     outputs = result.output
     excepted_output = (
         customized_error_msg(ECustomizedError.LOCAL_METADATA_FILE_EXISTS)
-        + f'\n - general: {general_loc}'
-        + f'\n - attribute: {attribute_loc}'
-        + f'\n - tag: {tag_loc}\n'
+        + f'\n - general: {file_meta_client.general_location}'
+        + f'\n - attribute: {file_meta_client.attribute_location}'
+        + f'\n - tag: {file_meta_client.tag_location}\n'
         + 'Do you want to overwrite the existing file? [y/N]: n\n'
         + 'Metadata download cancelled.\n'
     )

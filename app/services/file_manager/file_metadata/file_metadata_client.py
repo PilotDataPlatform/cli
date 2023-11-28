@@ -3,11 +3,23 @@
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
 import json
+from os import makedirs
+from os.path import basename
+from os.path import dirname
+from os.path import exists
+from os.path import join
+from sys import exit
 from typing import Any
 from typing import Dict
 from typing import List
 from typing import Union
 
+import click
+from click.exceptions import Abort
+
+import app.services.output_manager.message_handler as message_handler
+from app.services.output_manager.error_handler import ECustomizedError
+from app.services.output_manager.error_handler import customized_error_msg
 from app.utils.aggregated import search_item
 
 
@@ -22,9 +34,9 @@ class FileMetaClient:
         self,
         zone: str,
         file_path: str,
-        general_location: str,
-        attribute_location: str,
-        tag_location: str,
+        general_folder: str,
+        attribute_folder: str,
+        tag_folder: str,
     ) -> None:
         """
         Summary:
@@ -32,19 +44,47 @@ class FileMetaClient:
         Parameters:
             zone (str): zone.
             file_path (str): file path.
-            general_location (str): local file location of general metadata eg. item_id, project_code.
-            attribute_location (str): local file location of attribute metadata.
-            tag_location (str): local file location of tag metadata.
+            general_folder (str): local folder of general metadata eg. item_id, project_code.
+            attribute_folder (str): local folder of attribute metadata.
+            tag_folder (str): local folder of tag metadata.
         """
 
         self.zone = zone
         self.file_path = file_path
         self.project_code, self.object_path = self.file_path.split('/', 1)
+        # only get the name regardless of the extension
+        self.file_name = basename(self.object_path).rsplit('.', 1)[0]
 
         # location of metadata files
-        self.general_location = general_location
-        self.attribute_location = attribute_location
-        self.tag_location = tag_location
+        self.general_location = join(general_folder, f'{self.file_name}-general.json')
+        self.attribute_location = join(attribute_folder, f'{self.file_name}-attribute.json')
+        self.tag_location = join(tag_folder, f'{self.file_name}-tag.json')
+        self._check_duplication(self.general_location, self.attribute_location, self.tag_location)
+
+    def _check_duplication(self, general_loc: str, attribute_loc: str, tag_loc: str) -> None:
+        """
+        Summary:
+            Check if the metadata files already exist in location system
+            and ask user whether to overwrite.
+        """
+
+        file_dict = {'general': general_loc, 'attribute': attribute_loc, 'tag': tag_loc}
+
+        # check if the manifest file exists and ask user whether to overwrite
+        try:
+            duplicate_error = customized_error_msg(ECustomizedError.LOCAL_METADATA_FILE_EXISTS)
+            overwrite_check = False
+            for metadata_name, location in file_dict.items():
+                if exists(location):
+                    overwrite_check = True
+                    duplicate_error = duplicate_error + f'\n - {metadata_name}: {location}'
+
+            if overwrite_check:
+                duplicate_error = duplicate_error + '\nDo you want to overwrite the existing file?'
+                click.confirm(duplicate_error, abort=True)
+        except Abort:
+            message_handler.SrvOutPutHandler.cancel_metadata_download()
+            exit(1)
 
     def save_file_metadata(self, file_loc: str, metadata: Union[dict, list]) -> None:
         """
@@ -52,6 +92,7 @@ class FileMetaClient:
             Save file metadata to local file.
         """
 
+        makedirs(dirname(file_loc), exist_ok=True)
         with open(file_loc, 'w') as f:
             json.dump(metadata, f, indent=4)
 

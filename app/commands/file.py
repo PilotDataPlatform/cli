@@ -482,31 +482,14 @@ def file_metadata_download(**kwargs):
 
     file_path = kwargs.get('file_path')
     zone = kwargs.get('zone')
-    general_location = kwargs.get('general')
-    attribute_location = kwargs.get('attribute')
-    tag_location = kwargs.get('tag')
+    general_folder = kwargs.get('general').rstrip('/')
+    attribute_folder = kwargs.get('attribute').rstrip('/')
+    tag_folder = kwargs.get('tag').rstrip('/')
 
     # user = UserConfig()
     # Check zone and upload-message
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
-
-    # check if the manifest file exists and ask user whether to overwrite
-    try:
-        duplicate_error = customized_error_msg(ECustomizedError.LOCAL_METADATA_FILE_EXISTS)
-        overwrite_check = False
-        for x in ['general', 'attribute', 'tag']:
-            if os.path.exists(kwargs.get(x)):
-                overwrite_check = True
-                duplicate_error = duplicate_error + f'\n - {x}: {kwargs.get(x)}'
-
-        if overwrite_check:
-            duplicate_error = duplicate_error + '\nDo you want to overwrite the existing file?'
-            click.confirm(duplicate_error, abort=True)
-    except Abort:
-        message_handler.SrvOutPutHandler.cancel_metadata_download()
-        exit(1)
-
-    file_meta_client = FileMetaClient(zone, file_path, general_location, attribute_location, tag_location)
+    file_meta_client = FileMetaClient(zone, file_path, general_folder, attribute_folder, tag_folder)
     file_meta_client.download_file_metadata()
 
     message_handler.SrvOutPutHandler.metadata_download_success()
