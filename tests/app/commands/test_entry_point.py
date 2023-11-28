@@ -60,7 +60,7 @@ def test_file_commands(user_login_true):
         'upload': file_put,
         'attribute-list': file_check_manifest,
         'attribute-export': file_export_manifest,
-        'sync': file_download,
+        'download': file_download,
         'resume': file_resume,
     }
     file_commands_object = entry_point.commands.get('file')

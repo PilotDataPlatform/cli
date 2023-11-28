@@ -4,8 +4,10 @@
 
 import json
 import os
+from sys import exit
 
 import click
+from click.exceptions import Abort
 
 import app.services.output_manager.help_page as file_help
 import app.services.output_manager.message_handler as message_handler
@@ -125,16 +127,26 @@ def file_put(**kwargs):  # noqa: C901
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
 
     toc = customized_error_msg(ECustomizedError.TOU_CONTENT).replace(' ', '...')
-    if zone.lower() == AppConfig.Env.core_zone.lower() and click.confirm(fit_terminal_width(toc), abort=True):
-        pass
+    try:
+        if zone.lower() == AppConfig.Env.core_zone.lower() and click.confirm(fit_terminal_width(toc), abort=True):
+            pass
+    except Abort:
+        message_handler.SrvOutPutHandler.cancel_upload()
+        exit(1)
 
     # check if user input at least one file/folder
     if len(paths) == 0:
         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_PATHS, True)
 
     # check if the manifest file exists
-    if os.path.exists(output_path):
-        click.confirm(customized_error_msg(ECustomizedError.MANIFEST_OF_FOLDER_FILE_EXIST) % (output_path), abort=True)
+    try:
+        if os.path.exists(output_path):
+            click.confirm(
+                customized_error_msg(ECustomizedError.MANIFEST_OF_FOLDER_FILE_EXIST) % (output_path), abort=True
+            )
+    except Abort:
+        message_handler.SrvOutPutHandler.cancel_upload()
+        exit(1)
 
     project_path = click.prompt('ProjectCode') if not project_path else project_path
     project_code, target_folder = identify_target_folder(project_path)
@@ -349,7 +361,7 @@ def file_list(paths, zone, page, page_size, detached):
         srv_list.list_files_with_pagination(paths, zone, page, page_size)
 
 
-@click.command(name='sync')
+@click.command(name='download')
 @click.argument('paths', type=click.STRING, nargs=-1)
 @click.argument('output_path', type=click.Path(exists=True), nargs=1)
 @click.option(
