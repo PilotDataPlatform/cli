@@ -20,6 +20,7 @@ from click.exceptions import Abort
 import app.services.output_manager.message_handler as message_handler
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import customized_error_msg
+from app.utils.aggregated import get_attribute_template_by_id
 from app.utils.aggregated import search_item
 
 
@@ -111,12 +112,14 @@ class FileMetaClient:
         extra_info = item_res.pop('extended', {}).get('extra')
         tags = extra_info.get('tags', [])
         attributes = extra_info.get('attributes', [])
-        # remove the uuid of attribute template
-        attribute_detail = attributes.get(next(iter(attributes)))
+        # use the uuid of attribute template to get template name
+        template_uuid = next(iter(attributes))
+        attribute_name = get_attribute_template_by_id(template_uuid).get('name')
+        attribute_detail = attributes.get(template_uuid)
 
         # save metadata into files
         self.save_file_metadata(self.general_location, item_res)
-        self.save_file_metadata(self.attribute_location, attribute_detail)
+        self.save_file_metadata(self.attribute_location, {attribute_name: attribute_detail})
         self.save_file_metadata(self.tag_location, tags)
 
-        return item_res, attribute_detail, tags
+        return item_res, {attribute_name: attribute_detail}, tags
