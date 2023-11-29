@@ -2,6 +2,8 @@
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
+import json
+
 import click
 import questionary
 
@@ -35,9 +37,11 @@ def test_file_upload_command_success_with_attribute(mocker, cli_runner):
     with runner.isolated_filesystem():
         with open('test.txt', 'w') as f:
             f.write('test.txt')
+        with open('template.json', 'w') as f:
+            json.dump({'template': {'attr1': 'value'}}, f)
 
         result = cli_runner.invoke(
-            file_put, ['--project-path', 'test', '--thread', 1, '--attribute', 'test.json', 'test.txt']
+            file_put, ['--project-path', 'test', '--thread', 1, '--attribute', 'template.json', 'test.txt']
         )
     assert result.exit_code == 0
     simple_upload_mock.assert_called_once()
