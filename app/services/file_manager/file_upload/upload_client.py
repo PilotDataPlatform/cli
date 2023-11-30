@@ -301,7 +301,7 @@ class UploadClient:
         # after all the chunks have been uploaded.
         chunk_result = []
         while True:
-            chunk = file_object.uploaded_chunks.get(str(count + 1))
+            chunk = file_object.uploaded_chunks.get(str(count + 1), {})
             chunk_etag = chunk.get('etag')
             chunk_size = chunk.get('chunk_size', self.chunk_size)
 
