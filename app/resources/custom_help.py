@@ -10,7 +10,7 @@ class HelpPage:
         'update': {
             'version': pkg_resources.get_distribution('app').version,
             '1': 'Add new feature for folder merging',
-            '2': 'Secure the config file',
+            '2': 'Secure the config file to limit access to current user',
             '3': 'Optimize logic, input and error message',
         },
         'dataset': {
