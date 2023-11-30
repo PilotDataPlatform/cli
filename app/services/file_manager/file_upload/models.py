@@ -7,7 +7,8 @@ from enum import Enum
 from os.path import basename
 from os.path import dirname
 from os.path import getsize
-from typing import List
+from typing import Any
+from typing import Dict
 from typing import Tuple
 
 from tqdm import tqdm
@@ -62,7 +63,7 @@ class FileObject:
     total_chunks: int
 
     # resumable info
-    uploaded_chunks: List[dict]
+    uploaded_chunks: Dict[str, Dict[str, Any]]
 
     # progress bar object
     progress_bar = None

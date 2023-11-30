@@ -301,14 +301,11 @@ class UploadClient:
         # after all the chunks have been uploaded.
         chunk_result = []
         while True:
-
-            if file_object.uploaded_chunks:
-                chunk_size = file_object.uploaded_chunks[0].get('chunk_size')
-            else:
-                chunk_size = self.chunk_size
+            chunk = file_object.uploaded_chunks.get(str(count + 1))
+            chunk_etag = chunk.get('etag')
+            chunk_size = chunk.get('chunk_size', self.chunk_size)
 
             chunk = f.read(chunk_size)
-            chunk_etag = file_object.uploaded_chunks.get(str(count + 1))
             local_chunk_etag = hashlib.md5(chunk).hexdigest()
             if not chunk:
                 break
