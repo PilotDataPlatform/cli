@@ -130,9 +130,6 @@ class UploadClient:
                     'object_path': file_object.object_path,
                     'item_id': file_object.item_id,
                     'resumable_id': file_object.resumable_id,
-                    'chunks_info': {
-                        '<chunk_size>': {'etag': file_object.get('ETag'), 'chunk_size': file_object.get('ChunkSize')}
-                    },
                 }
                 for file_object in unfinished_file_objects
             ],
@@ -304,7 +301,13 @@ class UploadClient:
         # after all the chunks have been uploaded.
         chunk_result = []
         while True:
-            chunk = f.read(self.chunk_size)
+
+            if file_object.uploaded_chunks:
+                chunk_size = file_object.uploaded_chunks[0].get('chunk_size')
+            else:
+                chunk_size = self.chunk_size
+
+            chunk = f.read(chunk_size)
             chunk_etag = file_object.uploaded_chunks.get(str(count + 1))
             local_chunk_etag = hashlib.md5(chunk).hexdigest()
             if not chunk:
@@ -316,11 +319,11 @@ class UploadClient:
                 if chunk_etag != local_chunk_etag:
                     SrvErrorHandler.customized_handle(ECustomizedError.INVALID_CHUNK_UPLOAD, value=count + 1)
                     raise INVALID_CHUNK_ETAG(count + 1)
-                file_object.update_progress(self.chunk_size)
+                file_object.update_progress(chunk_size)
             else:
                 res = pool.apply_async(
                     self.upload_chunk,
-                    args=(file_object, count + 1, chunk, local_chunk_etag),
+                    args=(file_object, count + 1, chunk, local_chunk_etag, chunk_size),
                 )
                 chunk_result.append(res)
 
@@ -330,7 +333,7 @@ class UploadClient:
 
         return chunk_result
 
-    def upload_chunk(self, file_object: FileObject, chunk_number: int, chunk: str, etag: str) -> None:
+    def upload_chunk(self, file_object: FileObject, chunk_number: int, chunk: str, etag: str, chunk_size: int) -> None:
         """
         Summary:
             The function is to upload a chunk directly into minio storage.
@@ -357,7 +360,7 @@ class UploadClient:
                 'key': file_object.item_id,
                 'upload_id': file_object.resumable_id,
                 'chunk_number': chunk_number,
-                'chunk_size': self.chunk_size,
+                'chunk_size': chunk_size,
             }
             headers = {
                 'Authorization': 'Bearer ' + self.user.access_token,
