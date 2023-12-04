@@ -6,6 +6,7 @@ import os
 import re
 import shutil
 from typing import Any
+from typing import Dict
 from typing import List
 
 import httpx
@@ -47,6 +48,18 @@ def search_item(project_code, zone, folder_relative_path, item_type, container_t
         SrvErrorHandler.default_handle(res.text, True)
 
     return res.json()
+
+
+@require_valid_token()
+def get_attribute_template_by_id(template_id: str) -> Dict[str, Any]:
+    token = UserConfig().access_token
+    url = AppConfig.Connections.url_portal + f'/v1/data/manifest/{template_id}'
+    headers = {'Authorization': 'Bearer ' + token}
+    res = resilient_session().get(url, headers=headers)
+    if res.status_code != 200:
+        SrvErrorHandler.default_handle(res.text, True)
+
+    return res.json().get('result', {})
 
 
 @require_valid_token()

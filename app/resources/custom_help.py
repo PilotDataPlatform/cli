@@ -54,6 +54,11 @@ class HelpPage:
                 "The processed pipeline of your processed files. [only used with '--source' option]"
             ),
             'FILE_UPLOAD_ZIP': 'Upload folder as a compressed zip file.',
+            'FILE_META': 'Download metadata file of a given file in target zone.',
+            'FILE_META_Z': 'Target Zone (i.e., core/greenroom)',
+            'FILE_META_G': 'The location of general metadata file',
+            'FILE_META_A': 'The location of attribute metadata file',
+            'FILE_META_T': 'The location of tag metadata file',
         },
         'config': {
             'SET_CONFIG': 'Chose config file and set for cli.',

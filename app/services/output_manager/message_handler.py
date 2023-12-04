@@ -196,6 +196,14 @@ class SrvOutPutHandler(metaclass=MetaService):
         logger.warning('Upload cancelled.')
 
     @staticmethod
+    def cancel_metadata_download():
+        logger.warning('Metadata download cancelled.')
+
+    @staticmethod
+    def metadata_download_success():
+        logger.succeed('Metadata download complete.')
+
+    @staticmethod
     def start_requests():
         """e.g. start requests."""
         logger.info('Starting request...')
