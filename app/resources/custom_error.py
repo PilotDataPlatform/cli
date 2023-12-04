@@ -93,6 +93,8 @@ class Error:
         'INVALID_FOLDER': 'Provided folder does not exist',
         'INVALID_NAMEFOLDER': 'User name folder is missing or provided user name folder does not exist',
         'INVALID_DOWNLOAD': 'Invalid download, file/folder not exist or folder is empty: %s',
+        # file metadata related error
+        'LOCAL_METADATA_FILE_EXISTS': 'Following metadata file already exists in the local directory: ',
         'VERSION_NOT_EXIST': 'Version not available: %s',
         'DATASET_NOT_EXIST': 'Dataset not found in your dataset list',
         'DATASET_PERMISSION': 'You do not have permission to access this dataset',

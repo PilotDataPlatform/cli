@@ -16,6 +16,7 @@ from app.configs.user_config import UserConfig
 from app.services.file_manager.file_download.download_client import SrvFileDownload
 from app.services.file_manager.file_list import SrvFileList
 from app.services.file_manager.file_manifests import SrvFileManifests
+from app.services.file_manager.file_metadata.file_metadata_client import FileMetaClient
 from app.services.file_manager.file_upload.file_upload import assemble_path
 from app.services.file_manager.file_upload.file_upload import resume_upload
 from app.services.file_manager.file_upload.file_upload import simple_upload
@@ -435,3 +436,60 @@ def file_download(**kwargs):
         for item in item_res:
             srv_download = SrvFileDownload(zone, interactive)
             srv_download.simple_download_file(output_path, [item])
+
+
+@click.command(name='metadata')
+@click.argument('file_path', type=click.STRING)
+@click.option(
+    '-z',
+    '--zone',
+    default=AppConfig.Env.green_zone,
+    required=True,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_META_Z),
+    show_default=False,
+)
+@click.option(
+    '-g',
+    '--general',
+    default=None,
+    required=True,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_META_G),
+    show_default=True,
+)
+@click.option(
+    '-a',
+    '--attribute',
+    default=None,
+    required=True,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_META_A),
+    show_default=True,
+)
+@click.option(
+    '-t',
+    '--tag',
+    default=None,
+    required=True,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_META_T),
+    show_default=True,
+)
+@require_valid_token()
+@doc(file_help.file_help_page(file_help.FileHELP.FILE_META))
+def file_metadata_download(**kwargs):
+    '''
+    Summary:
+        Download metadata of a file including general, attribute and tag.
+    '''
+
+    file_path = kwargs.get('file_path')
+    zone = kwargs.get('zone')
+    general_folder = kwargs.get('general').rstrip('/')
+    attribute_folder = kwargs.get('attribute').rstrip('/')
+    tag_folder = kwargs.get('tag').rstrip('/')
+
+    # user = UserConfig()
+    # Check zone and upload-message
+    zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
+    file_meta_client = FileMetaClient(zone, file_path, general_folder, attribute_folder, tag_folder)
+    file_meta_client.download_file_metadata()
+
+    message_handler.SrvOutPutHandler.metadata_download_success()
