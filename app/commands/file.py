@@ -15,6 +15,7 @@ from app.configs.app_config import AppConfig
 from app.services.file_manager.file_download.download_client import SrvFileDownload
 from app.services.file_manager.file_list import SrvFileList
 from app.services.file_manager.file_manifests import SrvFileManifests
+from app.services.file_manager.file_metadata.file_metadata_client import FileMetaClient
 from app.services.file_manager.file_upload.file_upload import assemble_path
 from app.services.file_manager.file_upload.file_upload import resume_upload
 from app.services.file_manager.file_upload.file_upload import simple_upload
@@ -446,7 +447,7 @@ def file_download(**kwargs):
 
 
 @click.command(name='metadata')
-@click.argument('file_path', type=click.STRING, nargs=-1)
+@click.argument('file_path', type=click.STRING)
 @click.option(
     '-z',
     '--zone',
@@ -479,7 +480,7 @@ def file_download(**kwargs):
     help=file_help.file_help_page(file_help.FileHELP.FILE_META_T),
     show_default=True,
 )
-# @require_valid_token()
+@require_valid_token()
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_META))
 def file_metadata_download(**kwargs):
     '''
@@ -487,25 +488,15 @@ def file_metadata_download(**kwargs):
         Download metadata of a file including general, attribute and tag.
     '''
 
-    # file_path = kwargs.get('file_path')
+    file_path = kwargs.get('file_path')
     zone = kwargs.get('zone')
-    general_location = kwargs.get('general')
-    attribute_location = kwargs.get('attribute')
-    tag_location = kwargs.get('tag')
+    general_folder = kwargs.get('general').rstrip('/')
+    attribute_folder = kwargs.get('attribute').rstrip('/')
+    tag_folder = kwargs.get('tag').rstrip('/')
 
-    # user = UserConfig()
     # Check zone and upload-message
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
+    file_meta_client = FileMetaClient(zone, file_path, general_folder, attribute_folder, tag_folder)
+    file_meta_client.download_file_metadata()
 
-    # check if the manifest file exists
-    try:
-        _ = {os.path.exists(x) for x in [general_location, attribute_location, tag_location]}
-        # print(files_exist)
-
-        # if os.path.exists(output_path):
-        #     click.confirm(
-        #         customized_error_msg(ECustomizedError.MANIFEST_OF_FOLDER_FILE_EXIST) % (output_path), abort=True
-        #     )
-    except Abort:
-        message_handler.SrvOutPutHandler.cancel_upload()
-        exit(1)
+    message_handler.SrvOutPutHandler.metadata_download_success()
