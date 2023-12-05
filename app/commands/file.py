@@ -181,6 +181,8 @@ def file_put(**kwargs):  # noqa: C901
             zipping,
         )
 
+        raise Exception('Not Implemented')
+
         upload_event = {
             'project_code': project_code,
             'target_folder': target_folder,
