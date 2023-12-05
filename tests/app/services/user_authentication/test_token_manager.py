@@ -38,3 +38,15 @@ class TestSrvTokenManager:
 
         assert manager.config.access_token == access_token
         assert manager.config.refresh_token == ''
+
+    def test_refresh_failed_with_invalid_token(self, requests_mock, settings):
+        manager = SrvTokenManager()
+        requests_mock.get(
+            f'{settings.url_keycloak_realm}/api-key/{manager.config.api_key}',
+            status_code=401,
+        )
+
+        manager.refresh_api_key()
+
+        assert manager.config.access_token == ''
+        assert manager.config.refresh_token == ''
