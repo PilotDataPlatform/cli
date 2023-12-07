@@ -1,8 +1,8 @@
 # Copyright (C) 2022-2023 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
-
 import click
+import pytest
 import questionary
 
 from app.commands.file import file_list
@@ -87,19 +87,30 @@ def test_resumable_upload_command_failed_with_file_not_exists(mocker, cli_runner
     assert result.output == customized_error_msg(ECustomizedError.INVALID_RESUMABLE) + '\n'
 
 
-def test_file_list_with_pagination(requests_mock, mocker, cli_runner):
+def test_file_list_with_pagination_with_folder_success(requests_mock, mocker, cli_runner):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
         return_value=decoded_token(),
     )
 
-    mocker.patch('app.services.file_manager.file_list.search_item', return_value=None)
+    mocker.patch(
+        'app.services.file_manager.file_list.search_item',
+        return_value={
+            'result': {
+                'type': 'folder',
+                'id': 'id',
+            }
+        },
+    )
     requests_mock.get(
         'http://bff_cli' + '/v1/testproject/files/query',
         json={
             'code': 200,
             'error_msg': '',
-            'result': [{'type': 'file', 'name': 'file1'}, {'type': 'file', 'name': 'file2'}],
+            'result': [
+                {'type': 'file', 'name': 'file1'},
+                {'type': 'file', 'name': 'file2'},
+            ],
         },
     )
     mocker.patch.object(questionary, 'select')
@@ -109,13 +120,56 @@ def test_file_list_with_pagination(requests_mock, mocker, cli_runner):
     assert outputs[0] == 'file1  file2   '
 
 
+@pytest.mark.parametrize('parent_folder_type', ['name_folder', 'project_folder'])
+def test_file_list_with_pagination_with_name_project_folder(requests_mock, mocker, cli_runner, parent_folder_type):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+
+    mocker.patch(
+        'app.services.file_manager.file_list.search_item',
+        return_value={
+            'result': {
+                'type': parent_folder_type,
+                'id': 'id',
+            }
+        },
+    )
+    requests_mock.get(
+        'http://bff_cli' + '/v1/testproject/files/query',
+        json={
+            'code': 200,
+            'error_msg': '',
+            'result': [
+                {'type': 'folder', 'name': 'folder1'},
+                {'type': 'name_folder', 'name': 'name_folder1'},
+                {'type': 'project_folder', 'name': 'project_folder1'},
+            ],
+        },
+    )
+    mocker.patch.object(questionary, 'select')
+    questionary.select.return_value.ask.return_value = 'exit'
+    result = cli_runner.invoke(file_list, ['testproject/admin', '-z', 'greenroom'])
+    outputs = result.output.split('\n')
+    assert outputs[0] == 'folder1  name_folder1  project_folder1   '
+
+
 def test_empty_file_list_with_pagination(requests_mock, mocker, cli_runner):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
         return_value=decoded_token(),
     )
 
-    mocker.patch('app.services.file_manager.file_list.search_item', return_value=None)
+    mocker.patch(
+        'app.services.file_manager.file_list.search_item',
+        return_value={
+            'result': {
+                'type': 'folder',
+                'id': 'id',
+            }
+        },
+    )
     requests_mock.get(
         'http://bff_cli' + '/v1/testproject/files/query',
         json={'code': 200, 'error_msg': '', 'result': []},
