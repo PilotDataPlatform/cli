@@ -173,15 +173,13 @@ def file_put(**kwargs):  # noqa: C901
     # and process them one by one
     for f in paths:
         # so this function will always return the furthest folder node as current_folder_node+parent_folder_id
-        current_folder_node, parent_folder, create_folder_flag, result_file = assemble_path(
+        current_folder_node, parent_folder, create_folder_flag, target_folder = assemble_path(
             f,
             target_folder,
             project_code,
             zone,
             zipping,
         )
-
-        raise Exception('Not Implemented')
 
         upload_event = {
             'project_code': project_code,
