@@ -17,10 +17,7 @@ class Settings(BaseSettings):
     project: str = 'pilot'
     app_name: str = 'pilotcli'
 
-    @computed_field
-    def config_path(self) -> str:
-        return str(Path.home() / f'.{self.app_name}')
-
+    config_path: str = str(Path.home() / f'.{app_name}')
     config_file: str = 'config.ini'
 
     keycloak_device_client_id: str = 'cli'
