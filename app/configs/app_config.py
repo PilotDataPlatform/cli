@@ -45,3 +45,4 @@ class AppConfig:
         url_keycloak_token = f'{ConfigClass.url_keycloak}/token'
         url_bff = ConfigClass.url_bff
         url_base = ConfigClass.base_url
+        url_portal = ConfigClass.url_portal

@@ -61,7 +61,7 @@ class UploadClient:
         self.user = UserConfig()
         self.operator = self.user.username
         self.upload_message = upload_message
-        self.chunk_size = AppConfig.Env.chunk_size  # remove
+        self.chunk_size = AppConfig.Env.chunk_size
         self.base_url = {
             AppConfig.Env.green_zone: AppConfig.Connections.url_upload_greenroom,
             AppConfig.Env.core_zone: AppConfig.Connections.url_upload_core,
@@ -111,7 +111,7 @@ class UploadClient:
         Parameter:
             - unfinished_file_objects(List[FileObject]): the unfinished items that need to be resumed.
         return:
-            - list of FileObject: the infomation retrieved from backend.
+            - list of FileObject: the information retrieved from backend.
                 - resumable_id(str): the unique identifier for multipart upload.
                 - object_path(str): the path in the object storage.
                 - local_path(str): the local path of file.
@@ -121,6 +121,7 @@ class UploadClient:
         headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
         url = AppConfig.Connections.url_bff + f'/v1/project/{self.project_code}/files/resumable'
         rid_file_object_map = {x.resumable_id: x for x in unfinished_file_objects}
+
         payload = {
             'bucket': self.bucket,
             'zone': self.zone,
@@ -300,8 +301,11 @@ class UploadClient:
         # after all the chunks have been uploaded.
         chunk_result = []
         while True:
-            chunk = f.read(self.chunk_size)
-            chunk_etag = file_object.uploaded_chunks.get(str(count + 1))
+            chunk = file_object.uploaded_chunks.get(str(count + 1), {})
+            chunk_etag = chunk.get('etag')
+            chunk_size = chunk.get('chunk_size', self.chunk_size)
+
+            chunk = f.read(chunk_size)
             local_chunk_etag = hashlib.md5(chunk).hexdigest()
             if not chunk:
                 break
@@ -312,11 +316,11 @@ class UploadClient:
                 if chunk_etag != local_chunk_etag:
                     SrvErrorHandler.customized_handle(ECustomizedError.INVALID_CHUNK_UPLOAD, value=count + 1)
                     raise INVALID_CHUNK_ETAG(count + 1)
-                file_object.update_progress(self.chunk_size)
+                file_object.update_progress(chunk_size)
             else:
                 res = pool.apply_async(
                     self.upload_chunk,
-                    args=(file_object, count + 1, chunk, local_chunk_etag),
+                    args=(file_object, count + 1, chunk, local_chunk_etag, chunk_size),
                 )
                 chunk_result.append(res)
 
@@ -326,7 +330,7 @@ class UploadClient:
 
         return chunk_result
 
-    def upload_chunk(self, file_object: FileObject, chunk_number: int, chunk: str, etag: str) -> None:
+    def upload_chunk(self, file_object: FileObject, chunk_number: int, chunk: str, etag: str, chunk_size: int) -> None:
         """
         Summary:
             The function is to upload a chunk directly into minio storage.
@@ -353,6 +357,7 @@ class UploadClient:
                 'key': file_object.item_id,
                 'upload_id': file_object.resumable_id,
                 'chunk_number': chunk_number,
+                'chunk_size': chunk_size,
             }
             headers = {
                 'Authorization': 'Bearer ' + self.user.access_token,

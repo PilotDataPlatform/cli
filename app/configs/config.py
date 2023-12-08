@@ -43,6 +43,10 @@ class Settings(BaseSettings):
         return 'http://localhost:5080'
 
     @computed_field
+    def url_portal(self) -> str:
+        return f'{self.base_url}/portal'
+
+    @computed_field
     def url_keycloak_realm(self) -> str:
         return f'https://iam.{self.domain}/realms/pilot'
 

@@ -6,6 +6,7 @@ import os
 import re
 import shutil
 from typing import Any
+from typing import Dict
 from typing import List
 
 import httpx
@@ -42,10 +43,24 @@ def search_item(project_code, zone, folder_relative_path, container_type='projec
         SrvErrorHandler.customized_handle(ECustomizedError.PERMISSION_DENIED, project_code)
     elif res.status_code == 404:
         pass
+    elif res.status_code == 401:
+        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TOKEN, if_exit=True)
     elif res.status_code != 200:
         SrvErrorHandler.default_handle(res.text, True)
 
     return res.json()
+
+
+@require_valid_token()
+def get_attribute_template_by_id(template_id: str) -> Dict[str, Any]:
+    token = UserConfig().access_token
+    url = AppConfig.Connections.url_portal + f'/v1/data/manifest/{template_id}'
+    headers = {'Authorization': 'Bearer ' + token}
+    res = resilient_session().get(url, headers=headers)
+    if res.status_code != 200:
+        SrvErrorHandler.default_handle(res.text, True)
+
+    return res.json().get('result', {})
 
 
 @require_valid_token()
@@ -59,7 +74,7 @@ def get_file_info_by_geid(geid: list):
 
 
 def fit_terminal_width(string_to_format):
-    string_to_format = string_to_format.split('...')
+    string_to_format = string_to_format.rsplit('...')
     current_len = 0
     sentence = ''
     terminal_width = shutil.get_terminal_size().columns

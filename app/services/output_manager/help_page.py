@@ -73,6 +73,12 @@ class FileHELP(enum.Enum):
     FILE_UPLOAD_PIPELINE = 'FILE_UPLOAD_PIPELINE'
     FILE_UPLOAD_ZIP = 'FILE_UPLOAD_ZIP'
 
+    FILE_META = 'FILE_META'
+    FILE_META_Z = 'FILE_META_Z'
+    FILE_META_G = 'FILE_META_G'
+    FILE_META_A = 'FILE_META_A'
+    FILE_META_T = 'FILE_META_T'
+
 
 def file_help_page(FileHELP: FileHELP):
     helps = help_msg.get('file', 'default file help')

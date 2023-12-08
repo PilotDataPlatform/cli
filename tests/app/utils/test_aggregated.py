@@ -99,4 +99,4 @@ def test_search_file_error_handling_with_401(requests_mock, mocker, capsys):
     with pytest.raises(SystemExit):
         search_item(test_project_code, 'zone', 'folder_relative_path', 'project')
     out, _ = capsys.readouterr()
-    assert out.rstrip() == 'Authentication failed.'
+    assert out.rstrip() == 'Your login session has expired. Please try again or log in again.'

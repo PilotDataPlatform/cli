@@ -20,6 +20,7 @@ from .file import file_check_manifest
 from .file import file_download
 from .file import file_export_manifest
 from .file import file_list
+from .file import file_metadata_download
 from .file import file_put
 from .file import file_resume
 
@@ -72,6 +73,7 @@ file_group.add_command(file_export_manifest)
 file_group.add_command(file_list)
 file_group.add_command(file_download)
 file_group.add_command(file_resume)
+file_group.add_command(file_metadata_download)
 project_group.add_command(project_list_all)
 user_group.add_command(login)
 user_group.add_command(logout)
