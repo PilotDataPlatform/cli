@@ -5,6 +5,7 @@ import click
 import pytest
 import questionary
 
+from app.commands.file import file_download
 from app.commands.file import file_list
 from app.commands.file import file_put
 from app.commands.file import file_resume
@@ -179,3 +180,46 @@ def test_empty_file_list_with_pagination(requests_mock, mocker, cli_runner):
     result = cli_runner.invoke(file_list, ['testproject/admin', '-z', 'greenroom'])
     outputs = result.output.split('\n')
     assert outputs[0] == ' '
+
+
+@pytest.mark.parametrize('parent_folder_type', ['name_folder', 'project_folder'])
+def test_file_download_success(requests_mock, mocker, cli_runner, parent_folder_type):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+
+    search_mock = mocker.patch(
+        'app.commands.file.search_item',
+        side_effect=[
+            {
+                'code': 200,
+                'result': {
+                    'type': parent_folder_type,
+                    'name': 'test',
+                    'id': 'id',
+                },
+            },
+            {
+                'code': 200,
+                'result': {
+                    'type': 'file',
+                    'id': 'id',
+                },
+            },
+        ],
+    )
+
+    download_mock = mocker.patch(
+        'app.services.file_manager.file_download.download_client.SrvFileDownload.simple_download_file',
+        return_value=None,
+    )
+
+    project_code, target_folder = 'testproject', 'test/test.txt'
+    result = cli_runner.invoke(file_download, [f'{project_code}/{target_folder}', './'])
+    outputs = result.output.split('\n')
+    assert outputs[0] == ''
+
+    except_target_folder = 'test/test.txt' if parent_folder_type == 'name_folder' else 'shared/test/test.txt'
+    search_mock.assert_called_with(project_code, 'greenroom', except_target_folder)
+    download_mock.assert_called_once()
