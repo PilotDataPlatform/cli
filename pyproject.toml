@@ -19,7 +19,7 @@ pre-commit = "^2.19.0"
 httpx = "^0.23.0"
 qrcode = "^7.4.2"
 pytest-click = "^1.1.0"
-pyinstaller = "^5.13.0"
+pyinstaller = "^5.13.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "6.2.5"
