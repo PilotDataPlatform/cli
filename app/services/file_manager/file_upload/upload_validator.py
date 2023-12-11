@@ -32,7 +32,7 @@ class UploadEventValidator:
                 ECustomizedError.INVALID_UPLOAD_REQUEST, True, value='upload-message is required'
             )
         if self.source:
-            source_file_info = search_item(self.project_code, AppConfig.Env.core_zone.lower(), self.source, 'file')
+            source_file_info = search_item(self.project_code, AppConfig.Env.core_zone.lower(), self.source)
             source_file_info = source_file_info['result']
             if not source_file_info:
                 SrvErrorHandler.customized_handle(ECustomizedError.INVALID_SOURCE_FILE, True, value=self.source)

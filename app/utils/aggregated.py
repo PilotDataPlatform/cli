@@ -28,14 +28,13 @@ def resilient_session():
 
 
 @require_valid_token()
-def search_item(project_code, zone, folder_relative_path, item_type, container_type='project'):
+def search_item(project_code, zone, folder_relative_path, container_type='project'):
     token = UserConfig().access_token
     url = AppConfig.Connections.url_bff + '/v1/project/{}/search'.format(project_code)
     params = {
         'zone': zone,
         'project_code': project_code,
         'path': folder_relative_path,
-        'item_type': item_type,
         'container_type': container_type,
     }
     headers = {'Authorization': 'Bearer ' + token}

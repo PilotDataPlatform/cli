@@ -195,7 +195,7 @@ def file_put(**kwargs):  # noqa: C901
     # and process them one by one
     for f in files:
         # so this function will always return the furthest folder node as current_folder_node+parent_folder_id
-        current_folder_node, parent_folder, create_folder_flag, result_file = assemble_path(
+        current_folder_node, parent_folder, create_folder_flag, target_folder = assemble_path(
             f,
             target_folder,
             project_code,
@@ -418,17 +418,18 @@ def file_download(**kwargs):
     else:
         item_res = []
         for path in paths:
-            project_code = path.strip('/').split('/')[0]
+            project_code, root_folder = path.strip('/').split('/')[:2]
             target_path = '/'.join(path.split('/')[1::])
-            item = search_item(project_code, zone, target_path, '')
+            # search the root to check for name folder or project folder
+            root_item = search_item(project_code, zone, root_folder).get('result', {})
+            target_path = 'shared/' + target_path if root_item.get('type') == 'project_folder' else target_path
+
+            # search the target item and download to local
+            item = search_item(project_code, zone, target_path)
             if item.get('code') == 200 and item.get('result'):
                 item_status = 'success'
                 item_result = item.get('result')
                 item_geid = item.get('result').get('id')
-            elif item.get('code') == 403 and item.get('error_msg'):
-                item_status = item.get('error_msg')
-                item_result = {}
-                item_geid = path
             else:
                 item_status = 'File Not Exist'
                 item_result = {}
