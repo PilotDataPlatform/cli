@@ -66,29 +66,30 @@ def assemble_path(
          - current_file_path: the format file path on platform
          - parent_folder: the item information of longest parent folder
          - create_folder_flag: the flag to indicate if need to create new folder
-         - result_file: the result file if zipping
+         - target_folder: result object path on platform
 
     '''
 
     current_file_path = target_folder + '/' + f.rstrip('/').split('/')[-1]
-    result_file = current_file_path
-    if zipping:
-        result_file = result_file + '.zip'
-
     # set name folder as first parent folder
     name_folder = target_folder.split('/')[0]
-    parent_folder = search_item(project_code, zone, name_folder, 'name_folder')
-    parent_folder = parent_folder.get('result')
+    parent_folder = search_item(project_code, zone, name_folder).get('result', {})
 
     # if f input is a file then current_folder_node is target_folder
     # otherwise it is target_folder + f input name
     current_folder_node = target_folder if os.path.isfile(f) else current_file_path
     create_folder_flag = False
+    # always add `shared/` as prefix to folder/file if
+    # they directly under the project root folder
+    if parent_folder.get('type') == 'project_folder':
+        current_folder_node = 'shared/' + current_folder_node
+        target_folder = 'shared/' + target_folder
+
     if len(current_file_path.split('/')) > 2:
         sub_path = target_folder.split('/')
         for index in range(len(sub_path) - 1):
             folder_path = '/'.join(sub_path[0 : 2 + index])
-            res = search_item(project_code, zone, folder_path, 'folder')
+            res = search_item(project_code, zone, folder_path)
 
             # find the longest existing folder as parent folder
             # if user input a path that need to create some folders
@@ -111,7 +112,7 @@ def assemble_path(
     if not parent_folder:
         SrvErrorHandler.customized_handle(ECustomizedError.PERMISSION_DENIED, True)
 
-    return current_folder_node, parent_folder, create_folder_flag, result_file
+    return current_folder_node, parent_folder, create_folder_flag, target_folder
 
 
 def simple_upload(  # noqa: C901
