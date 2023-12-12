@@ -77,7 +77,7 @@ def cli():
 @click.option(
     '-m',
     '--upload-message',
-    default='',
+    default=None,
     required=False,
     help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_M),
     show_default=True,
@@ -103,7 +103,7 @@ def cli():
     '-td',
     default=1,
     required=False,
-    help='The number of thread for upload a file',
+    help='The number of threads for uploading a file.',
     show_default=True,
 )
 @click.option(
@@ -111,7 +111,7 @@ def cli():
     '-o',
     default='./manifest.json',
     required=False,
-    help='The output path for the manifest file of resumable upload',
+    help='The output path for the manifest file of resumable upload.',
     show_default=True,
 )
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD))
