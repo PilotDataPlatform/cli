@@ -16,6 +16,7 @@ from app.services.file_manager.file_download.download_client import SrvFileDownl
 from app.services.file_manager.file_list import SrvFileList
 from app.services.file_manager.file_manifests import SrvFileManifests
 from app.services.file_manager.file_metadata.file_metadata_client import FileMetaClient
+from app.services.file_manager.file_move.file_move_client import FileMoveClient
 from app.services.file_manager.file_upload.file_upload import assemble_path
 from app.services.file_manager.file_upload.file_upload import resume_upload
 from app.services.file_manager.file_upload.file_upload import simple_upload
@@ -501,3 +502,28 @@ def file_metadata_download(**kwargs):
     file_meta_client.download_file_metadata()
 
     message_handler.SrvOutPutHandler.metadata_download_success()
+
+
+@click.command(name='move')
+@click.argument('project_code', type=click.STRING)
+@click.argument('src_item_path', type=click.STRING)
+@click.argument('dest_item_path', type=click.STRING)
+@click.option(
+    '-z',
+    '--zone',
+    default=AppConfig.Env.green_zone,
+    required=True,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_MOVE_Z),
+    show_default=False,
+)
+@require_valid_token()
+@doc(file_help.file_help_page(file_help.FileHELP.FILE_MOVE))
+def file_move(**kwargs):
+    project_code = kwargs.get('project_code')
+    src_item_path = kwargs.get('src_item_path')
+    dest_item_path = kwargs.get('dest_item_path')
+    zone = kwargs.get('zone')
+
+    zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
+    file_meta_client = FileMoveClient(zone, project_code, src_item_path, dest_item_path)
+    file_meta_client.move_file()

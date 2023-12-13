@@ -36,7 +36,8 @@ class Settings(BaseSettings):
 
     @computed_field
     def url_bff(self) -> str:
-        return f'{self.base_url}/cli'
+        # return f'{self.base_url}/cli'
+        return 'http://localhost:5080'
 
     @computed_field
     def url_portal(self) -> str:
