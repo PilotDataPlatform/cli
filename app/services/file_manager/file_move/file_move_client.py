@@ -2,6 +2,7 @@
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
+import app.services.output_manager.message_handler as message_handler
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.utils.aggregated import resilient_session
@@ -55,5 +56,15 @@ class FileMoveClient:
 
             response = resilient_session().patch(url, json=payload, headers=headers, timeout=None)
             response.raise_for_status()
-        except Exception as e:
-            raise e
+        except Exception:
+            if response.status_code == 422:
+                error_message = ''
+                for x in response.json().get('detail'):
+                    error_message += '\n' + x.get('msg')
+            else:
+                error_message = response.json().get('error_msg')
+            message_handler.SrvOutPutHandler.move_action_failed(self.src_item_path, self.dest_item_path, error_message)
+            exit(1)
+
+        message_handler.SrvOutPutHandler.move_action_success(self.src_item_path, self.dest_item_path)
+        return response.json()
