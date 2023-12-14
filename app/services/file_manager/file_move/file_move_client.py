@@ -66,5 +66,4 @@ class FileMoveClient:
             message_handler.SrvOutPutHandler.move_action_failed(self.src_item_path, self.dest_item_path, error_message)
             exit(1)
 
-        message_handler.SrvOutPutHandler.move_action_success(self.src_item_path, self.dest_item_path)
-        return response.json()
+        return response.json().get('result')

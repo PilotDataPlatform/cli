@@ -12,6 +12,7 @@ from app.commands.file import file_download
 from app.commands.file import file_export_manifest
 from app.commands.file import file_list
 from app.commands.file import file_metadata_download
+from app.commands.file import file_move
 from app.commands.file import file_put
 from app.commands.file import file_resume
 from app.commands.project import project_list_all
@@ -64,6 +65,7 @@ def test_file_commands(user_login_true):
         'download': file_download,
         'resume': file_resume,
         'metadata': file_metadata_download,
+        'move': file_move,
     }
     file_commands_object = entry_point.commands.get('file')
     file_commands_object.callback()

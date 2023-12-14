@@ -527,3 +527,5 @@ def file_move(**kwargs):
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
     file_meta_client = FileMoveClient(zone, project_code, src_item_path, dest_item_path)
     file_meta_client.move_file()
+
+    message_handler.SrvOutPutHandler.move_action_success(src_item_path, dest_item_path)
