@@ -56,6 +56,8 @@ class FileMoveClient:
 
             response = resilient_session().patch(url, json=payload, headers=headers, timeout=None)
             response.raise_for_status()
+
+            return response.json().get('result')
         except Exception:
             if response.status_code == 422:
                 error_message = ''
@@ -65,5 +67,3 @@ class FileMoveClient:
                 error_message = response.json().get('error_msg')
             message_handler.SrvOutPutHandler.move_action_failed(self.src_item_path, self.dest_item_path, error_message)
             exit(1)
-
-        return response.json().get('result')
