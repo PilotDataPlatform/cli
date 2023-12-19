@@ -26,7 +26,7 @@ Command line tool that allows the user to execute data operations on the platfor
     1. Create a `.env` file in the root directory of the project.
     2. Sdd following two environmental varibles to the `.env` file.
         - `api_url`: the url that the api server is hosted on. default is `https://api.pilot.indocresearch.com/pilot`
-        - `keycloak_url`: thr url that the keycloak server is hosted on. default is `https://iam.pilot.indocresearch.com/realms/pilot/protocol/openid-connect`
+        - `keycloak_realm_url`: thr url that the keycloak server is hosted on. default is `https://iam.pilot.indocresearch.com/realms/pilot`
 
 #### Run from bundled application
 1. Navigate to the appropriate directory for your system.
