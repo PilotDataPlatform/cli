@@ -41,8 +41,8 @@ class AppConfig:
         url_dataset_v2download = ConfigClass.url_dataset_v2download
         url_dataset = ConfigClass.url_dataset
         url_validation = ConfigClass.url_validation
-        url_keycloak = ConfigClass.url_keycloak
-        url_keycloak_token = f'{ConfigClass.url_keycloak}/token'
+        url_keycloak = ConfigClass.keycloak_url
+        url_keycloak_token = f'{ConfigClass.keycloak_url}/token'
         url_bff = ConfigClass.url_bff
-        url_base = ConfigClass.base_url
+        url_base = ConfigClass.api_url
         url_portal = ConfigClass.url_portal
