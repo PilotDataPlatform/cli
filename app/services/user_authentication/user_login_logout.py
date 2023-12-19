@@ -23,7 +23,7 @@ from app.services.output_manager.message_handler import SrvOutPutHandler
 def exchange_api_key(api_key: str) -> Union[str, None]:
     """Exchange API Key with JWT token using Keycloak."""
 
-    url = f'{ConfigClass.url_keycloak_realm}/api-key/{api_key}'
+    url = f'{ConfigClass.keycloak_url}/api-key/{api_key}'
     try:
         response = requests.get(url, timeout=5)
         response.raise_for_status()
