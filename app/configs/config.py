@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     url_harbor: str = ''
 
     api_url: str = 'https://api.pilot.indocresearch.com/pilot'
-    keycloak_url: str = 'https://iam.pilot.indocresearch.com/realms/pilot/protocol/openid-connect'
+    keycloak_realm_url: str = 'https://iam.pilot.indocresearch.com/realms/pilot'
 
     @computed_field
     def url_bff(self) -> str:
@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     @computed_field
     def url_portal(self) -> str:
         return f'{self.api_url}/portal'
+
+    @computed_field
+    def url_keycloak(self) -> str:
+        return f'{self.keycloak_realm_url}/protocol/openid-connect'
 
     @computed_field
     def url_authn(self) -> str:
