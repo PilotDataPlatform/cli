@@ -33,7 +33,7 @@ class TestSrvTokenManager:
         manager = SrvTokenManager()
         access_token = jwt.encode({}, key='').decode()
         requests_mock.get(
-            f'{settings.url_keycloak_realm}/api-key/{manager.config.api_key}',
+            f'{AppConfig.Connections.url_keycloak_realm}/api-key/{manager.config.api_key}',
             json={'access_token': access_token},
         )
 

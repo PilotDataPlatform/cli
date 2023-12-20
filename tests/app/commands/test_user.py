@@ -5,6 +5,7 @@
 import jwt
 
 from app.commands.user import login
+from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 
 
@@ -14,7 +15,9 @@ def test_login_command_with_api_key_option_calls_keycloak_and_stores_response_in
     username = fake.user_name()
     api_key = fake.pystr(20)
     access_token = jwt.encode({'preferred_username': username}, key='').decode()
-    requests_mock.get(f'{settings.url_keycloak_realm}/api-key/{api_key}', json={'access_token': access_token})
+    requests_mock.get(
+        f'{AppConfig.Connections.url_keycloak_realm}/api-key/{api_key}', json={'access_token': access_token}
+    )
 
     result = cli_runner.invoke(login, ['--api-key', api_key])
 
