@@ -13,6 +13,7 @@ import questionary
 from app.commands.file import file_download
 from app.commands.file import file_list
 from app.commands.file import file_metadata_download
+from app.commands.file import file_move
 from app.commands.file import file_put
 from app.commands.file import file_resume
 from app.services.file_manager.file_metadata.file_metadata_client import FileMetaClient
@@ -332,3 +333,20 @@ def test_download_file_metadata_file_duplicate_abort(mocker, cli_runner):
     assert outputs == excepted_output
 
     assert donwload_metadata_mock.call_count == 0
+
+
+def test_file_move_success(mocker, cli_runner):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+
+    file_move_mock = mocker.patch(
+        'app.services.file_manager.file_move.file_move_client.FileMoveClient.move_file',
+        return_value=None,
+    )
+
+    result = cli_runner.invoke(file_move, ['test_project', 'src_item_path', 'dest_item_path'])
+    outputs = result.output.split('\n')
+    assert outputs[0] == 'Successfully moved src_item_path to dest_item_path'
+    file_move_mock.assert_called_once()

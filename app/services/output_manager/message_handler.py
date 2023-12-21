@@ -204,6 +204,16 @@ class SrvOutPutHandler(metaclass=MetaService):
         logger.succeed('Metadata download complete.')
 
     @staticmethod
+    def move_action_success(src, dest):
+        """e.g. Move action succeed."""
+        return logger.succeed(f'Successfully moved {src} to {dest}')
+
+    @staticmethod
+    def move_action_failed(src, dest, error):
+        """e.g. Move action failed."""
+        return logger.error(f'Failed to move {src} to {dest}: {error}')
+
+    @staticmethod
     def start_requests():
         """e.g. start requests."""
         logger.info('Starting request...')

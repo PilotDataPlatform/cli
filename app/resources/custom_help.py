@@ -60,6 +60,8 @@ class HelpPage:
             'FILE_META_G': 'The location of general metadata file',
             'FILE_META_A': 'The location of attribute metadata file',
             'FILE_META_T': 'The location of tag metadata file',
+            'FILE_MOVE': 'Move/Rename files/folders to a given Project path.',
+            'FILE_MOVE_Z': 'Target Zone (i.e., core/greenroom).',
         },
         'config': {
             'SET_CONFIG': 'Chose config file and set for cli.',

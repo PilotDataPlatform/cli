@@ -79,6 +79,9 @@ class FileHELP(enum.Enum):
     FILE_META_A = 'FILE_META_A'
     FILE_META_T = 'FILE_META_T'
 
+    FILE_MOVE = 'FILE_MOVE'
+    FILE_MOVE_Z = 'FILE_MOVE_Z'
+
 
 def file_help_page(FileHELP: FileHELP):
     helps = help_msg.get('file', 'default file help')
