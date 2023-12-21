@@ -28,59 +28,52 @@ class Settings(BaseSettings):
     harbor_client_secret: str = ''
     url_harbor: str = ''
 
-    domain: str = 'pilot.indocresearch.com'
-
-    @computed_field
-    def base_url(self) -> str:
-        return f'https://api.{self.domain}/pilot'
+    api_url: str = 'https://api.pilot.indocresearch.com/pilot'
+    keycloak_realm_url: str = 'https://iam.pilot.indocresearch.com/realms/pilot'
 
     @computed_field
     def url_bff(self) -> str:
-        return f'{self.base_url}/cli'
+        return f'{self.api_url}/cli'
 
     @computed_field
     def url_portal(self) -> str:
-        return f'{self.base_url}/portal'
-
-    @computed_field
-    def url_keycloak_realm(self) -> str:
-        return f'https://iam.{self.domain}/realms/pilot'
+        return f'{self.api_url}/portal'
 
     @computed_field
     def url_keycloak(self) -> str:
-        return f'{self.url_keycloak_realm}/protocol/openid-connect'
+        return f'{self.keycloak_realm_url}/protocol/openid-connect'
 
     @computed_field
     def url_authn(self) -> str:
-        return f'{self.base_url}/portal/users/auth'
+        return f'{self.api_url}/portal/users/auth'
 
     @computed_field
     def url_refresh_token(self) -> str:
-        return f'{self.base_url}/portal/users/refresh'
+        return f'{self.api_url}/portal/users/refresh'
 
     @computed_field
     def url_file_tag(self) -> str:
-        return f'{self.base_url}/portal/v2/%s/tags'
+        return f'{self.api_url}/portal/v2/%s/tags'
 
     @computed_field
     def url_upload_greenroom(self) -> str:
-        return f'{self.base_url}/upload/gr'
+        return f'{self.api_url}/upload/gr'
 
     @computed_field
     def url_upload_core(self) -> str:
-        return f'{self.base_url}/upload/core'
+        return f'{self.api_url}/upload/core'
 
     @computed_field
     def url_status(self) -> str:
-        return f'{self.base_url}/portal/v1/files/actions/tasks'
+        return f'{self.api_url}/portal/v1/files/actions/tasks'
 
     @computed_field
     def url_download_greenroom(self) -> str:
-        return f'{self.base_url}/portal/download/gr/'
+        return f'{self.api_url}/portal/download/gr/'
 
     @computed_field
     def url_download_core(self) -> str:
-        return f'{self.base_url}/portal/download/core/'
+        return f'{self.api_url}/portal/download/core/'
 
     @computed_field
     def url_v2_download_pre(self) -> str:
@@ -88,15 +81,15 @@ class Settings(BaseSettings):
 
     @computed_field
     def url_dataset_v2download(self) -> str:
-        return f'{self.base_url}/portal/download/core/v2/dataset'
+        return f'{self.api_url}/portal/download/core/v2/dataset'
 
     @computed_field
     def url_dataset(self) -> str:
-        return f'{self.base_url}/portal/v1/dataset'
+        return f'{self.api_url}/portal/v1/dataset'
 
     @computed_field
     def url_validation(self) -> str:
-        return f'{self.base_url}/v1/files/validation'
+        return f'{self.api_url}/v1/files/validation'
 
 
 @lru_cache(1)

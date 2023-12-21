@@ -17,6 +17,7 @@ from typing import Union
 import click
 from click.exceptions import Abort
 
+import app.services.logger_services.log_functions as logger
 import app.services.output_manager.message_handler as message_handler
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import customized_error_msg
@@ -108,18 +109,23 @@ class FileMetaClient:
         """
 
         project_code, object_path = self.file_path.split('/', 1)
-        item_res = search_item(project_code, self.zone, object_path, 'file').get('result', {})
+        item_res = search_item(project_code, self.zone, object_path).get('result', {})
         extra_info = item_res.pop('extended', {}).get('extra')
         tags = extra_info.get('tags', [])
-        attributes = extra_info.get('attributes', [])
+        attributes = extra_info.get('attributes', {})
         # use the uuid of attribute template to get template name
-        template_uuid = next(iter(attributes))
-        attribute_name = get_attribute_template_by_id(template_uuid).get('name')
-        attribute_detail = attributes.get(template_uuid)
+        attribute_info = {}
+        if len(attributes):
+            template_uuid = next(iter(attributes))
+            attribute_name = get_attribute_template_by_id(template_uuid).get('name')
+            attribute_detail = attributes.get(template_uuid)
+            attribute_info = {attribute_name: attribute_detail}
+            self.save_file_metadata(self.attribute_location, attribute_info)
+        else:
+            logger.warning('No attribute metadata found.')
 
         # save metadata into files
         self.save_file_metadata(self.general_location, item_res)
-        self.save_file_metadata(self.attribute_location, {attribute_name: attribute_detail})
         self.save_file_metadata(self.tag_location, tags)
 
-        return item_res, {attribute_name: attribute_detail}, tags
+        return item_res, attribute_info, tags
