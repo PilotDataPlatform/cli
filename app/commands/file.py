@@ -110,9 +110,9 @@ def cli():
 @click.option(
     '--output-path',
     '-o',
-    default='./manifest.json',
+    default='./resumable_upload_log.json',
     required=False,
-    help='The output path for the manifest file of resumable upload.',
+    help='The output path for the manifest file of resumable upload log.',
     show_default=True,
 )
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD))
@@ -241,7 +241,7 @@ def file_put(**kwargs):  # noqa: C901
     '-r',
     default=None,
     required=True,
-    help='The manifest file for resumable upload',
+    help='The resumable upload log file',
     show_default=True,
 )
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_RESUME))

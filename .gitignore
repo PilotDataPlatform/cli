@@ -155,4 +155,5 @@ integration_tests
 # cli manifest data
 ./manifest.json
 manifest.json
+resumable_upload_log.json
 test

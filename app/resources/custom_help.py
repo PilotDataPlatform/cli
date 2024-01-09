@@ -36,7 +36,7 @@ class HelpPage:
             'FILE_LIST': 'List files and folders inside a given Project/folder.',
             'FILE_SYNC': 'Download files/folders from a given Project/folder/file in core zone.',
             'FILE_UPLOAD': 'Upload files/folders to a given Project path.',
-            'FILE_RESUME': 'Resume the upload process with given manifest file.',
+            'FILE_RESUME': 'resume Resume the upload process with a resumable upload log.',
             'FILE_Z': 'Target Zone (i.e., core/greenroom).',
             'FILE_ATTRIBUTE_P': 'Project Code',
             'FILE_ATTRIBUTE_N': 'Attribute Template Name',
