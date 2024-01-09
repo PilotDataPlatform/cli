@@ -226,6 +226,10 @@ def file_put(**kwargs):  # noqa: C901
         srv_manifest.attach_manifest(attribute, item_ids[0], zone) if attribute else None
         message_handler.SrvOutPutHandler.all_file_uploaded()
 
+        # after each successful upload, clean up the output file to avoid confusion
+        if os.path.exists(output_path):
+            os.remove(output_path)
+
 
 @click.command(name='resume')
 @click.option(
@@ -277,6 +281,10 @@ def file_resume(**kwargs):  # noqa: C901
     zone = resumable_manifest.get('zone')
     srv_manifest.attach_manifest(attribute, item_id, zone) if attribute else None
     message_handler.SrvOutPutHandler.all_file_uploaded()
+
+    # after each successful resume, clean up the output file to avoid confusion
+    if os.path.exists(resumable_manifest_file):
+        os.remove(resumable_manifest_file)
 
 
 def validate_upload_event(event):
