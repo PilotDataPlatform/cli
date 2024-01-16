@@ -30,6 +30,7 @@ from app.utils.aggregated import fit_terminal_width
 from app.utils.aggregated import get_file_info_by_geid
 from app.utils.aggregated import get_zone
 from app.utils.aggregated import identify_target_folder
+from app.utils.aggregated import remove_the_output_file
 from app.utils.aggregated import search_item
 
 
@@ -226,9 +227,7 @@ def file_put(**kwargs):  # noqa: C901
         srv_manifest.attach_manifest(attribute, item_ids[0], zone) if attribute else None
         message_handler.SrvOutPutHandler.all_file_uploaded()
 
-        # after each successful upload, clean up the output file to avoid confusion
-        if os.path.exists(output_path):
-            os.remove(output_path)
+        remove_the_output_file(output_path)
 
 
 @click.command(name='resume')
@@ -282,9 +281,7 @@ def file_resume(**kwargs):  # noqa: C901
     srv_manifest.attach_manifest(attribute, item_id, zone) if attribute else None
     message_handler.SrvOutPutHandler.all_file_uploaded()
 
-    # after each successful resume, clean up the output file to avoid confusion
-    if os.path.exists(resumable_manifest_file):
-        os.remove(resumable_manifest_file)
+    remove_the_output_file(resumable_manifest_file)
 
 
 def validate_upload_event(event):
