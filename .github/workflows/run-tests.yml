@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - develop
+      - patch20240117
   pull_request:
     branches:
       - main
