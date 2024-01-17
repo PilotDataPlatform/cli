@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 Indoc Systems
+# Copyright (C) 2022-2024 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -23,7 +23,7 @@ from app.services.output_manager.message_handler import SrvOutPutHandler
 def exchange_api_key(api_key: str) -> Union[str, None]:
     """Exchange API Key with JWT token using Keycloak."""
 
-    url = f'{ConfigClass.url_keycloak_realm}/api-key/{api_key}'
+    url = f'{AppConfig.Connections.url_keycloak_realm}/api-key/{api_key}'
     try:
         response = requests.get(url, timeout=5)
         response.raise_for_status()

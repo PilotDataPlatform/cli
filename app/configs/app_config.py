@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 Indoc Systems
+# Copyright (C) 2022-2024 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -43,5 +43,6 @@ class AppConfig:
         url_validation = ConfigClass.url_validation
         url_keycloak = ConfigClass.url_keycloak
         url_keycloak_token = f'{ConfigClass.url_keycloak}/token'
+        url_keycloak_realm = ConfigClass.keycloak_realm_url
         url_bff = ConfigClass.url_bff
-        url_base = ConfigClass.base_url
+        url_base = ConfigClass.api_url
