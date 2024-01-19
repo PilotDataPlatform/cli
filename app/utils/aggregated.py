@@ -12,6 +12,7 @@ from typing import List
 import httpx
 import requests
 
+import app.services.logger_services.log_functions as logger
 from app.configs.app_config import AppConfig
 from app.configs.config import ConfigClass
 from app.configs.user_config import UserConfig
@@ -154,3 +155,13 @@ def batch_generator(iterable: List[Any], batch_size=1):
     max_size = len(iterable)
     for start_index in range(0, max_size, batch_size):
         yield iterable[start_index : min(start_index + batch_size, max_size)]
+
+
+def remove_the_output_file(filepath: str) -> None:
+    """Remove the output file after each successful operation to avoid confusion."""
+    try:
+        os.remove(filepath)
+    except FileNotFoundError:
+        pass
+    except OSError:
+        logger.warning(f'Unable to remove "{filepath}".')

@@ -30,6 +30,7 @@ from app.utils.aggregated import fit_terminal_width
 from app.utils.aggregated import get_file_info_by_geid
 from app.utils.aggregated import get_zone
 from app.utils.aggregated import identify_target_folder
+from app.utils.aggregated import remove_the_output_file
 from app.utils.aggregated import search_item
 
 
@@ -110,9 +111,9 @@ def cli():
 @click.option(
     '--output-path',
     '-o',
-    default='./manifest.json',
+    default='./resumable_upload_log.json',
     required=False,
-    help='The output path for the manifest file of resumable upload.',
+    help='The output path for the manifest file of resumable upload log.',
     show_default=True,
 )
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD))
@@ -226,6 +227,8 @@ def file_put(**kwargs):  # noqa: C901
         srv_manifest.attach_manifest(attribute, item_ids[0], zone) if attribute else None
         message_handler.SrvOutPutHandler.all_file_uploaded()
 
+        remove_the_output_file(output_path)
+
 
 @click.command(name='resume')
 @click.option(
@@ -241,7 +244,7 @@ def file_put(**kwargs):  # noqa: C901
     '-r',
     default=None,
     required=True,
-    help='The manifest file for resumable upload',
+    help='The resumable upload log file',
     show_default=True,
 )
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_RESUME))
@@ -277,6 +280,8 @@ def file_resume(**kwargs):  # noqa: C901
     zone = resumable_manifest.get('zone')
     srv_manifest.attach_manifest(attribute, item_id, zone) if attribute else None
     message_handler.SrvOutPutHandler.all_file_uploaded()
+
+    remove_the_output_file(resumable_manifest_file)
 
 
 def validate_upload_event(event):
