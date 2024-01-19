@@ -62,6 +62,7 @@ def test_resumable_upload_command_success(mocker, cli_runner):
     mocker.patch('builtins.open', mocked_open_data)
     mocker.patch('json.load', return_value={'file_objects': {'test_item_id': {'file_name': 'test.json'}}, 'zone': 1})
     mocker.patch('app.commands.file.resume_upload', return_value=None)
+    mocker.patch('os.remove', return_value=None)
     result = cli_runner.invoke(file_resume, ['--resumable-manifest', 'test.json', '--thread', 1])
     assert result.exit_code == 0
 
@@ -84,6 +85,8 @@ def test_resumable_upload_command_with_file_attribute_success(mocker, cli_runner
     attribute_fun_mock = mocker.patch(
         'app.services.file_manager.file_manifests.SrvFileManifests.attach_manifest', return_value=None
     )
+
+    mocker.patch('os.remove', return_value=None)
 
     result = cli_runner.invoke(file_resume, ['--resumable-manifest', 'test.json', '--thread', 1])
     assert result.exit_code == 0
@@ -253,13 +256,13 @@ def test_download_file_metadata_file_duplicate_success(mocker, cli_runner):
     with runner.isolated_filesystem():
         file_meta_client = FileMetaClient('zone', file_path, metadata_loc, metadata_loc, metadata_loc)
         # create all file to make duplicationn
-        makedirs(dirname(file_meta_client.general_location), exist_ok=True)
+        makedirs(dirname(file_meta_client.general_location), exist_ok=True, mode=0o0700)
         with open(file_meta_client.general_location, 'w') as f:
             f.write(file_meta_client.general_location)
-        makedirs(dirname(file_meta_client.attribute_location), exist_ok=True)
+        makedirs(dirname(file_meta_client.attribute_location), exist_ok=True, mode=0o0700)
         with open(file_meta_client.attribute_location, 'w') as f:
             f.write(file_meta_client.attribute_location)
-        makedirs(dirname(file_meta_client.tag_location), exist_ok=True)
+        makedirs(dirname(file_meta_client.tag_location), exist_ok=True, mode=0o0700)
         with open(file_meta_client.tag_location, 'w') as f:
             f.write(file_meta_client.tag_location)
 
@@ -303,13 +306,13 @@ def test_download_file_metadata_file_duplicate_abort(mocker, cli_runner):
     with runner.isolated_filesystem():
         file_meta_client = FileMetaClient('zone', file_path, metadata_loc, metadata_loc, metadata_loc)
         # create all file to make duplicationn
-        makedirs(dirname(file_meta_client.general_location), exist_ok=True)
+        makedirs(dirname(file_meta_client.general_location), exist_ok=True, mode=0o0700)
         with open(file_meta_client.general_location, 'w') as f:
             f.write(file_meta_client.general_location)
-        makedirs(dirname(file_meta_client.attribute_location), exist_ok=True)
+        makedirs(dirname(file_meta_client.attribute_location), exist_ok=True, mode=0o0700)
         with open(file_meta_client.attribute_location, 'w') as f:
             f.write(file_meta_client.attribute_location)
-        makedirs(dirname(file_meta_client.tag_location), exist_ok=True)
+        makedirs(dirname(file_meta_client.tag_location), exist_ok=True, mode=0o0700)
         with open(file_meta_client.tag_location, 'w') as f:
             f.write(file_meta_client.tag_location)
 

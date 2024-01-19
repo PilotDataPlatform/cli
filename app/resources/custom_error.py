@@ -63,7 +63,7 @@ class Error:
             'The upload ID may be invalid, or the upload may have been aborted or completed.'
         ),
         'MANIFEST_OF_FOLDER_FILE_EXIST': (
-            'The manifest file of folder %s already exist. ' 'Do you want to overwrite the existing manifest file?'
+            'The manifest file of folder %s already exist. ' 'To continue and overwrite the resumable upload log, enter'
         ),
         'INVALID_CHUNK_UPLOAD': (
             '\nThe chunk number %d is not the same with previous etag.\n'
