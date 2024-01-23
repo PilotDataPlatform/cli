@@ -31,6 +31,7 @@ class FileMoveClient:
         project_code: str,
         src_item_path: str,
         dest_item_path: str,
+        skip_confirm: bool = False,
     ) -> None:
         """
         Summary:
@@ -46,6 +47,7 @@ class FileMoveClient:
         self.project_code = project_code
         self.src_item_path = src_item_path
         self.dest_item_path = dest_item_path
+        self.skip_confirm = skip_confirm
 
         self.user = UserConfig()
 
@@ -83,7 +85,8 @@ class FileMoveClient:
         not_exist_path = sorted(set(check_list) - set(exist_path))
         if not_exist_path:
             try:
-                click.confirm(customized_error_msg(ECustomizedError.CREATE_FOLDER_IF_NOT_EXIST), abort=True)
+                if not self.skip_confirm:
+                    click.confirm(customized_error_msg(ECustomizedError.CREATE_FOLDER_IF_NOT_EXIST), abort=True)
             except Abort:
                 message_handler.SrvOutPutHandler.move_cancelled()
                 exit(1)
