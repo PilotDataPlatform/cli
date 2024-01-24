@@ -14,6 +14,8 @@ from app.configs.user_config import UserConfig
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.output_manager.error_handler import customized_error_msg
+from app.services.user_authentication.decorator import require_valid_token
+from app.utils.aggregated import check_item_duplication
 from app.utils.aggregated import resilient_session
 from app.utils.aggregated import search_item
 
@@ -43,7 +45,7 @@ class FileMoveClient:
             dest_item_path (str): destination item path.
         """
 
-        self.zone = zone
+        self.zone = {'greenroom': 0, 'core': 1}.get(zone)
         self.project_code = project_code
         self.src_item_path = src_item_path
         self.dest_item_path = dest_item_path
@@ -67,21 +69,8 @@ class FileMoveClient:
         if len(check_list) == 0:
             return
 
-        url = AppConfig.Connections.url_base + '/portal/v1/files/exists'
-        zone_int = {'greenroom': 0, 'core': 1}.get(self.zone.lower())
-        headers = {'Authorization': 'Bearer ' + UserConfig().access_token}
-        payload = {
-            'locations': check_list,
-            'container_code': self.project_code,
-            'container_type': 'project',
-            'zone': zone_int,
-        }
-        response = resilient_session().post(url, json=payload, headers=headers)
-        if response.status_code != 200:
-            SrvErrorHandler.default_handle(response.text, True)
-
         # confirm if user want to create folder or not
-        exist_path = response.json().get('result')
+        exist_path = check_item_duplication(check_list, self.zone, self.project_code)
         not_exist_path = sorted(set(check_list) - set(exist_path))
         if not_exist_path:
             try:
@@ -108,7 +97,7 @@ class FileMoveClient:
                     'parent_path': parent_path,
                     'container_code': self.project_code,
                     'container_type': 'project',
-                    'zone': zone_int,
+                    'zone': self.zone,
                     'item_id': current_item_id,
                 }
             )
@@ -121,6 +110,7 @@ class FileMoveClient:
             SrvErrorHandler.default_handle(response.text, True)
         return response.json().get('result')
 
+    @require_valid_token()
     def move_file(self) -> None:
         """
         Summary:
