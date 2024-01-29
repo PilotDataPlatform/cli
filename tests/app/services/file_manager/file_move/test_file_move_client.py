@@ -2,6 +2,8 @@
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
+import pytest
+
 from app.configs.app_config import AppConfig
 from app.services.file_manager.file_move.file_move_client import FileMoveClient
 from tests.conftest import decoded_token
@@ -71,3 +73,46 @@ def test_file_move_error_with_wrong_input_422(mocker, httpx_mock, capfd):
     except SystemExit:
         out, _ = capfd.readouterr()
         assert out == 'Failed to move src_item_path to dest_item_path: \nerror_msg\n'
+
+
+@pytest.mark.parametrize('skip_confirmation', [True, False])
+def test_move_file_dest_parent_not_exist_success(mocker, httpx_mock, skip_confirmation):
+    project_code = 'test_code'
+    item_info = {'result': {'id': 'test_id', 'name': 'test_name'}}
+
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+
+    # mock duplicated item
+    mocker.patch(
+        'app.services.file_manager.file_move.file_move_client.check_item_duplication',
+        return_value=[],
+    )
+    mocker.patch(
+        'app.services.file_manager.file_move.file_move_client.search_item',
+        return_value={'result': {'id': 'test_id', 'name': 'test_name'}},
+    )
+    click_mocker = mocker.patch('app.services.file_manager.file_move.file_move_client.click.confirm', return_value=None)
+    httpx_mock.add_response(
+        url=AppConfig.Connections.url_bff + '/v1/folders/batch',
+        method='POST',
+        json={'result': []},
+    )
+
+    httpx_mock.add_response(
+        url=AppConfig.Connections.url_bff + f'/v1/{project_code}/files',
+        method='PATCH',
+        json={'result': item_info},
+    )
+
+    file_move_client = FileMoveClient(
+        'zone', project_code, 'src_item_path', 'dest_item_path/test_folder/test_file', skip_confirm=skip_confirmation
+    )
+    res = file_move_client.move_file()
+    assert res == item_info
+    if not skip_confirmation:
+        click_mocker.assert_called_once()
+    else:
+        click_mocker.assert_not_called()

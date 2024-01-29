@@ -4,7 +4,10 @@
 
 import pytest
 
+from app.configs.app_config import AppConfig
+from app.utils.aggregated import check_item_duplication
 from app.utils.aggregated import search_item
+from tests.conftest import decoded_token
 
 test_project_code = 'testproject'
 
@@ -100,3 +103,22 @@ def test_search_file_error_handling_with_401(requests_mock, mocker, capsys):
         search_item(test_project_code, 'zone', 'folder_relative_path', 'project')
     out, _ = capsys.readouterr()
     assert out.rstrip() == 'Your login session has expired. Please try again or log in again.'
+
+
+def test_check_duplicate_fail_with_error_code(httpx_mock, mocker, capsys):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+
+    httpx_mock.add_response(
+        url=AppConfig.Connections.url_base + '/portal/v1/files/exists',
+        method='POST',
+        json={'error': 'internal server error'},
+        status_code=500,
+    )
+
+    with pytest.raises(SystemExit):
+        check_item_duplication(['test_path'], 0, 'test_project_code')
+    out, _ = capsys.readouterr()
+    assert out.rstrip() == '{"error": "internal server error"}'

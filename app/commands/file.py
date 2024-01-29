@@ -521,6 +521,15 @@ def file_metadata_download(**kwargs):
     help=file_help.file_help_page(file_help.FileHELP.FILE_MOVE_Z),
     show_default=False,
 )
+@click.option(
+    '-y',
+    '--yes',
+    default=False,
+    required=False,
+    is_flag=True,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_MOVE_Y),
+    show_default=True,
+)
 @require_valid_token()
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_MOVE))
 def file_move(**kwargs):
@@ -528,9 +537,10 @@ def file_move(**kwargs):
     src_item_path = kwargs.get('src_item_path')
     dest_item_path = kwargs.get('dest_item_path')
     zone = kwargs.get('zone')
+    skip_confirm = kwargs.get('yes')
 
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
-    file_meta_client = FileMoveClient(zone, project_code, src_item_path, dest_item_path)
+    file_meta_client = FileMoveClient(zone, project_code, src_item_path, dest_item_path, skip_confirm=skip_confirm)
     file_meta_client.move_file()
 
     message_handler.SrvOutPutHandler.move_action_success(src_item_path, dest_item_path)

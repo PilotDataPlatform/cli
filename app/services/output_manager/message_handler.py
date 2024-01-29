@@ -209,6 +209,11 @@ class SrvOutPutHandler(metaclass=MetaService):
         return logger.succeed(f'Successfully moved {src} to {dest}')
 
     @staticmethod
+    def move_cancelled():
+        """e.g. Move action cancelled."""
+        return logger.warning('Move cancelled.')
+
+    @staticmethod
     def move_action_failed(src, dest, error):
         """e.g. Move action failed."""
         return logger.error(f'Failed to move {src} to {dest}: {error}')
