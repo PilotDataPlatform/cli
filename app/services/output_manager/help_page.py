@@ -81,6 +81,7 @@ class FileHELP(enum.Enum):
 
     FILE_MOVE = 'FILE_MOVE'
     FILE_MOVE_Z = 'FILE_MOVE_Z'
+    FILE_MOVE_Y = 'FILE_MOVE_Y'
 
 
 def file_help_page(FileHELP: FileHELP):

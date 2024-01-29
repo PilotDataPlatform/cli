@@ -74,6 +74,34 @@ def get_file_info_by_geid(geid: list):
     return res.json()['result']
 
 
+@require_valid_token()
+def check_item_duplication(item_list: List[str], zone: int, project_code: str) -> List[str]:
+    '''
+    Summary:
+        Check if the item already exists in the project in batch.
+    Parameters:
+        - item_list: list of item path to check
+        - zone: zone of the project
+        - project_code: project code
+    Returns:
+        - list of item path that already exists in the project
+    '''
+
+    url = AppConfig.Connections.url_base + '/portal/v1/files/exists'
+    headers = {'Authorization': 'Bearer ' + UserConfig().access_token}
+    payload = {
+        'locations': item_list,
+        'container_code': project_code,
+        'container_type': 'project',
+        'zone': zone,
+    }
+    response = resilient_session().post(url, json=payload, headers=headers)
+    if response.status_code != 200:
+        SrvErrorHandler.default_handle(response.text, True)
+
+    return response.json().get('result')
+
+
 def fit_terminal_width(string_to_format):
     string_to_format = string_to_format.rsplit('...')
     current_len = 0
