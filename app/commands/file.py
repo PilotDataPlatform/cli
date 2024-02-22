@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 Indoc Systems
+# Copyright (C) 2022-2024 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -12,10 +12,11 @@ from click.exceptions import Abort
 import app.services.output_manager.help_page as file_help
 import app.services.output_manager.message_handler as message_handler
 from app.configs.app_config import AppConfig
-from app.configs.user_config import UserConfig
 from app.services.file_manager.file_download.download_client import SrvFileDownload
 from app.services.file_manager.file_list import SrvFileList
 from app.services.file_manager.file_manifests import SrvFileManifests
+from app.services.file_manager.file_metadata.file_metadata_client import FileMetaClient
+from app.services.file_manager.file_move.file_move_client import FileMoveClient
 from app.services.file_manager.file_upload.file_upload import assemble_path
 from app.services.file_manager.file_upload.file_upload import resume_upload
 from app.services.file_manager.file_upload.file_upload import simple_upload
@@ -29,6 +30,7 @@ from app.utils.aggregated import fit_terminal_width
 from app.utils.aggregated import get_file_info_by_geid
 from app.utils.aggregated import get_zone
 from app.utils.aggregated import identify_target_folder
+from app.utils.aggregated import remove_the_output_file
 from app.utils.aggregated import search_item
 
 
@@ -39,15 +41,21 @@ def cli():
 
 
 @click.command(name='upload')
-@click.argument('paths', type=click.Path(exists=True), nargs=-1)
-@click.option('-p', '--project-path', required=True, help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_P))
+@click.argument('files', type=click.Path(exists=True), nargs=-1)
+@click.option(
+    '-p',
+    '--project-path',
+    required=True,
+    type=click.Path(),
+    help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_P),
+)
 @click.option(
     '-a',
     '--attribute',
     default=None,
     required=False,
     help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_A),
-    # type=click.Path(exists=True),
+    type=click.File('rb'),
     show_default=True,
 )
 @click.option(
@@ -57,6 +65,7 @@ def cli():
     required=False,
     multiple=True,
     help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_T),
+    type=click.File('rb'),
     show_default=True,
 )
 @click.option(
@@ -70,7 +79,7 @@ def cli():
 @click.option(
     '-m',
     '--upload-message',
-    default='',
+    default=None,
     required=False,
     help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_M),
     show_default=True,
@@ -96,36 +105,40 @@ def cli():
     '-td',
     default=1,
     required=False,
-    help='The number of thread for upload a file',
+    help='The number of threads for uploading a file.',
     show_default=True,
 )
 @click.option(
     '--output-path',
     '-o',
-    default='./manifest.json',
+    default='./resumable_upload_log.json',
     required=False,
-    help='The output path for the manifest file of resumable upload',
+    help='The output path for the manifest file of resumable upload log.',
     show_default=True,
 )
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD))
 def file_put(**kwargs):  # noqa: C901
     """"""
 
-    paths = kwargs.get('paths')
+    files = kwargs.get('files')
     project_path = kwargs.get('project_path')
-    tag = kwargs.get('tag')
+    tag_files = kwargs.get('tag')
     zone = kwargs.get('zone')
     upload_message = kwargs.get('upload_message')
     source_file = kwargs.get('source_file')
     zipping = kwargs.get('zip')
-    attribute = kwargs.get('attribute')
+    attribute_file = kwargs.get('attribute')
     thread = kwargs.get('thread')
     output_path = kwargs.get('output_path')
 
-    user = UserConfig()
+    # load tag json file to list, and attribute file to dict
+    tag = []
+    for t_f in tag_files:
+        tag.extend(json.load(t_f))
+    attribute = json.load(attribute_file) if attribute_file else None
+
     # Check zone and upload-message
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
-
     toc = customized_error_msg(ECustomizedError.TOU_CONTENT).replace(' ', '...')
     try:
         if zone.lower() == AppConfig.Env.core_zone.lower() and click.confirm(fit_terminal_width(toc), abort=True):
@@ -135,7 +148,7 @@ def file_put(**kwargs):  # noqa: C901
         exit(1)
 
     # check if user input at least one file/folder
-    if len(paths) == 0:
+    if len(files) == 0:
         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_PATHS, True)
 
     # check if the manifest file exists
@@ -156,7 +169,6 @@ def file_put(**kwargs):  # noqa: C901
         'upload_message': upload_message,
         'source': source_file,
         'project_code': project_code,
-        'token': user.access_token,
         'attribute': attribute,
         'tag': tag,
     }
@@ -180,12 +192,12 @@ def file_put(**kwargs):  # noqa: C901
     #      be the parent folder node + the shortest non-exist folder. (like one level down).
 
     # Unique Paths
-    paths = set(paths)
+    files = set(files)
     # the loop will read all input path(folder or files)
     # and process them one by one
-    for f in paths:
+    for f in files:
         # so this function will always return the furthest folder node as current_folder_node+parent_folder_id
-        current_folder_node, parent_folder, create_folder_flag, result_file = assemble_path(
+        current_folder_node, parent_folder, create_folder_flag, target_folder = assemble_path(
             f,
             target_folder,
             project_code,
@@ -215,6 +227,8 @@ def file_put(**kwargs):  # noqa: C901
         srv_manifest.attach_manifest(attribute, item_ids[0], zone) if attribute else None
         message_handler.SrvOutPutHandler.all_file_uploaded()
 
+        remove_the_output_file(output_path)
+
 
 @click.command(name='resume')
 @click.option(
@@ -230,7 +244,7 @@ def file_put(**kwargs):  # noqa: C901
     '-r',
     default=None,
     required=True,
-    help='The manifest file for resumable upload',
+    help='The resumable upload log file',
     show_default=True,
 )
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_RESUME))
@@ -267,6 +281,8 @@ def file_resume(**kwargs):  # noqa: C901
     srv_manifest.attach_manifest(attribute, item_id, zone) if attribute else None
     message_handler.SrvOutPutHandler.all_file_uploaded()
 
+    remove_the_output_file(resumable_manifest_file)
+
 
 def validate_upload_event(event):
     """validate upload request, raise error when filed."""
@@ -274,10 +290,9 @@ def validate_upload_event(event):
     upload_message = event.get('upload_message')
     source = event.get('source')
     project_code = event.get('project_code')
-    token = event.get('token')
     attribute = event.get('attribute')
     tag = event.get('tag')
-    validator = UploadEventValidator(project_code, zone, upload_message, source, token, attribute, tag)
+    validator = UploadEventValidator(project_code, zone, upload_message, source, attribute, tag)
     converted_content = validator.validate_upload_event()
     return converted_content
 
@@ -409,17 +424,18 @@ def file_download(**kwargs):
     else:
         item_res = []
         for path in paths:
-            project_code = path.strip('/').split('/')[0]
+            project_code, root_folder = path.strip('/').split('/')[:2]
             target_path = '/'.join(path.split('/')[1::])
-            item = search_item(project_code, zone, target_path, '')
+            # search the root to check for name folder or project folder
+            root_item = search_item(project_code, zone, root_folder).get('result', {})
+            target_path = 'shared/' + target_path if root_item.get('type') == 'project_folder' else target_path
+
+            # search the target item and download to local
+            item = search_item(project_code, zone, target_path)
             if item.get('code') == 200 and item.get('result'):
                 item_status = 'success'
                 item_result = item.get('result')
                 item_geid = item.get('result').get('id')
-            elif item.get('code') == 403 and item.get('error_msg'):
-                item_status = item.get('error_msg')
-                item_result = {}
-                item_geid = path
             else:
                 item_status = 'File Not Exist'
                 item_result = {}
@@ -435,3 +451,96 @@ def file_download(**kwargs):
         for item in item_res:
             srv_download = SrvFileDownload(zone, interactive)
             srv_download.simple_download_file(output_path, [item])
+
+
+@click.command(name='metadata')
+@click.argument('file_path', type=click.STRING)
+@click.option(
+    '-z',
+    '--zone',
+    default=AppConfig.Env.green_zone,
+    required=True,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_META_Z),
+    show_default=False,
+)
+@click.option(
+    '-g',
+    '--general',
+    default=None,
+    required=True,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_META_G),
+    show_default=True,
+)
+@click.option(
+    '-a',
+    '--attribute',
+    default=None,
+    required=True,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_META_A),
+    show_default=True,
+)
+@click.option(
+    '-t',
+    '--tag',
+    default=None,
+    required=True,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_META_T),
+    show_default=True,
+)
+@require_valid_token()
+@doc(file_help.file_help_page(file_help.FileHELP.FILE_META))
+def file_metadata_download(**kwargs):
+    '''
+    Summary:
+        Download metadata of a file including general, attribute and tag.
+    '''
+
+    file_path = kwargs.get('file_path')
+    zone = kwargs.get('zone')
+    general_folder = kwargs.get('general').rstrip('/')
+    attribute_folder = kwargs.get('attribute').rstrip('/')
+    tag_folder = kwargs.get('tag').rstrip('/')
+
+    # Check zone and upload-message
+    zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
+    file_meta_client = FileMetaClient(zone, file_path, general_folder, attribute_folder, tag_folder)
+    file_meta_client.download_file_metadata()
+
+    message_handler.SrvOutPutHandler.metadata_download_success()
+
+
+@click.command(name='move')
+@click.argument('project_code', type=click.STRING)
+@click.argument('src_item_path', type=click.STRING)
+@click.argument('dest_item_path', type=click.STRING)
+@click.option(
+    '-z',
+    '--zone',
+    default=AppConfig.Env.green_zone,
+    required=True,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_MOVE_Z),
+    show_default=False,
+)
+@click.option(
+    '-y',
+    '--yes',
+    default=False,
+    required=False,
+    is_flag=True,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_MOVE_Y),
+    show_default=True,
+)
+@require_valid_token()
+@doc(file_help.file_help_page(file_help.FileHELP.FILE_MOVE))
+def file_move(**kwargs):
+    project_code = kwargs.get('project_code')
+    src_item_path = kwargs.get('src_item_path')
+    dest_item_path = kwargs.get('dest_item_path')
+    zone = kwargs.get('zone')
+    skip_confirm = kwargs.get('yes')
+
+    zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
+    file_meta_client = FileMoveClient(zone, project_code, src_item_path, dest_item_path, skip_confirm=skip_confirm)
+    file_meta_client.move_file()
+
+    message_handler.SrvOutPutHandler.move_action_success(src_item_path, dest_item_path)

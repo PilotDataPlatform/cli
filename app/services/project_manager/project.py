@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 Indoc Systems
+# Copyright (C) 2022-2024 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -43,6 +43,8 @@ class SrvProjectManager(metaclass=MetaService):
                 return res_to_dict
             elif response.status_code == 404:
                 SrvErrorHandler.customized_handle(ECustomizedError.USER_DISABLED, True)
+            elif response.status_code == 401:
+                SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TOKEN, if_exit=True)
             else:
                 SrvErrorHandler.default_handle(response.content, True)
         except Exception:

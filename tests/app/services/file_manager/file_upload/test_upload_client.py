@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 Indoc Systems
+# Copyright (C) 2022-2024 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -73,7 +73,7 @@ def test_chunk_upload(httpx_mock, mocker):
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
 
     test_obj = FileObject('test', 'test', 'test', 'test', 'test')
-    res = upload_client.upload_chunk(test_obj, 0, b'1', 'test_etag')
+    res = upload_client.upload_chunk(test_obj, 0, b'1', 'test_etag', 10)
 
     assert test_obj.progress_bar.n == 1
     assert res.status_code == 200

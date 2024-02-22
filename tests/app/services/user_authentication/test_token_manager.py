@@ -1,11 +1,14 @@
-# Copyright (C) 2023 Indoc Systems
+# Copyright (C) 2023-2024 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
 import jwt
+import pytest
 
+from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.services.user_authentication.token_manager import SrvTokenManager
+from tests.conftest import decoded_token
 
 
 class TestSrvTokenManager:
@@ -30,7 +33,7 @@ class TestSrvTokenManager:
         manager = SrvTokenManager()
         access_token = jwt.encode({}, key='').decode()
         requests_mock.get(
-            f'{settings.url_keycloak_realm}/api-key/{manager.config.api_key}',
+            f'{AppConfig.Connections.url_keycloak_realm}/api-key/{manager.config.api_key}',
             json={'access_token': access_token},
         )
 
@@ -38,3 +41,20 @@ class TestSrvTokenManager:
 
         assert manager.config.access_token == access_token
         assert manager.config.refresh_token == ''
+
+    def test_refresh_failed_with_invalid_token(self, requests_mock, mocker, settings, capsys):
+        manager = SrvTokenManager()
+        mocker.patch(
+            'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+            return_value=decoded_token(),
+        )
+
+        requests_mock.post(
+            AppConfig.Connections.url_keycloak_token,
+            status_code=401,
+        )
+
+        with pytest.raises(SystemExit):
+            manager.refresh('test_azp')
+        out, _ = capsys.readouterr()
+        assert out.rstrip() == 'Your login session has expired. Please try again or log in again.'

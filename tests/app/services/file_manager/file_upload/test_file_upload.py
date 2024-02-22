@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 Indoc Systems
+# Copyright (C) 2022-2024 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -28,6 +28,7 @@ def test_assemble_path_at_name_folder(mocker):
                 'parent_path': '',
                 'name': 'admin',
                 'zone': 0,
+                'type': 'name_folder',
             }
         },
     )
@@ -55,6 +56,7 @@ def test_assemble_path_at_exsting_folder(mocker):
                 'parent_path': '',
                 'name': 'admin',
                 'zone': 0,
+                'type': 'folder',
             }
         },
         {
@@ -64,6 +66,7 @@ def test_assemble_path_at_exsting_folder(mocker):
                 'parent_path': 'admin',
                 'name': 'test_folder_exist',
                 'zone': 0,
+                'type': 'folder',
             }
         },
     ]
@@ -93,6 +96,7 @@ def test_assemble_path_at_non_existing_folder(mocker):
                 'parent_path': '',
                 'name': 'admin',
                 'zone': 0,
+                'type': 'folder',
             }
         },
         {'result': {}},
@@ -107,6 +111,36 @@ def test_assemble_path_at_non_existing_folder(mocker):
     assert current_file_path == 'admin/test_folder_not_exist'
     assert parent_folder.get('name') == 'admin'
     assert create_folder_flag is True
+
+
+def test_assemble_path_at_project_folder(mocker):
+    local_file_path = './test/file.txt'
+    target_folder = 'project_folder'
+    project_code = 'test_project'
+    zone = 0
+    resumable_id = None
+
+    mocker.patch(
+        'app.services.file_manager.file_upload.file_upload.search_item',
+        return_value={
+            'result': {
+                'id': 'test',
+                'parent_id': 'test_parent',
+                'parent_path': '',
+                'name': 'project_folder',
+                'zone': 0,
+                'type': 'project_folder',
+            }
+        },
+    )
+
+    current_file_path, parent_folder, create_folder_flag, target_folder = assemble_path(
+        local_file_path, target_folder, project_code, zone, resumable_id
+    )
+    assert current_file_path == 'shared/project_folder/file.txt'
+    assert parent_folder.get('name') == 'project_folder'
+    assert target_folder == 'shared/project_folder'
+    assert create_folder_flag is False
 
 
 def test_file_upload_skip_empty_file(mocker, tmp_path, capfd):

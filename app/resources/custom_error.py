@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 Indoc Systems
+# Copyright (C) 2022-2024 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -63,7 +63,7 @@ class Error:
             'The upload ID may be invalid, or the upload may have been aborted or completed.'
         ),
         'MANIFEST_OF_FOLDER_FILE_EXIST': (
-            'The manifest file of folder %s already exist. ' 'Do you want to overwrite the existing manifest file?'
+            'The manifest file of folder %s already exist. ' 'To continue and overwrite the resumable upload log, enter'
         ),
         'INVALID_CHUNK_UPLOAD': (
             '\nThe chunk number %d is not the same with previous etag.\n'
@@ -93,6 +93,8 @@ class Error:
         'INVALID_FOLDER': 'Provided folder does not exist',
         'INVALID_NAMEFOLDER': 'User name folder is missing or provided user name folder does not exist',
         'INVALID_DOWNLOAD': 'Invalid download, file/folder not exist or folder is empty: %s',
+        # file metadata related error
+        'LOCAL_METADATA_FILE_EXISTS': 'Following metadata file already exists in the local directory: ',
         'VERSION_NOT_EXIST': 'Version not available: %s',
         'DATASET_NOT_EXIST': 'Dataset not found in your dataset list',
         'DATASET_PERMISSION': 'You do not have permission to access this dataset',

@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 Indoc Systems
+# Copyright (C) 2022-2024 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -6,11 +6,13 @@ import os
 import re
 import shutil
 from typing import Any
+from typing import Dict
 from typing import List
 
 import httpx
 import requests
 
+import app.services.logger_services.log_functions as logger
 from app.configs.app_config import AppConfig
 from app.configs.config import ConfigClass
 from app.configs.user_config import UserConfig
@@ -27,14 +29,13 @@ def resilient_session():
 
 
 @require_valid_token()
-def search_item(project_code, zone, folder_relative_path, item_type, container_type='project'):
+def search_item(project_code, zone, folder_relative_path, container_type='project'):
     token = UserConfig().access_token
     url = AppConfig.Connections.url_bff + '/v1/project/{}/search'.format(project_code)
     params = {
         'zone': zone,
         'project_code': project_code,
         'path': folder_relative_path,
-        'item_type': item_type,
         'container_type': container_type,
     }
     headers = {'Authorization': 'Bearer ' + token}
@@ -43,10 +44,24 @@ def search_item(project_code, zone, folder_relative_path, item_type, container_t
         SrvErrorHandler.customized_handle(ECustomizedError.PERMISSION_DENIED, project_code)
     elif res.status_code == 404:
         pass
+    elif res.status_code == 401:
+        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TOKEN, if_exit=True)
     elif res.status_code != 200:
         SrvErrorHandler.default_handle(res.text, True)
 
     return res.json()
+
+
+@require_valid_token()
+def get_attribute_template_by_id(template_id: str) -> Dict[str, Any]:
+    token = UserConfig().access_token
+    url = AppConfig.Connections.url_portal + f'/v1/data/manifest/{template_id}'
+    headers = {'Authorization': 'Bearer ' + token}
+    res = resilient_session().get(url, headers=headers)
+    if res.status_code != 200:
+        SrvErrorHandler.default_handle(res.text, True)
+
+    return res.json().get('result', {})
 
 
 @require_valid_token()
@@ -57,6 +72,34 @@ def get_file_info_by_geid(geid: list):
     url = AppConfig.Connections.url_bff + '/v1/query/geid'
     res = resilient_session().post(url, headers=headers, json=payload)
     return res.json()['result']
+
+
+@require_valid_token()
+def check_item_duplication(item_list: List[str], zone: int, project_code: str) -> List[str]:
+    '''
+    Summary:
+        Check if the item already exists in the project in batch.
+    Parameters:
+        - item_list: list of item path to check
+        - zone: zone of the project
+        - project_code: project code
+    Returns:
+        - list of item path that already exists in the project
+    '''
+
+    url = AppConfig.Connections.url_base + '/portal/v1/files/exists'
+    headers = {'Authorization': 'Bearer ' + UserConfig().access_token}
+    payload = {
+        'locations': item_list,
+        'container_code': project_code,
+        'container_type': 'project',
+        'zone': zone,
+    }
+    response = resilient_session().post(url, json=payload, headers=headers)
+    if response.status_code != 200:
+        SrvErrorHandler.default_handle(response.text, True)
+
+    return response.json().get('result')
 
 
 def fit_terminal_width(string_to_format):
@@ -140,3 +183,13 @@ def batch_generator(iterable: List[Any], batch_size=1):
     max_size = len(iterable)
     for start_index in range(0, max_size, batch_size):
         yield iterable[start_index : min(start_index + batch_size, max_size)]
+
+
+def remove_the_output_file(filepath: str) -> None:
+    """Remove the output file after each successful operation to avoid confusion."""
+    try:
+        os.remove(filepath)
+    except FileNotFoundError:
+        pass
+    except OSError:
+        logger.warning(f'Unable to remove "{filepath}".')

@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 Indoc Systems
+# Copyright (C) 2022-2024 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -72,6 +72,16 @@ class FileHELP(enum.Enum):
     FILE_UPLOAD_S = 'FILE_UPLOAD_S'
     FILE_UPLOAD_PIPELINE = 'FILE_UPLOAD_PIPELINE'
     FILE_UPLOAD_ZIP = 'FILE_UPLOAD_ZIP'
+
+    FILE_META = 'FILE_META'
+    FILE_META_Z = 'FILE_META_Z'
+    FILE_META_G = 'FILE_META_G'
+    FILE_META_A = 'FILE_META_A'
+    FILE_META_T = 'FILE_META_T'
+
+    FILE_MOVE = 'FILE_MOVE'
+    FILE_MOVE_Z = 'FILE_MOVE_Z'
+    FILE_MOVE_Y = 'FILE_MOVE_Y'
 
 
 def file_help_page(FileHELP: FileHELP):

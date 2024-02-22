@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 Indoc Systems
+# Copyright (C) 2022-2024 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -29,7 +29,13 @@ class SrvFileList(metaclass=MetaService):
             source_type = 'project'
         else:
             source_type = 'project'
-            res = search_item(project_code, zone, folder_rel_path, 'folder')
+            res = search_item(project_code, zone, folder_rel_path)
+            parent_folder = res.get('result')
+            # if the target folder is project folder add the default path
+            if parent_folder.get('type') == 'project_folder':
+                folder_rel_path = 'shared/' + folder_rel_path
+
+        # now query the backend to get the file list
         get_url = AppConfig.Connections.url_bff + f'/v1/{project_code}/files/query'
         headers = {
             'Authorization': 'Bearer ' + self.user.access_token,
@@ -49,12 +55,13 @@ class SrvFileList(metaclass=MetaService):
         elif res_json.get('error_msg') == 'Folder not exist':
             SrvErrorHandler.customized_handle(ECustomizedError.INVALID_FOLDER, True)
         res = res_json.get('result')
-        files = ''
-        folders = ''
+
+        # then format the console output
+        files, folders = '', ''
         for f in res:
             if 'file' == f.get('type'):
                 files = files + f.get('name') + ' ...'
-            elif f.get('type') in ['folder', 'name_folder']:
+            elif f.get('type') in ['folder', 'name_folder', 'project_folder']:
                 folders = folders + f"\033[34m{f.get('name')}\033[0m ..."
         f_string = folders + files
         return f_string
