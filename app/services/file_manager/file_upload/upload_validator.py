@@ -1,8 +1,10 @@
-# Copyright (C) 2022-2023 Indoc Systems
+# Copyright (C) 2022-2024 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
-import os
+from typing import Any
+from typing import Dict
+from typing import List
 
 from app.configs.app_config import AppConfig
 from app.services.file_manager.file_manifests import SrvFileManifests
@@ -13,12 +15,13 @@ from app.utils.aggregated import search_item
 
 
 class UploadEventValidator:
-    def __init__(self, project_code, zone, upload_message, source, token, attribute, tag):
+    def __init__(
+        self, project_code: str, zone: str, upload_message: str, source: str, attribute: Dict[str, Any], tag: List[str]
+    ):
         self.project_code = project_code
         self.zone = zone
         self.upload_message = upload_message
         self.source = source
-        self.token = token
         self.attribute = attribute
         self.tag = tag
 
@@ -29,7 +32,7 @@ class UploadEventValidator:
                 ECustomizedError.INVALID_UPLOAD_REQUEST, True, value='upload-message is required'
             )
         if self.source:
-            source_file_info = search_item(self.project_code, AppConfig.Env.core_zone.lower(), self.source, 'file')
+            source_file_info = search_item(self.project_code, AppConfig.Env.core_zone.lower(), self.source)
             source_file_info = source_file_info['result']
             if not source_file_info:
                 SrvErrorHandler.customized_handle(ECustomizedError.INVALID_SOURCE_FILE, True, value=self.source)
@@ -37,11 +40,8 @@ class UploadEventValidator:
 
     def validate_attribute(self):
         srv_manifest = SrvFileManifests()
-        if not os.path.isfile(self.attribute):
-            raise Exception('Attribute not exist in the given path')
         try:
-            attribute = srv_manifest.read_manifest_template(self.attribute)
-            attribute = srv_manifest.convert_import(attribute, self.project_code)
+            attribute = srv_manifest.convert_import(self.attribute, self.project_code)
             srv_manifest.validate_manifest(attribute)
             return attribute
         except Exception:

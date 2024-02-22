@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 Indoc Systems
+# Copyright (C) 2022-2024 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -63,6 +63,9 @@ class ECustomizedError(enum.Enum):
     INVALID_NAMEFOLDER = 'INVALID_NAMEFOLDER'
     INVALID_DOWNLOAD = 'INVALID_DOWNLOAD'
     DUPLICATE_TAG_ERROR = 'DUPLICATE_TAG_ERROR'
+    # file metadata related error
+    LOCAL_METADATA_FILE_EXISTS = 'LOCAL_METADATA_FILE_EXISTS'
+
     VERSION_NOT_EXIST = 'VERSION_NOT_EXIST'
     DATASET_NOT_EXIST = 'DATASET_NOT_EXIST'
     DATASET_PERMISSION = 'DATASET_PERMISSION'

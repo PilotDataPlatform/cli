@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 Indoc Systems
+# Copyright (C) 2022-2024 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -36,24 +36,33 @@ class HelpPage:
             'FILE_LIST': 'List files and folders inside a given Project/folder.',
             'FILE_SYNC': 'Download files/folders from a given Project/folder/file in core zone.',
             'FILE_UPLOAD': 'Upload files/folders to a given Project path.',
-            'FILE_RESUME': 'Resume the upload process with given manifest file.',
-            'FILE_Z': 'Target Zone (i.e., core/greenroom)  [default: greenroom]',
+            'FILE_RESUME': 'Resume the upload process with a resumable upload log.',
+            'FILE_Z': 'Target Zone (i.e., core/greenroom).',
             'FILE_ATTRIBUTE_P': 'Project Code',
             'FILE_ATTRIBUTE_N': 'Attribute Template Name',
             'FILE_SYNC_ZIP': 'Download files as a zip.',
             'FILE_SYNC_I': 'Enable downloading by geid.',
-            'FILE_SYNC_Z': 'Target Zone (i.e., core/greenroom)',
-            'FILE_UPLOAD_P': 'Project folder path starting from Project code. (i.e., indoctestproject/user/folder)',
-            'FILE_UPLOAD_A': 'File Attribute Template used for annotating files during upload.',
-            'FILE_UPLOAD_T': (
-                'Add a tag to the file. This option could be used multiple times for adding multiple tags.'
+            'FILE_SYNC_Z': 'Target Zone (i.e., core/greenroom).',
+            'FILE_UPLOAD_P': 'Project folder path starting from Project Code. (i.e., indoctestproject/user/folder)',
+            'FILE_UPLOAD_A': 'Add attributes to the file using a File Attribute Template.',
+            'FILE_UPLOAD_T': 'Add tags to the file using a Tag file.',
+            'FILE_UPLOAD_M': 'The message used to comment on the purpose of uploading your processed file.',
+            'FILE_UPLOAD_S': (
+                'Project file path for identifying a source file when creating an upstream '
+                'file lineage node. Source files must exist in the Core zone.'
             ),
-            'FILE_UPLOAD_M': 'The message used to comment on the purpose of uploading your processed file',
-            'FILE_UPLOAD_S': 'The Project path of the source file of your processed files.',
             'FILE_UPLOAD_PIPELINE': (
                 "The processed pipeline of your processed files. [only used with '--source' option]"
             ),
             'FILE_UPLOAD_ZIP': 'Upload folder as a compressed zip file.',
+            'FILE_META': 'Download metadata file of a given file in target zone.',
+            'FILE_META_Z': 'Target Zone (i.e., core/greenroom).',
+            'FILE_META_G': 'The location of general metadata file',
+            'FILE_META_A': 'The location of attribute metadata file',
+            'FILE_META_T': 'The location of tag metadata file',
+            'FILE_MOVE': 'Move/Rename files/folders to a given Project path.',
+            'FILE_MOVE_Z': 'Target Zone (i.e., core/greenroom).',
+            'FILE_MOVE_Y': 'Skip the prompt confirmation and create non-existing folders.',
         },
         'config': {
             'SET_CONFIG': 'Chose config file and set for cli.',

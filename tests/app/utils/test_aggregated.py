@@ -1,10 +1,13 @@
-# Copyright (C) 2022-2023 Indoc Systems
+# Copyright (C) 2022-2024 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
 import pytest
 
+from app.configs.app_config import AppConfig
+from app.utils.aggregated import check_item_duplication
 from app.utils.aggregated import search_item
+from tests.conftest import decoded_token
 
 test_project_code = 'testproject'
 
@@ -55,7 +58,7 @@ def test_search_file_should_return_200(requests_mock, mocker):
         'storage': {'id': 'storage-id', 'location_uri': 'minio-path', 'version': 'version-id'},
         'extended': {'id': 'extended-id', 'extra': {'tags': [], 'system_tags': [], 'attributes': {}}},
     }
-    res = search_item(test_project_code, 'zone', 'folder_relative_path', 'file', 'project')
+    res = search_item(test_project_code, 'zone', 'folder_relative_path', 'project')
     assert res['result'] == expected_result
 
 
@@ -68,7 +71,7 @@ def test_search_item_returns_response_when_status_code_is_404(requests_mock, moc
         status_code=404,
     )
 
-    response = search_item(test_project_code, 'zone', 'folder_relative_path', 'file', 'project')
+    response = search_item(test_project_code, 'zone', 'folder_relative_path', 'project')
 
     assert response == expected_response
 
@@ -81,7 +84,7 @@ def test_search_file_error_handling_with_403(requests_mock, mocker, capsys):
         status_code=403,
     )
     with pytest.raises(SystemExit):
-        search_item(test_project_code, 'zone', 'folder_relative_path', 'file', 'project')
+        search_item(test_project_code, 'zone', 'folder_relative_path', 'project')
     out, _ = capsys.readouterr()
     assert (
         out.rstrip()
@@ -97,6 +100,25 @@ def test_search_file_error_handling_with_401(requests_mock, mocker, capsys):
         status_code=401,
     )
     with pytest.raises(SystemExit):
-        search_item(test_project_code, 'zone', 'folder_relative_path', 'file', 'project')
+        search_item(test_project_code, 'zone', 'folder_relative_path', 'project')
     out, _ = capsys.readouterr()
-    assert out.rstrip() == 'Authentication failed.'
+    assert out.rstrip() == 'Your login session has expired. Please try again or log in again.'
+
+
+def test_check_duplicate_fail_with_error_code(httpx_mock, mocker, capsys):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+
+    httpx_mock.add_response(
+        url=AppConfig.Connections.url_base + '/portal/v1/files/exists',
+        method='POST',
+        json={'error': 'internal server error'},
+        status_code=500,
+    )
+
+    with pytest.raises(SystemExit):
+        check_item_duplication(['test_path'], 0, 'test_project_code')
+    out, _ = capsys.readouterr()
+    assert out.rstrip() == '{"error": "internal server error"}'
