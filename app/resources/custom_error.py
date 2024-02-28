@@ -23,6 +23,7 @@ class Error:
             "Attribute validation failed. Please ensure mandatory attribute '%s' have value and try again."
         ),
         'INVALID_TEMPLATE': 'Attribute validation failed. Please correct JSON format and try again.',
+        'INVALID_TAG_FILE': 'Tag files validation failed. Please correct JSON format and try again.',
         'LIMIT_TAG_ERROR': 'Tag limit has been reached. A maximum of 10 tags are allowed per file.',
         'INVALID_TAG_ERROR': (
             'Invalid tag format. Tags must be between 1 and 32 characters long '

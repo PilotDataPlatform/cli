@@ -55,6 +55,35 @@ def test_file_upload_command_success_with_attribute(mocker, cli_runner):
     attribute_mock.assert_called_once()
 
 
+def test_file_upload_failed_with_invalid_tag_file(mocker, cli_runner):
+    # create invalid tag file with wrong format
+    runner = click.testing.CliRunner()
+    with runner.isolated_filesystem():
+        with open('wrong_tag.json', 'w') as f:
+            f.write('wrong_tag.json')
+
+        result = cli_runner.invoke(
+            file_put, ['--project-path', 'test', '--thread', 1, '--tag', 'wrong_tag.json', 'wrong_tag.json']
+        )
+    assert result.exit_code == 0
+    assert result.output == customized_error_msg(ECustomizedError.INVALID_TAG_FILE) + '\n'
+
+
+def test_file_upload_failed_with_invalid_attribute_file(mocker, cli_runner):
+    # create invalid attribute file with wrong format
+    runner = click.testing.CliRunner()
+    with runner.isolated_filesystem():
+        with open('wrong_attribute.json', 'w') as f:
+            f.write('wrong_attribute.json')
+
+        result = cli_runner.invoke(
+            file_put,
+            ['--project-path', 'test', '--thread', 1, '--attribute', 'wrong_attribute.json', 'wrong_attribute.json'],
+        )
+    assert result.exit_code == 0
+    assert result.output == customized_error_msg(ECustomizedError.INVALID_TEMPLATE) + '\n'
+
+
 def test_resumable_upload_command_success(mocker, cli_runner):
     mocker.patch('os.path.exists', return_value=True)
     # mock the open function
