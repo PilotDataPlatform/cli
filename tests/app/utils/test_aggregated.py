@@ -7,6 +7,7 @@ import pytest
 from app.configs.app_config import AppConfig
 from app.utils.aggregated import check_item_duplication
 from app.utils.aggregated import search_item
+from app.utils.aggregated import validate_folder_name
 from tests.conftest import decoded_token
 
 test_project_code = 'testproject'
@@ -122,3 +123,9 @@ def test_check_duplicate_fail_with_error_code(httpx_mock, mocker, capsys):
         check_item_duplication(['test_path'], 0, 'test_project_code')
     out, _ = capsys.readouterr()
     assert out.rstrip() == '{"error": "internal server error"}'
+
+
+@pytest.mark.parametrize('folder_name', ['/:?.\\*<>|”\'', ''.join(['1' for _ in range(101)])])
+def test_validate_folder_name(folder_name):
+    valid = validate_folder_name(folder_name)
+    assert valid is False
