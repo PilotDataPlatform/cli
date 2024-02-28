@@ -45,7 +45,7 @@ class Error:
         'INVALID_FOLDERNAME': (
             'The input folder name is not valid. Please follow the rule:\n'
             ' - cannot contains special characters.\n'
-            ' - the length should be smaller than 20 characters.'
+            ' - the length should be smaller than or equal to 100 characters.'
         ),
         'INVALID_TOKEN': 'Your login session has expired. Please try again or log in again.',
         'PERMISSION_DENIED': (
