@@ -55,7 +55,7 @@ def test_file_upload_command_success_with_attribute(mocker, cli_runner):
     attribute_mock.assert_called_once()
 
 
-def test_file_upload_failed_with_invalid_tag_file(mocker, cli_runner):
+def test_file_upload_failed_with_invalid_tag_file(cli_runner):
     # create invalid tag file with wrong format
     runner = click.testing.CliRunner()
     with runner.isolated_filesystem():
@@ -69,7 +69,7 @@ def test_file_upload_failed_with_invalid_tag_file(mocker, cli_runner):
     assert result.output == customized_error_msg(ECustomizedError.INVALID_TAG_FILE) + '\n'
 
 
-def test_file_upload_failed_with_invalid_attribute_file(mocker, cli_runner):
+def test_file_upload_failed_with_invalid_attribute_file(cli_runner):
     # create invalid attribute file with wrong format
     runner = click.testing.CliRunner()
     with runner.isolated_filesystem():
