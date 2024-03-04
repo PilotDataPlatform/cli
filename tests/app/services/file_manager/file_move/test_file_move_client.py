@@ -18,6 +18,11 @@ def test_file_move_success(mocker, httpx_mock):
         return_value=decoded_token(),
     )
 
+    mocker.patch(
+        'app.services.file_manager.file_move.file_move_client.FileMoveClient.create_object_path_if_not_exist',
+        return_value=[],
+    )
+
     httpx_mock.add_response(
         url=AppConfig.Connections.url_bff + f'/v1/{project_code}/files',
         method='PATCH',
@@ -35,6 +40,11 @@ def test_file_move_error_with_permission_denied_403(mocker, httpx_mock, capfd):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
         return_value=decoded_token(),
+    )
+
+    mocker.patch(
+        'app.services.file_manager.file_move.file_move_client.FileMoveClient.create_object_path_if_not_exist',
+        return_value=[],
     )
 
     httpx_mock.add_response(
@@ -58,6 +68,11 @@ def test_file_move_error_with_wrong_input_422(mocker, httpx_mock, capfd):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
         return_value=decoded_token(),
+    )
+
+    mocker.patch(
+        'app.services.file_manager.file_move.file_move_client.FileMoveClient.create_object_path_if_not_exist',
+        return_value=[],
     )
 
     httpx_mock.add_response(
