@@ -133,7 +133,7 @@ def get_zone(zone):
 def validate_folder_name(folder_name):
     regex = re.compile('[/:?.\\*<>|”\']')
     contain_invalid_char = regex.search(folder_name)
-    if contain_invalid_char or len(folder_name) > 20 or not folder_name:
+    if contain_invalid_char or len(folder_name) > 100 or not folder_name:
         valid = False
     else:
         valid = True

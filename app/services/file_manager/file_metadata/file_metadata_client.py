@@ -109,7 +109,15 @@ class FileMetaClient:
         """
 
         project_code, object_path = self.file_path.split('/', 1)
-        item_res = search_item(project_code, self.zone, object_path).get('result', {})
+        item_res = search_item(project_code, self.zone, object_path)
+        # double check if the file is in shared folder
+        if item_res.get('code') == 404:
+            item_res = search_item(project_code, self.zone, f'shared/{object_path}')
+            if item_res.get('code') == 404:
+                logger.error(f'Cannot find item {self.file_path} at {self.zone}.')
+                exit(1)
+
+        item_res = item_res.get('result', {})
         extra_info = item_res.pop('extended', {}).get('extra')
         tags = extra_info.get('tags', [])
         attributes = extra_info.get('attributes', {})
