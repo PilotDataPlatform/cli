@@ -132,10 +132,16 @@ def file_put(**kwargs):  # noqa: C901
     output_path = kwargs.get('output_path')
 
     # load tag json file to list, and attribute file to dict
-    tag = []
-    for t_f in tag_files:
-        tag.extend(json.load(t_f))
-    attribute = json.load(attribute_file) if attribute_file else None
+    try:
+        tag = []
+        for t_f in tag_files:
+            tag.extend(json.load(t_f))
+    except Exception:
+        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TAG_FILE, True)
+    try:
+        attribute = json.load(attribute_file) if attribute_file else None
+    except Exception:
+        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TEMPLATE, True)
 
     # Check zone and upload-message
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
