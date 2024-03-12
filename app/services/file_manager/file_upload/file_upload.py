@@ -18,6 +18,7 @@ from click.exceptions import Abort
 import app.services.logger_services.log_functions as logger
 import app.services.output_manager.message_handler as mhandler
 from app.configs.app_config import AppConfig
+from app.models.folder import FolderType
 from app.services.file_manager.file_upload.models import FileObject
 from app.services.file_manager.file_upload.models import ItemStatus
 from app.services.file_manager.file_upload.models import UploadType
@@ -43,7 +44,7 @@ def compress_folder_to_zip(path):
 
 
 def assemble_path(
-    f: str, target_folder: str, project_code: str, zone: str, zipping: bool = False
+    f: str, target_folder: str, project_code: str, folder_type: FolderType, zone: str
 ) -> Tuple[str, Dict, bool, str]:
     '''
     Summary:
@@ -61,7 +62,6 @@ def assemble_path(
          - target_folder(str): the folder on the platform
          - project_code(str): the unique identifier of project
          - zone(str): the zone label eg.greenroom/core
-         - zipping(bool): default False. The flag to indicate if upload as a zip
     Return:
          - current_file_path: the format file path on platform
          - parent_folder: the item information of longest parent folder
@@ -79,11 +79,11 @@ def assemble_path(
     # otherwise it is target_folder + f input name
     current_folder_node = target_folder if os.path.isfile(f) else current_file_path
     create_folder_flag = False
-    # always add `shared/` as prefix to folder/file if
-    # they directly under the project root folder
-    if parent_folder.get('type') == 'project_folder':
-        current_folder_node = 'shared/' + current_folder_node
-        target_folder = 'shared/' + target_folder
+    # add prefix to folder
+    current_folder_node = folder_type.get_prefix() + current_folder_node
+    target_folder = folder_type.get_prefix() + target_folder
+
+    raise
 
     if len(current_file_path.split('/')) > 2:
         sub_path = target_folder.split('/')
