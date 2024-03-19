@@ -15,7 +15,7 @@ class FolderType(str, Enum):
         """Get the prefix for the folder type."""
 
         prefix = {
-            'namefolder': 'namefolder/',
+            'namefolder': '',
             'projectfolder': 'shared/',
         }
 

@@ -72,8 +72,8 @@ def assemble_path(
 
     current_file_path = target_folder + '/' + f.rstrip('/').split('/')[-1]
     # set name folder as first parent folder
-    name_folder = target_folder.split('/')[0]
-    parent_folder = search_item(project_code, zone, name_folder).get('result', {})
+    root_folder = target_folder.split('/')[0]
+    parent_folder = search_item(project_code, zone, root_folder).get('result', {})
 
     # if f input is a file then current_folder_node is target_folder
     # otherwise it is target_folder + f input name
@@ -82,8 +82,6 @@ def assemble_path(
     # add prefix to folder
     current_folder_node = folder_type.get_prefix() + current_folder_node
     target_folder = folder_type.get_prefix() + target_folder
-
-    raise
 
     if len(current_file_path.split('/')) > 2:
         sub_path = target_folder.split('/')
