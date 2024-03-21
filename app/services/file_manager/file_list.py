@@ -9,6 +9,7 @@ import requests
 import app.services.logger_services.log_functions as logger
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
+from app.models.item import ItemType
 from app.models.service_meta_class import MetaService
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
@@ -59,10 +60,17 @@ class SrvFileList(metaclass=MetaService):
         # then format the console output
         files, folders = '', ''
         for f in res:
-            if 'file' == f.get('type'):
+            item_type = ItemType(f.get('type'))
+
+            if item_type == ItemType.FILE:
                 files = files + f.get('name') + ' ...'
-            elif f.get('type') in ['folder', 'name_folder', 'project_folder']:
+            else:
+                # add [p] in front of the project folder
+                if item_type == ItemType.PROJECTFOLDER:
+                    f['name'] = f'[p]{f.get("name")}'
+
                 folders = folders + f"\033[34m{f.get('name')}\033[0m ..."
+
         f_string = folders + files
         return f_string
 

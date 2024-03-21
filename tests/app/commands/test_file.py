@@ -193,7 +193,7 @@ def test_file_list_with_pagination_with_name_project_folder(requests_mock, mocke
     questionary.select.return_value.ask.return_value = 'exit'
     result = cli_runner.invoke(file_list, ['testproject/admin', '-z', 'greenroom'])
     outputs = result.output.split('\n')
-    assert outputs[0] == 'folder1  name_folder1  project_folder1   '
+    assert outputs[0] == 'folder1  name_folder1  [p]project_folder1   '
 
 
 def test_empty_file_list_with_pagination(requests_mock, mocker, cli_runner):
