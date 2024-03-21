@@ -167,8 +167,7 @@ def file_put(**kwargs):  # noqa: C901
         message_handler.SrvOutPutHandler.cancel_upload()
         exit(1)
 
-    project_path = click.prompt('ProjectCode') if not project_path else project_path
-    project_code, target_folder = identify_target_folder(project_path)
+    project_code, folder_type, target_folder = identify_target_folder(project_path)
     srv_manifest = SrvFileManifests()
     upload_val_event = {
         'zone': zone,
@@ -207,8 +206,8 @@ def file_put(**kwargs):  # noqa: C901
             f,
             target_folder,
             project_code,
+            folder_type,
             zone,
-            zipping,
         )
 
         upload_event = {

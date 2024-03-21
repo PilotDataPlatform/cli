@@ -3,6 +3,7 @@
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
 from app.configs.app_config import AppConfig
+from app.models.folder import FolderType
 from app.services.file_manager.file_upload.file_upload import assemble_path
 from app.services.file_manager.file_upload.file_upload import resume_upload
 from app.services.file_manager.file_upload.file_upload import simple_upload
@@ -17,7 +18,6 @@ def test_assemble_path_at_name_folder(mocker):
     target_folder = 'admin'
     project_code = 'test_project'
     zone = 0
-    resumable_id = None
 
     mocker.patch(
         'app.services.file_manager.file_upload.file_upload.search_item',
@@ -34,7 +34,7 @@ def test_assemble_path_at_name_folder(mocker):
     )
 
     current_file_path, parent_folder, create_folder_flag, _ = assemble_path(
-        local_file_path, target_folder, project_code, zone, resumable_id
+        local_file_path, target_folder, project_code, FolderType.NAMEFOLDER, zone
     )
     assert current_file_path == 'admin/file.txt'
     assert parent_folder.get('name') == 'admin'
@@ -46,7 +46,6 @@ def test_assemble_path_at_exsting_folder(mocker):
     target_folder = 'admin/test_folder_exist'
     project_code = 'test_project'
     zone = 0
-    resumable_id = None
 
     node_list = [
         {
@@ -74,7 +73,7 @@ def test_assemble_path_at_exsting_folder(mocker):
     mocker.patch('app.services.file_manager.file_upload.file_upload.search_item', side_effect=node_list)
 
     current_file_path, parent_folder, create_folder_flag, _ = assemble_path(
-        local_file_path, target_folder, project_code, zone, resumable_id
+        local_file_path, target_folder, project_code, FolderType.NAMEFOLDER, zone
     )
     assert current_file_path == 'admin/test_folder_exist/file.txt'
     assert parent_folder.get('name') == 'test_folder_exist'
@@ -86,7 +85,6 @@ def test_assemble_path_at_non_existing_folder(mocker):
     target_folder = 'admin/test_folder_not_exist'
     project_code = 'test_project'
     zone = 0
-    resumable_id = None
 
     node_list = [
         {
@@ -106,7 +104,7 @@ def test_assemble_path_at_non_existing_folder(mocker):
     mocker.patch('app.services.file_manager.file_upload.file_upload.click.confirm', return_value=None)
 
     current_file_path, parent_folder, create_folder_flag, _ = assemble_path(
-        local_file_path, target_folder, project_code, zone, resumable_id
+        local_file_path, target_folder, project_code, FolderType.NAMEFOLDER, zone
     )
     assert current_file_path == 'admin/test_folder_not_exist'
     assert parent_folder.get('name') == 'admin'
@@ -118,7 +116,6 @@ def test_assemble_path_at_project_folder(mocker):
     target_folder = 'project_folder'
     project_code = 'test_project'
     zone = 0
-    resumable_id = None
 
     mocker.patch(
         'app.services.file_manager.file_upload.file_upload.search_item',
@@ -135,7 +132,7 @@ def test_assemble_path_at_project_folder(mocker):
     )
 
     current_file_path, parent_folder, create_folder_flag, target_folder = assemble_path(
-        local_file_path, target_folder, project_code, zone, resumable_id
+        local_file_path, target_folder, project_code, FolderType.PROJECTFOLDER, zone
     )
     assert current_file_path == 'shared/project_folder/file.txt'
     assert parent_folder.get('name') == 'project_folder'

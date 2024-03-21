@@ -5,7 +5,9 @@
 import pytest
 
 from app.configs.app_config import AppConfig
+from app.models.folder import FolderType
 from app.utils.aggregated import check_item_duplication
+from app.utils.aggregated import identify_target_folder
 from app.utils.aggregated import search_item
 from app.utils.aggregated import validate_folder_name
 from tests.conftest import decoded_token
@@ -129,3 +131,24 @@ def test_check_duplicate_fail_with_error_code(httpx_mock, mocker, capsys):
 def test_validate_folder_name(folder_name):
     valid = validate_folder_name(folder_name)
     assert valid is False
+
+
+@pytest.mark.parametrize(
+    'input_path,expected_result',
+    [
+        ('project_code/username', ('project_code', FolderType.NAMEFOLDER, 'username')),
+        ('project_code/username/folder1', ('project_code', FolderType.NAMEFOLDER, 'username/folder1')),
+        ('project_code/projectfolder/folder1', ('project_code', FolderType.PROJECTFOLDER, 'folder1')),
+        ('project_code/projectfolder/folder1/folder2', ('project_code', FolderType.PROJECTFOLDER, 'folder1/folder2')),
+    ],
+)
+def test_identify_target_folder_success_with_different_path(mocker, input_path, expected_result):
+    mocker.patch('app.utils.aggregated.validate_folder_name', return_value=True)
+    result = identify_target_folder(input_path)
+    assert result == expected_result
+
+
+def test_identify_target_folder_fail_with_invalid_input(mocker):
+    mocker.patch('app.utils.aggregated.validate_folder_name', return_value=False)
+    with pytest.raises(SystemExit):
+        identify_target_folder('project_code')
