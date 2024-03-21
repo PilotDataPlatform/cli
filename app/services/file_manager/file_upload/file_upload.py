@@ -18,7 +18,7 @@ from click.exceptions import Abort
 import app.services.logger_services.log_functions as logger
 import app.services.output_manager.message_handler as mhandler
 from app.configs.app_config import AppConfig
-from app.models.folder import FolderType
+from app.models.item import FolderPrefix
 from app.services.file_manager.file_upload.models import FileObject
 from app.services.file_manager.file_upload.models import ItemStatus
 from app.services.file_manager.file_upload.models import UploadType
@@ -44,7 +44,7 @@ def compress_folder_to_zip(path):
 
 
 def assemble_path(
-    f: str, target_folder: str, project_code: str, folder_type: FolderType, zone: str
+    f: str, target_folder: str, project_code: str, folder_type: FolderPrefix, zone: str
 ) -> Tuple[str, Dict, bool, str]:
     '''
     Summary:
