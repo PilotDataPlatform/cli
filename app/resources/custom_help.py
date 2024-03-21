@@ -43,7 +43,11 @@ class HelpPage:
             'FILE_SYNC_ZIP': 'Download files as a zip.',
             'FILE_SYNC_I': 'Enable downloading by geid.',
             'FILE_SYNC_Z': 'Target Zone (i.e., core/greenroom).',
-            'FILE_UPLOAD_P': 'Project folder path starting from Project Code. (i.e., indoctestproject/user/folder)',
+            'FILE_UPLOAD_P': (
+                'Project folder path starting from Project Code(i.e. <project>/user/folder). '
+                'A new key word `projectfolder` is required to specify project folder(i.e. '
+                '<project>/projectfolder/folder1)'
+            ),
             'FILE_UPLOAD_A': 'Add attributes to the file using a File Attribute Template.',
             'FILE_UPLOAD_T': 'Add tags to the file using a Tag file.',
             'FILE_UPLOAD_M': 'The message used to comment on the purpose of uploading your processed file.',

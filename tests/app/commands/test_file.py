@@ -24,10 +24,6 @@ from tests.conftest import decoded_token
 
 
 def test_file_upload_command_success_with_attribute(mocker, cli_runner):
-    project_code = 'test_project'
-    target_folder = 'admin'
-
-    mocker.patch('app.commands.file.identify_target_folder', return_value=(project_code, target_folder))
     mocker.patch('app.commands.file.validate_upload_event', return_value={'source_file': '', 'attribute': 'test'})
     mocker.patch('app.commands.file.assemble_path', return_value=('test', {'id': 'id'}, True, 'test'))
 
@@ -48,8 +44,10 @@ def test_file_upload_command_success_with_attribute(mocker, cli_runner):
             json.dump({'template': {'attr1': 'value'}}, f)
 
         result = cli_runner.invoke(
-            file_put, ['--project-path', 'test', '--thread', 1, '--attribute', 'template.json', 'test.txt']
+            file_put,
+            ['--project-path', 'test_project/admin', '--thread', 1, '--attribute', 'template.json', 'test.txt'],
         )
+
     assert result.exit_code == 0
     simple_upload_mock.assert_called_once()
     attribute_mock.assert_called_once()
