@@ -61,6 +61,9 @@ class SrvFileList(metaclass=MetaService):
         files, folders = '', ''
         for f in res:
             item_type = ItemType(f.get('type'))
+            # if there is space within the nane add double quotation to aviod confusion
+            if ' ' in f.get('name'):
+                f['name'] = f'"{f.get("name")}"'
 
             if item_type == ItemType.FILE:
                 files = files + f.get('name') + ' ...'
