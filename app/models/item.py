@@ -5,32 +5,6 @@
 from enum import Enum
 
 
-class FolderPrefix(str, Enum):
-    """In database, name folders and project folders will prefix with different path. and user will need to key in the
-    keyword to get the correct path. eg.
-
-    - project folder:
-        - key in: <project_code>/projectfolder/<folder_name>
-        - path: <project_code>/shared/<folder_name>
-    - name folder:
-        - key in: <project_code>/<name>/<file>
-        - path: <project_code>/<name>/<file>
-    """
-
-    NAMEFOLDER = 'namefolder'
-    PROJECTFOLDER = 'projectfolder'
-
-    def get_prefix(self) -> str:
-        """Get the prefix for the folder type."""
-
-        prefix = {
-            'namefolder': '',
-            'projectfolder': 'shared/',
-        }
-
-        return prefix.get(self.value)
-
-
 class ItemType(str, Enum):
     """The class to reflect the type of item in database."""
 
@@ -40,16 +14,25 @@ class ItemType(str, Enum):
     PROJECTFOLDER = 'project_folder'
 
     @classmethod
-    def get_item_type(cls, value):
-        # Define a mapping for alternative values
+    def get_type_from_keyword(self, keyword: str):
+        """The function will return the type of the item based on the keyword.
+
+        - name folder will have keyword 'namefolder' as input
+        - project folder will not have any keyword
+        """
+
         alternative_mapping = {
-            'namefolder': cls.NAMEFOLDER,
+            'projectfolder': self.PROJECTFOLDER,
         }
-        # Check if the value is in the alternative mapping
-        if value in alternative_mapping:
-            return alternative_mapping[value]
-        # Fall back to normal lookup by value
-        for item in cls:
-            if item.value == value:
-                return item
-        return None
+
+        return alternative_mapping.get(keyword, self.NAMEFOLDER)
+
+    def get_prefix_by_type(self) -> str:
+        """Get the prefix for the folder type."""
+
+        prefix = {
+            self.NAMEFOLDER: '',
+            self.PROJECTFOLDER: 'shared/',
+        }
+
+        return prefix.get(self.value, '')
