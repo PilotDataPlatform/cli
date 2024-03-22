@@ -5,7 +5,7 @@
 import pytest
 
 from app.configs.app_config import AppConfig
-from app.models.item import FolderPrefix
+from app.models.item import ItemType
 from app.utils.aggregated import check_item_duplication
 from app.utils.aggregated import identify_target_folder
 from app.utils.aggregated import search_item
@@ -136,10 +136,10 @@ def test_validate_folder_name(folder_name):
 @pytest.mark.parametrize(
     'input_path,expected_result',
     [
-        ('project_code/username', ('project_code', FolderPrefix.NAMEFOLDER, 'username')),
-        ('project_code/username/folder1', ('project_code', FolderPrefix.NAMEFOLDER, 'username/folder1')),
-        ('project_code/projectfolder/folder1', ('project_code', FolderPrefix.PROJECTFOLDER, 'folder1')),
-        ('project_code/projectfolder/folder1/folder2', ('project_code', FolderPrefix.PROJECTFOLDER, 'folder1/folder2')),
+        ('project_code/username', ('project_code', ItemType.NAMEFOLDER, 'username')),
+        ('project_code/username/folder1', ('project_code', ItemType.NAMEFOLDER, 'username/folder1')),
+        ('project_code/projectfolder/folder1', ('project_code', ItemType.PROJECTFOLDER, 'folder1')),
+        ('project_code/projectfolder/folder1/folder2', ('project_code', ItemType.PROJECTFOLDER, 'folder1/folder2')),
     ],
 )
 def test_identify_target_folder_success_with_different_path(mocker, input_path, expected_result):

@@ -17,7 +17,7 @@ import app.services.logger_services.log_functions as logger
 from app.configs.app_config import AppConfig
 from app.configs.config import ConfigClass
 from app.configs.user_config import UserConfig
-from app.models.item import FolderPrefix
+from app.models.item import ItemType
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
@@ -166,7 +166,7 @@ def get_file_in_folder(path):
     return files_list
 
 
-def identify_target_folder(project_path: str) -> Tuple[str, FolderPrefix, str]:
+def identify_target_folder(project_path: str) -> Tuple[str, ItemType, str]:
     '''
     Summary:
         the function will validate if input folder path doesn't
@@ -187,14 +187,13 @@ def identify_target_folder(project_path: str) -> Tuple[str, FolderPrefix, str]:
     # check folder type if is project folder or name folder
     # there will be a extra string for project folder between project code and folder name
     if len(temp_paths) == 2:
-        folder_type = FolderPrefix.NAMEFOLDER
+        folder_type = ItemType.NAMEFOLDER
         folder_name = temp_paths[1]
     elif len(temp_paths) >= 3:
-        if temp_paths[1] == FolderPrefix.PROJECTFOLDER.value:
-            folder_type = FolderPrefix.PROJECTFOLDER
+        folder_type = ItemType.get_type_from_keyword(temp_paths[1])
+        if folder_type == ItemType.PROJECTFOLDER:
             folder_name = temp_paths[2]
         else:
-            folder_type = FolderPrefix.NAMEFOLDER
             folder_name = os.path.join(temp_paths[1], temp_paths[2])
     else:
         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_NAMEFOLDER, True)
