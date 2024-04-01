@@ -69,7 +69,7 @@ class SrvFileList(metaclass=MetaService):
                 files = files + f.get('name') + ' ...'
             else:
                 # add [p] in front of the project folder
-                if item_type == ItemType.PROJECTFOLDER:
+                if item_type == ItemType.SHAREDFOLDER:
                     f['name'] = f'[p]{f.get("name")}'
 
                 folders = folders + f"\033[34m{f.get('name')}\033[0m ..."
