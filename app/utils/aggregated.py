@@ -89,7 +89,8 @@ def check_item_duplication(item_list: List[str], zone: int, project_code: str) -
         - list of item path that already exists in the project
     '''
 
-    url = AppConfig.Connections.url_base + '/portal/v1/files/exists'
+    # url = AppConfig.Connections.url_base + '/portal/v1/files/exists'
+    url = 'http://localhost:5060/v1/files/exists'
     headers = {'Authorization': 'Bearer ' + UserConfig().access_token}
     payload = {
         'locations': item_list,
