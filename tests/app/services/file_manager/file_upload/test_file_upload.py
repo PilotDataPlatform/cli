@@ -112,7 +112,7 @@ def test_assemble_path_at_non_existing_folder(mocker):
 
 def test_assemble_path_at_project_folder(mocker):
     local_file_path = './test/file.txt'
-    target_folder = 'project_folder'
+    target_folder = ItemType.SHAREDFOLDER.value
     project_code = 'test_project'
     zone = 0
 
@@ -123,9 +123,9 @@ def test_assemble_path_at_project_folder(mocker):
                 'id': 'test',
                 'parent_id': 'test_parent',
                 'parent_path': '',
-                'name': 'project_folder',
+                'name': target_folder,
                 'zone': 0,
-                'type': 'project_folder',
+                'type': target_folder,
             }
         },
     )
@@ -133,9 +133,9 @@ def test_assemble_path_at_project_folder(mocker):
     current_file_path, parent_folder, create_folder_flag, target_folder = assemble_path(
         local_file_path, target_folder, project_code, ItemType.SHAREDFOLDER, zone
     )
-    assert current_file_path == 'shared/project_folder/file.txt'
-    assert parent_folder.get('name') == 'project_folder'
-    assert target_folder == 'shared/project_folder'
+    assert current_file_path == f'shared/{target_folder}/file.txt'
+    assert parent_folder.get('name') == target_folder
+    assert target_folder == f'shared/{target_folder}'
     assert create_folder_flag is False
 
 

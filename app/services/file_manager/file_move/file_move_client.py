@@ -60,11 +60,6 @@ class FileMoveClient:
         """
 
         path_list = folder_path.split('/')
-        # first get the root folder to check if it is name folder
-        # or project folder
-        # root_item = search_item(self.project_code, self.zone, path_list[0]).get('result')
-        # if root_item.get('type') == 'project_folder':
-        #     path_list[0] = '/'.join([root_item.get('parent_path'), path_list[0]])
 
         # first check every folder in path exist or not
         # the loop start with index 1 since we assume cli will not
@@ -123,7 +118,7 @@ class FileMoveClient:
             Move file.
         """
 
-        self.create_object_path_if_not_exist(self.dest_item_path)
+        # self.create_object_path_if_not_exist(self.dest_item_path)
 
         try:
             url = AppConfig.Connections.url_bff + f'/v1/{self.project_code}/files'
