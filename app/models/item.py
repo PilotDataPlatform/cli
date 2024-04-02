@@ -11,7 +11,7 @@ class ItemType(str, Enum):
     FILE = 'file'
     Folder = 'folder'
     NAMEFOLDER = 'name_folder'
-    SHAREDFOLDER = 'project_folder'
+    SHAREDFOLDER = 'shared_folder'
 
     @classmethod
     def get_type_from_keyword(self, keyword: str):
@@ -22,7 +22,8 @@ class ItemType(str, Enum):
         """
 
         alternative_mapping = {
-            'projectfolder': self.SHAREDFOLDER,
+            'shared': self.SHAREDFOLDER,
+            'users': self.NAMEFOLDER,
         }
 
         return alternative_mapping.get(keyword, self.NAMEFOLDER)
@@ -31,7 +32,7 @@ class ItemType(str, Enum):
         """Get the prefix for the folder type."""
 
         prefix = {
-            self.NAMEFOLDER: '',
+            self.NAMEFOLDER: 'users/',
             self.SHAREDFOLDER: 'shared/',
         }
 
