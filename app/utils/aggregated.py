@@ -192,7 +192,7 @@ def identify_target_folder(project_path: str) -> Tuple[str, ItemType, str]:
         folder_name = temp_paths[1]
     elif len(temp_paths) >= 3:
         folder_type = ItemType.get_type_from_keyword(temp_paths[1])
-        if folder_type == ItemType.PROJECTFOLDER:
+        if folder_type == ItemType.SHAREDFOLDER:
             folder_name = temp_paths[2]
         else:
             folder_name = os.path.join(temp_paths[1], temp_paths[2])
