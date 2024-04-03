@@ -11,7 +11,7 @@ class ItemType(str, Enum):
     FILE = 'file'
     Folder = 'folder'
     NAMEFOLDER = 'name_folder'
-    SHAREDFOLDER = 'shared_folder'
+    SHAREDFOLDER = 'project_folder'
 
     @classmethod
     def get_type_from_keyword(self, keyword: str):
