@@ -154,9 +154,9 @@ def test_assemble_path_at_project_folder(mocker):
     current_file_path, parent_folder, create_folder_flag, target_folder = assemble_path(
         local_file_path, target_folder, project_code, ItemType.SHAREDFOLDER, zone
     )
-    assert current_file_path == 'shared/project_folder/file.txt'
+    assert current_file_path == f'{ItemType.SHAREDFOLDER.get_prefix_by_type()}project_folder/file.txt'
     assert parent_folder.get('name') == 'project_folder'
-    assert target_folder == 'shared/project_folder'
+    assert target_folder == f'{ItemType.SHAREDFOLDER.get_prefix_by_type()}project_folder'
     assert create_folder_flag is False
 
 
