@@ -186,17 +186,7 @@ def identify_target_folder(project_path: str) -> Tuple[str, ItemType, str]:
 
     # check folder type if is project folder or name folder
     # there will be a extra string for project folder between project code and folder name
-    # if len(temp_paths) == 2:
-    #     folder_type = ItemType.NAMEFOLDER
-    #     folder_name = temp_paths[1]
-    # el
     if len(temp_paths) >= 3:
-        # if temp_paths[1] == ItemType.SHAREDFOLDER.value:
-        #     folder_type = ItemType.SHAREDFOLDER
-        #     folder_name = temp_paths[2]
-        # else:
-        #     folder_type = ItemType.NAMEFOLDER
-        #     folder_name = os.path.join(temp_paths[1], temp_paths[2])
         folder_type = ItemType.get_type_from_keyword(temp_paths[1])
         folder_name = temp_paths[2]
     else:
