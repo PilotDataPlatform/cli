@@ -16,6 +16,7 @@ from app.commands.file import file_metadata_download
 from app.commands.file import file_move
 from app.commands.file import file_put
 from app.commands.file import file_resume
+from app.models.item import ItemType
 from app.services.file_manager.file_metadata.file_metadata_client import FileMetaClient
 from app.services.file_manager.file_upload.models import FileObject
 from app.services.output_manager.error_handler import ECustomizedError
@@ -45,7 +46,15 @@ def test_file_upload_command_success_with_attribute(mocker, cli_runner):
 
         result = cli_runner.invoke(
             file_put,
-            ['--project-path', 'test_project/admin', '--thread', 1, '--attribute', 'template.json', 'test.txt'],
+            [
+                '--project-path',
+                f'test_project/{ItemType.NAMEFOLDER.get_prefix_by_type()}admin',
+                '--thread',
+                1,
+                '--attribute',
+                'template.json',
+                'test.txt',
+            ],
         )
 
     assert result.exit_code == 0

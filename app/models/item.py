@@ -22,7 +22,8 @@ class ItemType(str, Enum):
         """
 
         alternative_mapping = {
-            'projectfolder': self.SHAREDFOLDER,
+            'shared': self.SHAREDFOLDER,
+            'users': self.NAMEFOLDER,
         }
 
         return alternative_mapping.get(keyword, self.NAMEFOLDER)
@@ -31,7 +32,7 @@ class ItemType(str, Enum):
         """Get the prefix for the folder type."""
 
         prefix = {
-            self.NAMEFOLDER: '',
+            self.NAMEFOLDER: 'users/',
             self.SHAREDFOLDER: 'shared/',
         }
 
