@@ -31,10 +31,9 @@ class SrvFileList(metaclass=MetaService):
         else:
             source_type = 'project'
             res = search_item(project_code, zone, folder_rel_path)
-            parent_folder = res.get('result')
+            parent_type = ItemType(res.get('result').get('type'))
             # if the target folder is project folder add the default path
-            if parent_folder.get('type') == 'project_folder':
-                folder_rel_path = 'shared/' + folder_rel_path
+            folder_rel_path = parent_type.get_prefix_by_type() + folder_rel_path
 
         # now query the backend to get the file list
         get_url = AppConfig.Connections.url_bff + f'/v1/{project_code}/files/query'
@@ -68,9 +67,6 @@ class SrvFileList(metaclass=MetaService):
             if item_type == ItemType.FILE:
                 files = files + f.get('name') + ' ...'
             else:
-                # # add [p] in front of the project folder
-                # if item_type == ItemType.SHAREDFOLDER:
-                #     f['name'] = f'[p]{f.get("name")}'
                 folders = folders + f"\033[34m{f.get('name')}\033[0m ..."
 
         f_string = folders + files

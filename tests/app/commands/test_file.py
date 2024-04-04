@@ -170,8 +170,8 @@ def test_file_list_with_pagination_with_folder_success(requests_mock, mocker, cl
     assert outputs[0] == 'file1  file2   '
 
 
-@pytest.mark.parametrize('parent_folder_type', ['name_folder', 'project_folder'])
-def test_file_list_with_pagination_with_name_project_folder(requests_mock, mocker, cli_runner, parent_folder_type):
+@pytest.mark.parametrize('parent_folder_type', [ItemType.NAMEFOLDER.value, ItemType.SHAREDFOLDER.value])
+def test_file_list_with_pagination_with_root_folder(requests_mock, mocker, cli_runner, parent_folder_type):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
         return_value=decoded_token(),
