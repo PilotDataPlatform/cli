@@ -18,7 +18,7 @@ from click.exceptions import Abort
 import app.services.logger_services.log_functions as logger
 import app.services.output_manager.message_handler as mhandler
 from app.configs.app_config import AppConfig
-from app.models.folder import FolderType
+from app.models.item import ItemType
 from app.services.file_manager.file_upload.models import FileObject
 from app.services.file_manager.file_upload.models import ItemStatus
 from app.services.file_manager.file_upload.models import UploadType
@@ -44,7 +44,7 @@ def compress_folder_to_zip(path):
 
 
 def assemble_path(
-    f: str, target_folder: str, project_code: str, folder_type: FolderType, zone: str
+    f: str, target_folder: str, project_code: str, folder_type: ItemType, zone: str
 ) -> Tuple[str, Dict, bool, str]:
     '''
     Summary:
@@ -80,8 +80,8 @@ def assemble_path(
     current_folder_node = target_folder if os.path.isfile(f) else current_file_path
     create_folder_flag = False
     # add prefix to folder
-    current_folder_node = folder_type.get_prefix() + current_folder_node
-    target_folder = folder_type.get_prefix() + target_folder
+    current_folder_node = folder_type.get_prefix_by_type() + current_folder_node
+    target_folder = folder_type.get_prefix_by_type() + target_folder
 
     if len(current_file_path.split('/')) > 2:
         sub_path = target_folder.split('/')
