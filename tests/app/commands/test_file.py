@@ -147,7 +147,7 @@ def test_file_list_with_pagination_with_folder_success(requests_mock, mocker, cl
         'app.services.file_manager.file_list.search_item',
         return_value={
             'result': {
-                'type': 'folder',
+                'type': ItemType.FOLDER.value,
                 'id': 'id',
             }
         },
@@ -158,8 +158,8 @@ def test_file_list_with_pagination_with_folder_success(requests_mock, mocker, cl
             'code': 200,
             'error_msg': '',
             'result': [
-                {'type': 'file', 'name': 'file1'},
-                {'type': 'file', 'name': 'file2'},
+                {'type': ItemType.FILE.value, 'name': 'file1'},
+                {'type': ItemType.FILE.value, 'name': 'file2'},
             ],
         },
     )
@@ -186,17 +186,21 @@ def test_file_list_with_pagination_with_name_project_folder(requests_mock, mocke
             }
         },
     )
+
+    folder = 'folder1'
+    folder_with_underline = 'folder_1'
+    folder_with_space = 'folder 1'
     requests_mock.get(
         'http://bff_cli' + '/v1/testproject/files/query',
         json={
             'code': 200,
             'error_msg': '',
             'result': [
-                {'type': 'folder', 'name': 'folder1'},
-                {'type': 'name_folder', 'name': 'name_folder1'},
-                {'type': 'project_folder', 'name': 'project folder1'},
-                {'type': 'folder', 'name': 'test folder2'},
-                {'type': 'project_folder', 'name': 'project folder2'},
+                {'type': ItemType.FOLDER.value, 'name': folder},
+                {'type': ItemType.NAMEFOLDER.value, 'name': folder_with_underline},
+                {'type': ItemType.SHAREDFOLDER.value, 'name': folder_with_underline},
+                {'type': ItemType.FOLDER.value, 'name': folder_with_space},
+                {'type': ItemType.SHAREDFOLDER.value, 'name': folder_with_space},
             ],
         },
     )
@@ -204,7 +208,8 @@ def test_file_list_with_pagination_with_name_project_folder(requests_mock, mocke
     questionary.select.return_value.ask.return_value = 'exit'
     result = cli_runner.invoke(file_list, ['testproject/admin', '-z', 'greenroom'])
     outputs = result.output.split('\n')
-    assert outputs[0] == 'folder1  name_folder1  "project folder1"  "test folder2"  "project folder2"   '
+    assert outputs[0] == f'{folder}  {folder_with_underline}  {folder_with_underline}  "{folder_with_space}"  '
+    assert outputs[1] == f'"{folder_with_space}"   '
 
 
 def test_empty_file_list_with_pagination(requests_mock, mocker, cli_runner):
@@ -217,7 +222,7 @@ def test_empty_file_list_with_pagination(requests_mock, mocker, cli_runner):
         'app.services.file_manager.file_list.search_item',
         return_value={
             'result': {
-                'type': 'folder',
+                'type': ItemType.FOLDER.value,
                 'id': 'id',
             }
         },
@@ -233,7 +238,7 @@ def test_empty_file_list_with_pagination(requests_mock, mocker, cli_runner):
     assert outputs[0] == ' '
 
 
-@pytest.mark.parametrize('parent_folder_type', ['name_folder', 'project_folder'])
+@pytest.mark.parametrize('parent_folder_type', [ItemType.NAMEFOLDER.value, ItemType.SHAREDFOLDER.value])
 def test_file_download_success(requests_mock, mocker, cli_runner, parent_folder_type):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
@@ -254,7 +259,7 @@ def test_file_download_success(requests_mock, mocker, cli_runner, parent_folder_
             {
                 'code': 200,
                 'result': {
-                    'type': 'file',
+                    'type': ItemType.FILE.value,
                     'id': 'id',
                 },
             },

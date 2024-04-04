@@ -9,7 +9,7 @@ class ItemType(str, Enum):
     """The class to reflect the type of item in database."""
 
     FILE = 'file'
-    Folder = 'folder'
+    FOLDER = 'folder'
     NAMEFOLDER = 'name_folder'
     SHAREDFOLDER = 'project_folder'
 
