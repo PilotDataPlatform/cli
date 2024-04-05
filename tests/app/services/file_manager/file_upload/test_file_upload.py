@@ -81,7 +81,6 @@ def test_assemble_path_at_exsting_folder(mocker):
     ]
 
     mocker.patch('app.services.file_manager.file_upload.file_upload.search_item', side_effect=node_list)
-
     current_file_path, parent_folder, create_folder_flag, _ = assemble_path(
         local_file_path, target_folder, project_code, ItemType.NAMEFOLDER, zone
     )
