@@ -174,8 +174,8 @@ def identify_target_folder(project_path: str) -> Tuple[str, ItemType, str]:
         contain invalid characters and return the project code and target folder
     Parameters:
         - project_path:
-            - for project folder the input folder path (eg. <project_code>/projectfolder/<folder_name>)
-            - for name folder the input folder path will be (eg. <project_code>/<folder_name>)
+            - for project folder the input folder path (eg. <project_code>/shared/<folder_name>)
+            - for name folder the input folder path will be (eg. <project_code>/users/<folder_name>)
     Return:
         - project_code: the project code
         - folder_type: the folder type
@@ -187,15 +187,9 @@ def identify_target_folder(project_path: str) -> Tuple[str, ItemType, str]:
 
     # check folder type if is project folder or name folder
     # there will be a extra string for project folder between project code and folder name
-    if len(temp_paths) == 2:
-        folder_type = ItemType.NAMEFOLDER
-        folder_name = temp_paths[1]
-    elif len(temp_paths) >= 3:
+    if len(temp_paths) >= 3:
         folder_type = ItemType.get_type_from_keyword(temp_paths[1])
-        if folder_type == ItemType.SHAREDFOLDER:
-            folder_name = temp_paths[2]
-        else:
-            folder_name = os.path.join(temp_paths[1], temp_paths[2])
+        folder_name = temp_paths[2]
     else:
         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_NAMEFOLDER, True)
         target_folder = ''
