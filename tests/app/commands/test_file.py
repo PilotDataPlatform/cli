@@ -388,7 +388,10 @@ def test_file_move_success(mocker, cli_runner):
         return_value=None,
     )
 
-    result = cli_runner.invoke(file_move, ['test_project', 'src_item_path', 'dest_item_path'])
+    src_path = 'src_item_path/test'
+    dest_path = 'dest_item_path/test'
+    result = cli_runner.invoke(file_move, ['test_project', src_path, dest_path])
+
     outputs = result.output.split('\n')
-    assert outputs[0] == 'Successfully moved src_item_path to dest_item_path'
+    assert outputs[0] == f'Successfully moved {src_path} to {dest_path}'
     file_move_mock.assert_called_once()

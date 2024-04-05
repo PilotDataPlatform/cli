@@ -118,7 +118,7 @@ class FileMoveClient:
             Move file.
         """
 
-        # self.create_object_path_if_not_exist(self.dest_item_path)
+        self.create_object_path_if_not_exist(self.dest_item_path)
 
         try:
             url = AppConfig.Connections.url_bff + f'/v1/{self.project_code}/files'
