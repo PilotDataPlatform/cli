@@ -24,10 +24,6 @@ from tests.conftest import decoded_token
 
 
 def test_file_upload_command_success_with_attribute(mocker, cli_runner):
-    project_code = 'test_project'
-    target_folder = 'admin'
-
-    mocker.patch('app.commands.file.identify_target_folder', return_value=(project_code, target_folder))
     mocker.patch('app.commands.file.validate_upload_event', return_value={'source_file': '', 'attribute': 'test'})
     mocker.patch('app.commands.file.assemble_path', return_value=('test', {'id': 'id'}, True, 'test'))
 
@@ -48,8 +44,10 @@ def test_file_upload_command_success_with_attribute(mocker, cli_runner):
             json.dump({'template': {'attr1': 'value'}}, f)
 
         result = cli_runner.invoke(
-            file_put, ['--project-path', 'test', '--thread', 1, '--attribute', 'template.json', 'test.txt']
+            file_put,
+            ['--project-path', 'test_project/admin', '--thread', 1, '--attribute', 'template.json', 'test.txt'],
         )
+
     assert result.exit_code == 0
     simple_upload_mock.assert_called_once()
     attribute_mock.assert_called_once()
@@ -187,7 +185,9 @@ def test_file_list_with_pagination_with_name_project_folder(requests_mock, mocke
             'result': [
                 {'type': 'folder', 'name': 'folder1'},
                 {'type': 'name_folder', 'name': 'name_folder1'},
-                {'type': 'project_folder', 'name': 'project_folder1'},
+                {'type': 'project_folder', 'name': 'project folder1'},
+                {'type': 'folder', 'name': 'test folder2'},
+                {'type': 'project_folder', 'name': 'project folder2'},
             ],
         },
     )
@@ -195,7 +195,8 @@ def test_file_list_with_pagination_with_name_project_folder(requests_mock, mocke
     questionary.select.return_value.ask.return_value = 'exit'
     result = cli_runner.invoke(file_list, ['testproject/admin', '-z', 'greenroom'])
     outputs = result.output.split('\n')
-    assert outputs[0] == 'folder1  name_folder1  project_folder1   '
+    assert outputs[0] == 'folder1  name_folder1  [p]"project folder1"  '
+    assert outputs[1] == '"test folder2"  [p]"project folder2"   '
 
 
 def test_empty_file_list_with_pagination(requests_mock, mocker, cli_runner):

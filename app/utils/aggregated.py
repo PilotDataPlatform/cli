@@ -8,6 +8,7 @@ import shutil
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Tuple
 
 import httpx
 import requests
@@ -16,6 +17,7 @@ import app.services.logger_services.log_functions as logger
 from app.configs.app_config import AppConfig
 from app.configs.config import ConfigClass
 from app.configs.user_config import UserConfig
+from app.models.item import ItemType
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
@@ -164,19 +166,48 @@ def get_file_in_folder(path):
     return files_list
 
 
-def identify_target_folder(project_path):
-    project_code = project_path.split('/')[0]
-    if len(project_path.split('/')) > 1:
-        target_folder = '/'.join(project_path.split('/')[1:])
-        for f in target_folder.split('/'):
-            f = f.strip(' ')
-            valid = validate_folder_name(f)
-            if not valid:
-                SrvErrorHandler.customized_handle(ECustomizedError.INVALID_FOLDERNAME, True)
+def identify_target_folder(project_path: str) -> Tuple[str, ItemType, str]:
+    '''
+    Summary:
+        the function will validate if input folder path doesn't
+        contain invalid characters and return the project code and target folder
+    Parameters:
+        - project_path:
+            - for project folder the input folder path (eg. <project_code>/projectfolder/<folder_name>)
+            - for name folder the input folder path will be (eg. <project_code>/<folder_name>)
+    Return:
+        - project_code: the project code
+        - folder_type: the folder type
+        - target_folder: the target folder
+    '''
+    # split into project_code, folder_type, folder
+    temp_paths = project_path.split('/', 2)
+    project_code, folder_type, folder_name = temp_paths[0], '', ''
+
+    # check folder type if is project folder or name folder
+    # there will be a extra string for project folder between project code and folder name
+    if len(temp_paths) == 2:
+        folder_type = ItemType.NAMEFOLDER
+        folder_name = temp_paths[1]
+    elif len(temp_paths) >= 3:
+        folder_type = ItemType.get_type_from_keyword(temp_paths[1])
+        if folder_type == ItemType.SHAREDFOLDER:
+            folder_name = temp_paths[2]
+        else:
+            folder_name = os.path.join(temp_paths[1], temp_paths[2])
     else:
         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_NAMEFOLDER, True)
         target_folder = ''
-    return project_code, target_folder
+
+    # first check if folder names are valid
+    target_folder = '/'.join(folder_name.split('/'))
+    for f in target_folder.split('/'):
+        f = f.strip(' ')
+        valid = validate_folder_name(f)
+        if not valid:
+            SrvErrorHandler.customized_handle(ECustomizedError.INVALID_FOLDERNAME, True)
+
+    return project_code, folder_type, target_folder
 
 
 def batch_generator(iterable: List[Any], batch_size=1):
