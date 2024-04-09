@@ -116,6 +116,9 @@ class FileMetaClient:
         root_type = ItemType.get_type_from_keyword(root_folder)
         object_path = join(root_type.get_prefix_by_type(), object_path)
         item_res = search_item(project_code, self.zone, object_path)
+        if item_res.get('code') == 404:
+            logger.error(f'Cannot find item {self.file_path} at {self.zone}.')
+            exit(1)
 
         # filter out item metadata
         item_res = item_res.get('result', {})

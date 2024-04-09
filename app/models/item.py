@@ -32,7 +32,7 @@ class ItemType(str, Enum):
         """Get the prefix for the folder type."""
 
         prefix = {
-            self.NAMEFOLDER: '',
+            self.NAMEFOLDER: 'users/',
             self.SHAREDFOLDER: 'shared/',
         }
 
