@@ -132,6 +132,7 @@ def test_validate_folder_name(folder_name):
     valid = validate_folder_name(folder_name)
     assert valid is False
 
+
 @pytest.mark.parametrize(
     'input_path,expected_result',
     [
