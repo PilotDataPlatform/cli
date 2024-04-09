@@ -19,6 +19,7 @@ from click.exceptions import Abort
 
 import app.services.logger_services.log_functions as logger
 import app.services.output_manager.message_handler as message_handler
+from app.models.item import ItemType
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import customized_error_msg
 from app.utils.aggregated import get_attribute_template_by_id
@@ -109,14 +110,14 @@ class FileMetaClient:
         """
 
         project_code, object_path = self.file_path.split('/', 1)
-        item_res = search_item(project_code, self.zone, object_path)
-        # double check if the file is in shared folder
-        if item_res.get('code') == 404:
-            item_res = search_item(project_code, self.zone, f'shared/{object_path}')
-            if item_res.get('code') == 404:
-                logger.error(f'Cannot find item {self.file_path} at {self.zone}.')
-                exit(1)
+        root_folder, object_path = object_path.split('/', 1)
 
+        # double check if the file is in shared folder
+        root_type = ItemType.get_type_from_keyword(root_folder)
+        object_path = join(root_type.get_prefix_by_type(), object_path)
+        item_res = search_item(project_code, self.zone, object_path)
+
+        # filter out item metadata
         item_res = item_res.get('result', {})
         extra_info = item_res.pop('extended', {}).get('extra')
         tags = extra_info.get('tags', [])
