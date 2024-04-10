@@ -234,8 +234,8 @@ def test_empty_file_list_with_pagination(requests_mock, mocker, cli_runner):
     assert outputs[0] == ' '
 
 
-@pytest.mark.parametrize('parent_folder_type', ['name_folder', 'project_folder'])
-def test_file_download_success(requests_mock, mocker, cli_runner, parent_folder_type):
+@pytest.mark.parametrize('parent_folder_type', [ItemType.NAMEFOLDER, ItemType.SHAREDFOLDER])
+def test_file_download_success(requests_mock, mocker, cli_runner, parent_folder_type: ItemType):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
         return_value=decoded_token(),
@@ -247,7 +247,7 @@ def test_file_download_success(requests_mock, mocker, cli_runner, parent_folder_
             {
                 'code': 200,
                 'result': {
-                    'type': parent_folder_type,
+                    'type': parent_folder_type.value,
                     'name': 'test',
                     'id': 'id',
                 },
@@ -267,13 +267,12 @@ def test_file_download_success(requests_mock, mocker, cli_runner, parent_folder_
         return_value=None,
     )
 
-    project_code, target_folder = 'testproject', 'test/test.txt'
+    project_code, target_folder = 'testproject', parent_folder_type.get_prefix_by_type() + 'test/test.txt'
     result = cli_runner.invoke(file_download, [f'{project_code}/{target_folder}', './'])
     outputs = result.output.split('\n')
     assert outputs[0] == ''
 
-    except_target_folder = 'test/test.txt' if parent_folder_type == 'name_folder' else 'shared/test/test.txt'
-    search_mock.assert_called_with(project_code, 'greenroom', except_target_folder)
+    search_mock.assert_called_with(project_code, 'greenroom', target_folder)
     download_mock.assert_called_once()
 
 
