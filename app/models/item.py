@@ -37,3 +37,8 @@ class ItemType(str, Enum):
         }
 
         return prefix.get(self.value, '')
+
+
+class ItemZone(str, Enum):
+    GREENROOM = 'greenroom'
+    CORE = 'core'

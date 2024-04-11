@@ -15,6 +15,7 @@ import app.services.logger_services.log_functions as logger
 import app.services.output_manager.message_handler as mhandler
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
+from app.models.item import ItemZone
 from app.models.service_meta_class import MetaService
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
@@ -53,7 +54,7 @@ class SrvFileDownload(metaclass=MetaService):
                 click.secho(f"{message}{'.'*i}\r", fg='white', nl=False)
 
     def get_download_url(self, zone):
-        if zone == 'greenroom':
+        if zone == ItemZone.GREENROOM.value:
             url = self.appconfig.Connections.url_download_greenroom
         else:
             url = self.appconfig.Connections.url_download_core
@@ -101,11 +102,11 @@ class SrvFileDownload(metaclass=MetaService):
             file_path = download_info.get('file_path')
             pre_status = EFileStatus(response.get('status'))
         elif res.status_code == 403:
-            SrvErrorHandler.customized_handle(ECustomizedError.NO_FILE_PERMMISION, self.interactive)
+            SrvErrorHandler.customized_handle(ECustomizedError.NO_FILE_PERMMISION, if_exit=self.interactive)
         elif res.status_code == 400 and 'number of file must greater than 0' in res_json.get('error_msg'):
-            SrvErrorHandler.customized_handle(ECustomizedError.FOLDER_EMPTY, self.interactive)
+            SrvErrorHandler.customized_handle(ECustomizedError.FOLDER_EMPTY, if_exit=self.interactive)
         else:
-            SrvErrorHandler.customized_handle(ECustomizedError.DOWNLOAD_FAIL, self.interactive)
+            SrvErrorHandler.customized_handle(ECustomizedError.DOWNLOAD_FAIL, if_exit=self.interactive)
 
         return pre_status, file_path
 
