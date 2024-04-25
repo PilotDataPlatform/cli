@@ -431,8 +431,6 @@ def file_download(**kwargs):
         item_res = []
         for path in paths:
             project_code, root_folder, object_path = path.strip('/').split('/', 2)
-
-            # double check if the file is in shared folder
             root_type = ItemType.get_type_from_keyword(root_folder)
             object_path = os.path.join(root_type.get_prefix_by_type(), object_path)
 
