@@ -555,8 +555,8 @@ def file_move(**kwargs):
     src_type = ItemType.get_type_from_keyword(src_keyword)
     dest_type = ItemType.get_type_from_keyword(dest_keyword)
 
-    src_path = (src_type.get_prefix_by_type() + src_path) if src_type == ItemType.SHAREDFOLDER else src_item_path
-    dest_path = (dest_type.get_prefix_by_type() + dest_path) if dest_type == ItemType.SHAREDFOLDER else dest_item_path
+    src_path = src_type.get_prefix_by_type() + src_path
+    dest_path = dest_type.get_prefix_by_type() + dest_path
 
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
     file_meta_client = FileMoveClient(zone, project_code, src_path, dest_path, skip_confirm=skip_confirm)

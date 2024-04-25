@@ -27,7 +27,7 @@ class ItemType(str, Enum):
             'users': self.NAMEFOLDER,
         }
 
-        return alternative_mapping.get(keyword, '')
+        return alternative_mapping.get(keyword, self.FOLDER)
 
     def get_prefix_by_type(self) -> str:
         """Get the prefix for the folder type."""
