@@ -16,6 +16,7 @@ from app.commands.file import file_metadata_download
 from app.commands.file import file_move
 from app.commands.file import file_put
 from app.commands.file import file_resume
+from app.models.item import ItemType
 from app.services.file_manager.file_metadata.file_metadata_client import FileMetaClient
 from app.services.file_manager.file_upload.models import FileObject
 from app.services.output_manager.error_handler import ECustomizedError
@@ -45,7 +46,15 @@ def test_file_upload_command_success_with_attribute(mocker, cli_runner):
 
         result = cli_runner.invoke(
             file_put,
-            ['--project-path', 'test_project/admin', '--thread', 1, '--attribute', 'template.json', 'test.txt'],
+            [
+                '--project-path',
+                f'test_project/{ItemType.NAMEFOLDER.get_prefix_by_type()}admin',
+                '--thread',
+                1,
+                '--attribute',
+                'template.json',
+                'test.txt',
+            ],
         )
 
     assert result.exit_code == 0
@@ -134,69 +143,55 @@ def test_file_list_with_pagination_with_folder_success(requests_mock, mocker, cl
         return_value=decoded_token(),
     )
 
-    mocker.patch(
-        'app.services.file_manager.file_list.search_item',
-        return_value={
-            'result': {
-                'type': 'folder',
-                'id': 'id',
-            }
-        },
-    )
     requests_mock.get(
         'http://bff_cli' + '/v1/testproject/files/query',
         json={
             'code': 200,
             'error_msg': '',
             'result': [
-                {'type': 'file', 'name': 'file1'},
-                {'type': 'file', 'name': 'file2'},
+                {'type': ItemType.FILE.value, 'name': 'file1'},
+                {'type': ItemType.FILE.value, 'name': 'file2'},
             ],
         },
     )
     mocker.patch.object(questionary, 'select')
     questionary.select.return_value.ask.return_value = 'exit'
-    result = cli_runner.invoke(file_list, ['testproject/admin', '-z', 'greenroom'])
+    result = cli_runner.invoke(file_list, ['testproject/users/admin', '-z', 'greenroom'])
     outputs = result.output.split('\n')
     assert outputs[0] == 'file1  file2   '
 
 
-@pytest.mark.parametrize('parent_folder_type', ['name_folder', 'project_folder'])
-def test_file_list_with_pagination_with_name_project_folder(requests_mock, mocker, cli_runner, parent_folder_type):
+def test_file_list_with_pagination_with_root_folder(requests_mock, mocker, cli_runner):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
         return_value=decoded_token(),
     )
 
-    mocker.patch(
-        'app.services.file_manager.file_list.search_item',
-        return_value={
-            'result': {
-                'type': parent_folder_type,
-                'id': 'id',
-            }
-        },
-    )
+    folder = 'folder1'
+    folder_with_underline = 'folder_1'
+    folder_with_space = 'folder 1'
+    root_folder = 'root_folder'
     requests_mock.get(
         'http://bff_cli' + '/v1/testproject/files/query',
         json={
             'code': 200,
             'error_msg': '',
             'result': [
-                {'type': 'folder', 'name': 'folder1'},
-                {'type': 'name_folder', 'name': 'name_folder1'},
-                {'type': 'project_folder', 'name': 'project folder1'},
-                {'type': 'folder', 'name': 'test folder2'},
-                {'type': 'project_folder', 'name': 'project folder2'},
+                {'type': ItemType.FOLDER.value, 'name': folder},
+                {'type': ItemType.NAMEFOLDER.value, 'name': folder_with_underline},
+                {'type': ItemType.SHAREDFOLDER.value, 'name': folder_with_underline},
+                {'type': ItemType.FOLDER.value, 'name': folder_with_space},
+                {'type': ItemType.SHAREDFOLDER.value, 'name': folder_with_space},
+                {'type': ItemType.ROOTFOLDER.value, 'name': root_folder},
             ],
         },
     )
     mocker.patch.object(questionary, 'select')
     questionary.select.return_value.ask.return_value = 'exit'
-    result = cli_runner.invoke(file_list, ['testproject/admin', '-z', 'greenroom'])
+    result = cli_runner.invoke(file_list, ['testproject/users/admin', '-z', 'greenroom'])
     outputs = result.output.split('\n')
-    assert outputs[0] == 'folder1  name_folder1  [p]"project folder1"  '
-    assert outputs[1] == '"test folder2"  [p]"project folder2"   '
+    assert outputs[0] == f'{folder}  {folder_with_underline}  {folder_with_underline}  "{folder_with_space}"  '
+    assert outputs[1] == f'"{folder_with_space}"  {root_folder}   '
 
 
 def test_empty_file_list_with_pagination(requests_mock, mocker, cli_runner):
@@ -205,15 +200,6 @@ def test_empty_file_list_with_pagination(requests_mock, mocker, cli_runner):
         return_value=decoded_token(),
     )
 
-    mocker.patch(
-        'app.services.file_manager.file_list.search_item',
-        return_value={
-            'result': {
-                'type': 'folder',
-                'id': 'id',
-            }
-        },
-    )
     requests_mock.get(
         'http://bff_cli' + '/v1/testproject/files/query',
         json={'code': 200, 'error_msg': '', 'result': []},
@@ -222,10 +208,10 @@ def test_empty_file_list_with_pagination(requests_mock, mocker, cli_runner):
     questionary.select.return_value.ask.return_value = 'exit'
     result = cli_runner.invoke(file_list, ['testproject/admin', '-z', 'greenroom'])
     outputs = result.output.split('\n')
-    assert outputs[0] == ' '
+    assert outputs[0] == ''
 
 
-@pytest.mark.parametrize('parent_folder_type', ['name_folder', 'project_folder'])
+@pytest.mark.parametrize('parent_folder_type', [ItemType.NAMEFOLDER.value, ItemType.SHAREDFOLDER.value])
 def test_file_download_success(requests_mock, mocker, cli_runner, parent_folder_type):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
@@ -246,7 +232,7 @@ def test_file_download_success(requests_mock, mocker, cli_runner, parent_folder_
             {
                 'code': 200,
                 'result': {
-                    'type': 'file',
+                    'type': ItemType.FILE.value,
                     'id': 'id',
                 },
             },
