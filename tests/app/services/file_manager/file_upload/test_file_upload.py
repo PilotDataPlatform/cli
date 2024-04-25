@@ -132,7 +132,7 @@ def test_assemble_path_at_non_existing_folder(mocker):
 
 def test_assemble_path_at_project_folder(mocker):
     local_file_path = './test/file.txt'
-    target_folder = 'project_folder'
+    target_folder = ItemType.SHAREDFOLDER.value
     project_code = 'test_project'
     zone = 0
 
@@ -143,9 +143,9 @@ def test_assemble_path_at_project_folder(mocker):
                 'id': 'test',
                 'parent_id': 'test_parent',
                 'parent_path': '',
-                'name': 'project_folder',
+                'name': target_folder,
                 'zone': 0,
-                'type': 'project_folder',
+                'type': target_folder,
             }
         },
     )
