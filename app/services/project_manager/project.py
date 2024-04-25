@@ -48,4 +48,4 @@ class SrvProjectManager(metaclass=MetaService):
             else:
                 SrvErrorHandler.default_handle(response.content, True)
         except Exception:
-            SrvErrorHandler.default_handle(response.content, True)
+            SrvErrorHandler.default_handle('Error when listing projects', True)

@@ -208,7 +208,7 @@ def test_empty_file_list_with_pagination(requests_mock, mocker, cli_runner):
     questionary.select.return_value.ask.return_value = 'exit'
     result = cli_runner.invoke(file_list, ['testproject/admin', '-z', 'greenroom'])
     outputs = result.output.split('\n')
-    assert outputs[0] == ''
+    assert outputs[0] == ' '
 
 
 @pytest.mark.parametrize('parent_folder_type', [ItemType.NAMEFOLDER.value, ItemType.SHAREDFOLDER.value])
