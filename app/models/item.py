@@ -9,9 +9,10 @@ class ItemType(str, Enum):
     """The class to reflect the type of item in database."""
 
     FILE = 'file'
-    Folder = 'folder'
+    FOLDER = 'folder'
     NAMEFOLDER = 'name_folder'
     SHAREDFOLDER = 'project_folder'
+    ROOTFOLDER = 'root_folder'
 
     @classmethod
     def get_type_from_keyword(self, keyword: str):
@@ -22,17 +23,19 @@ class ItemType(str, Enum):
         """
 
         alternative_mapping = {
-            'projectfolder': self.SHAREDFOLDER,
+            'shared': self.SHAREDFOLDER,
+            'users': self.NAMEFOLDER,
         }
 
-        return alternative_mapping.get(keyword, self.NAMEFOLDER)
+        return alternative_mapping.get(keyword, '')
 
     def get_prefix_by_type(self) -> str:
         """Get the prefix for the folder type."""
 
         prefix = {
-            self.NAMEFOLDER: '',
+            self.NAMEFOLDER: 'users/',
             self.SHAREDFOLDER: 'shared/',
+            self.ROOTFOLDER: '',
         }
 
         return prefix.get(self.value, '')
