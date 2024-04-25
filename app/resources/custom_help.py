@@ -9,9 +9,9 @@ class HelpPage:
     page = {
         'update': {
             'version': pkg_resources.get_distribution('app').version,
-            '1': 'Add new feature for folder merging',
-            '2': 'Secure the config file',
-            '3': 'Optimize logic, input and error message',
+            '1': 'Add a new feature for file metadata downloading.',
+            '2': 'Add a new feature for file moving/renaming.',
+            '3': 'Support shared folder within project.',
         },
         'dataset': {
             'DATASET_DOWNLOAD': 'Download a dataset or a particular version of a dataset.',
