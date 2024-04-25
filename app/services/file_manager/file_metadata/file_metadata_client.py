@@ -111,8 +111,6 @@ class FileMetaClient:
 
         project_code, object_path = self.file_path.split('/', 1)
         root_folder, object_path = object_path.split('/', 1)
-
-        # double check if the file is in shared folder
         root_type = ItemType.get_type_from_keyword(root_folder)
         object_path = join(root_type.get_prefix_by_type(), object_path)
         item_res = search_item(project_code, self.zone, object_path)
