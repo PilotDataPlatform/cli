@@ -190,7 +190,7 @@ def identify_target_folder(project_path: str) -> Tuple[str, ItemType, str]:
         folder_type = ItemType.get_type_from_keyword(temp_paths[1])
         folder_name = temp_paths[2]
     else:
-        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_NAMEFOLDER, True)
+        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_PROJECT_PATH, True)
         target_folder = ''
 
     # first check if folder names are valid
