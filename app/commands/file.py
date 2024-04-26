@@ -430,14 +430,12 @@ def file_download(**kwargs):
     else:
         item_res = []
         for path in paths:
-            project_code, root_folder = path.strip('/').split('/')[:2]
-            target_path = '/'.join(path.split('/')[1::])
-            # search the root to check for name folder or project folder
-            root_item = search_item(project_code, zone, root_folder).get('result', {})
-            target_path = 'shared/' + target_path if root_item.get('type') == 'project_folder' else target_path
+            project_code, root_folder, object_path = path.strip('/').split('/', 2)
+            root_type = ItemType.get_type_from_keyword(root_folder)
+            object_path = os.path.join(root_type.get_prefix_by_type(), object_path)
 
             # search the target item and download to local
-            item = search_item(project_code, zone, target_path)
+            item = search_item(project_code, zone, object_path)
             if item.get('code') == 200 and item.get('result'):
                 item_status = 'success'
                 item_result = item.get('result')

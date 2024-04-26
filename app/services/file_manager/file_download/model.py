@@ -5,11 +5,8 @@
 from enum import Enum
 
 
-class EFileStatus(Enum):
+class EFileStatus(str, Enum):
     WAITING = 'WAITING'
     RUNNING = 'RUNNING'
     SUCCEED = 'SUCCEED'
     FAILED = 'FAILED'
-
-    def __str__(self):
-        return '%s' % self.name
