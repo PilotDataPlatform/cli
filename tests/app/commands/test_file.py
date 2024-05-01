@@ -211,7 +211,7 @@ def test_empty_file_list_with_pagination(requests_mock, mocker, cli_runner):
     assert outputs[0] == ' '
 
 
-@pytest.mark.parametrize('parent_folder_type', [ItemType.NAMEFOLDER.value, ItemType.SHAREDFOLDER.value])
+@pytest.mark.parametrize('parent_folder_type', [ItemType.NAMEFOLDER, ItemType.SHAREDFOLDER])
 def test_file_download_success(requests_mock, mocker, cli_runner, parent_folder_type):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
