@@ -36,7 +36,7 @@ def test_assemble_path_at_name_folder(mocker):
     current_file_path, parent_folder, create_folder_flag, _ = assemble_path(
         local_file_path, target_folder, project_code, ItemType.NAMEFOLDER, zone
     )
-    assert current_file_path == 'admin/file.txt'
+    assert current_file_path == f'{ItemType.NAMEFOLDER.get_prefix_by_type()}admin/file.txt'
     assert parent_folder.get('name') == 'admin'
     assert create_folder_flag is False
 
@@ -53,6 +53,16 @@ def test_assemble_path_at_exsting_folder(mocker):
                 'id': 'test',
                 'parent_id': 'test_parent',
                 'parent_path': '',
+                'name': ItemType.NAMEFOLDER.get_prefix_by_type().strip('/'),
+                'zone': 0,
+                'type': 'folder',
+            }
+        },
+        {
+            'result': {
+                'id': 'test',
+                'parent_id': 'test_parent',
+                'parent_path': ItemType.NAMEFOLDER.get_prefix_by_type(),
                 'name': 'admin',
                 'zone': 0,
                 'type': 'folder',
@@ -62,7 +72,7 @@ def test_assemble_path_at_exsting_folder(mocker):
             'result': {
                 'id': 'test',
                 'parent_id': 'test_parent',
-                'parent_path': 'admin',
+                'parent_path': ItemType.NAMEFOLDER.get_prefix_by_type() + 'admin',
                 'name': 'test_folder_exist',
                 'zone': 0,
                 'type': 'folder',
@@ -74,7 +84,7 @@ def test_assemble_path_at_exsting_folder(mocker):
     current_file_path, parent_folder, create_folder_flag, _ = assemble_path(
         local_file_path, target_folder, project_code, ItemType.NAMEFOLDER, zone
     )
-    assert current_file_path == 'admin/test_folder_exist/file.txt'
+    assert current_file_path == f'{ItemType.NAMEFOLDER.get_prefix_by_type()}admin/test_folder_exist/file.txt'
     assert parent_folder.get('name') == 'test_folder_exist'
     assert create_folder_flag is False
 
@@ -91,6 +101,16 @@ def test_assemble_path_at_non_existing_folder(mocker):
                 'id': 'test',
                 'parent_id': 'test_parent',
                 'parent_path': '',
+                'name': ItemType.NAMEFOLDER.get_prefix_by_type().strip('/'),
+                'zone': 0,
+                'type': 'folder',
+            }
+        },
+        {
+            'result': {
+                'id': 'test',
+                'parent_id': 'test_parent',
+                'parent_path': ItemType.NAMEFOLDER.get_prefix_by_type(),
                 'name': 'admin',
                 'zone': 0,
                 'type': 'folder',
@@ -105,14 +125,14 @@ def test_assemble_path_at_non_existing_folder(mocker):
     current_file_path, parent_folder, create_folder_flag, _ = assemble_path(
         local_file_path, target_folder, project_code, ItemType.NAMEFOLDER, zone
     )
-    assert current_file_path == 'admin/test_folder_not_exist'
+    assert current_file_path == f'{ItemType.NAMEFOLDER.get_prefix_by_type()}admin/test_folder_not_exist'
     assert parent_folder.get('name') == 'admin'
     assert create_folder_flag is True
 
 
 def test_assemble_path_at_project_folder(mocker):
     local_file_path = './test/file.txt'
-    target_folder = 'project_folder'
+    target_folder = ItemType.SHAREDFOLDER.value
     project_code = 'test_project'
     zone = 0
 
@@ -123,9 +143,9 @@ def test_assemble_path_at_project_folder(mocker):
                 'id': 'test',
                 'parent_id': 'test_parent',
                 'parent_path': '',
-                'name': 'project_folder',
+                'name': target_folder,
                 'zone': 0,
-                'type': 'project_folder',
+                'type': target_folder,
             }
         },
     )
@@ -133,9 +153,9 @@ def test_assemble_path_at_project_folder(mocker):
     current_file_path, parent_folder, create_folder_flag, target_folder = assemble_path(
         local_file_path, target_folder, project_code, ItemType.SHAREDFOLDER, zone
     )
-    assert current_file_path == 'shared/project_folder/file.txt'
+    assert current_file_path == f'{ItemType.SHAREDFOLDER.get_prefix_by_type()}project_folder/file.txt'
     assert parent_folder.get('name') == 'project_folder'
-    assert target_folder == 'shared/project_folder'
+    assert target_folder == f'{ItemType.SHAREDFOLDER.get_prefix_by_type()}project_folder'
     assert create_folder_flag is False
 
 

@@ -1,4 +1,4 @@
-# command_line_tool_ctl
+# Pilot CLI
 
 [![Run Tests](https://github.com/PilotDataPlatform/cli/actions/workflows/run-tests.yml/badge.svg?branch=develop)](https://github.com/PilotDataPlatform/cli/actions/workflows/run-tests.yml)
 [![Python](https://img.shields.io/badge/python-3.7-brightgreen.svg)](https://www.python.org/)

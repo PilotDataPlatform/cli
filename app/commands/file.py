@@ -12,6 +12,7 @@ from click.exceptions import Abort
 import app.services.output_manager.help_page as file_help
 import app.services.output_manager.message_handler as message_handler
 from app.configs.app_config import AppConfig
+from app.models.item import ItemType
 from app.services.file_manager.file_download.download_client import SrvFileDownload
 from app.services.file_manager.file_list import SrvFileList
 from app.services.file_manager.file_manifests import SrvFileManifests
@@ -429,14 +430,12 @@ def file_download(**kwargs):
     else:
         item_res = []
         for path in paths:
-            project_code, root_folder = path.strip('/').split('/')[:2]
-            target_path = '/'.join(path.split('/')[1::])
-            # search the root to check for name folder or project folder
-            root_item = search_item(project_code, zone, root_folder).get('result', {})
-            target_path = 'shared/' + target_path if root_item.get('type') == 'project_folder' else target_path
+            project_code, root_folder, object_path = path.strip('/').split('/', 2)
+            root_type = ItemType.get_type_from_keyword(root_folder)
+            object_path = os.path.join(root_type.get_prefix_by_type(), object_path)
 
             # search the target item and download to local
-            item = search_item(project_code, zone, target_path)
+            item = search_item(project_code, zone, object_path)
             if item.get('code') == 200 and item.get('result'):
                 item_status = 'success'
                 item_result = item.get('result')
@@ -544,8 +543,21 @@ def file_move(**kwargs):
     zone = kwargs.get('zone')
     skip_confirm = kwargs.get('yes')
 
+    if len(src_item_path.split('/')) == 1 and len(dest_item_path.split('/')) == 1:
+        raise Exception('Invalid path')
+
+    # tranlate keyword to correct object path
+    src_keyword, src_path = src_item_path.split('/', 1)
+    dest_keyword, dest_path = dest_item_path.split('/', 1)
+
+    src_type = ItemType.get_type_from_keyword(src_keyword)
+    dest_type = ItemType.get_type_from_keyword(dest_keyword)
+
+    src_path = src_type.get_prefix_by_type() + src_path
+    dest_path = dest_type.get_prefix_by_type() + dest_path
+
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
-    file_meta_client = FileMoveClient(zone, project_code, src_item_path, dest_item_path, skip_confirm=skip_confirm)
+    file_meta_client = FileMoveClient(zone, project_code, src_path, dest_path, skip_confirm=skip_confirm)
     file_meta_client.move_file()
 
     message_handler.SrvOutPutHandler.move_action_success(src_item_path, dest_item_path)

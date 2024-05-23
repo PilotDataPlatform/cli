@@ -92,7 +92,7 @@ class Error:
         'INVALID_ACTION': 'Invalid action: %s',
         'DUPLICATE_TAG_ERROR': 'Cannot add duplicate tags',
         'INVALID_FOLDER': 'Provided folder does not exist',
-        'INVALID_NAMEFOLDER': 'User name folder is missing or provided user name folder does not exist',
+        'INVALID_PROJECT_PATH': 'root folder is missing or provided name/shared folder does not exist',
         'INVALID_DOWNLOAD': 'Invalid download, file/folder not exist or folder is empty: %s',
         # file metadata related error
         'LOCAL_METADATA_FILE_EXISTS': 'Following metadata file already exists in the local directory: ',

@@ -15,7 +15,6 @@ from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
 from app.utils.aggregated import fit_terminal_width
-from app.utils.aggregated import search_item
 
 
 class SrvFileList(metaclass=MetaService):
@@ -23,18 +22,14 @@ class SrvFileList(metaclass=MetaService):
 
     @require_valid_token()
     def list_files(self, paths, zone, page, page_size):
+        # path is formatted as <project_code>/<root_folder>/<folder1>
+        # split the path in to project_code, root_folder, and folder1
         project_path = paths.strip('/').split('/')
-        project_code = project_path[0]
+        project_code, source_type = project_path[0], 'project'
         folder_rel_path = '/'.join(project_path[1:])
-        if len(project_path) == 1:
-            source_type = 'project'
-        else:
-            source_type = 'project'
-            res = search_item(project_code, zone, folder_rel_path)
-            parent_folder = res.get('result')
-            # if the target folder is project folder add the default path
-            if parent_folder.get('type') == 'project_folder':
-                folder_rel_path = 'shared/' + folder_rel_path
+        if len(project_path) > 1:
+            root_folder = ItemType.get_type_from_keyword(project_path[1])
+            folder_rel_path = folder_rel_path.replace(project_path[1], root_folder.get_prefix_by_type()[:-1], 1)
 
         # now query the backend to get the file list
         get_url = AppConfig.Connections.url_bff + f'/v1/{project_code}/files/query'
@@ -68,10 +63,6 @@ class SrvFileList(metaclass=MetaService):
             if item_type == ItemType.FILE:
                 files = files + f.get('name') + ' ...'
             else:
-                # add [p] in front of the project folder
-                if item_type == ItemType.SHAREDFOLDER:
-                    f['name'] = f'[p]{f.get("name")}'
-
                 folders = folders + f"\033[34m{f.get('name')}\033[0m ..."
 
         f_string = folders + files

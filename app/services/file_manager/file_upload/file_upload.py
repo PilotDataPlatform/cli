@@ -69,10 +69,9 @@ def assemble_path(
          - target_folder: result object path on platform
 
     '''
-
     current_file_path = target_folder + '/' + f.rstrip('/').split('/')[-1]
     # set name folder as first parent folder
-    root_folder = target_folder.split('/')[0]
+    root_folder = folder_type.get_prefix_by_type() + target_folder.split('/')[0]
     parent_folder = search_item(project_code, zone, root_folder).get('result', {})
 
     # if f input is a file then current_folder_node is target_folder

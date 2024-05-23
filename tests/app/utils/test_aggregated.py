@@ -136,10 +136,22 @@ def test_validate_folder_name(folder_name):
 @pytest.mark.parametrize(
     'input_path,expected_result',
     [
-        ('project_code/username', ('project_code', ItemType.NAMEFOLDER, 'username')),
-        ('project_code/username/folder1', ('project_code', ItemType.NAMEFOLDER, 'username/folder1')),
-        ('project_code/projectfolder/folder1', ('project_code', ItemType.SHAREDFOLDER, 'folder1')),
-        ('project_code/projectfolder/folder1/folder2', ('project_code', ItemType.SHAREDFOLDER, 'folder1/folder2')),
+        (
+            f'project_code/{ItemType.NAMEFOLDER.get_prefix_by_type()}username',
+            ('project_code', ItemType.NAMEFOLDER, 'username'),
+        ),
+        (
+            f'project_code/{ItemType.NAMEFOLDER.get_prefix_by_type()}username/folder1',
+            ('project_code', ItemType.NAMEFOLDER, 'username/folder1'),
+        ),
+        (
+            f'project_code/{ItemType.SHAREDFOLDER.get_prefix_by_type()}folder1',
+            ('project_code', ItemType.SHAREDFOLDER, 'folder1'),
+        ),
+        (
+            f'project_code/{ItemType.SHAREDFOLDER.get_prefix_by_type()}folder1/folder2',
+            ('project_code', ItemType.SHAREDFOLDER, 'folder1/folder2'),
+        ),
     ],
 )
 def test_identify_target_folder_success_with_different_path(mocker, input_path, expected_result):
