@@ -12,6 +12,7 @@ from typing import Tuple
 
 import httpx
 import requests
+from github import Github
 
 import app.services.logger_services.log_functions as logger
 from app.configs.app_config import AppConfig
@@ -218,3 +219,11 @@ def remove_the_output_file(filepath: str) -> None:
         pass
     except OSError:
         logger.warning(f'Unable to remove "{filepath}".')
+
+
+def get_latest_cli_version() -> str:
+    g = Github()
+    cli_repo = g.get_repo(AppConfig.Env.github_url)
+    latest_release = cli_repo.get_latest_release()
+
+    return latest_release.tag_name

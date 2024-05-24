@@ -27,6 +27,8 @@ class AppConfig:
         core_bucket_prefix = 'core'
         greenroom_bucket_prefix = 'gr'
 
+        github_url = 'PilotDataPlatform/cli'
+
     class Connections:
         url_harbor = ConfigClass.url_harbor
         url_authn = ConfigClass.url_authn

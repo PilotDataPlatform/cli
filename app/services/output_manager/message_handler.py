@@ -7,6 +7,7 @@ import io
 import qrcode
 
 import app.services.logger_services.log_functions as logger
+from app.configs.app_config import AppConfig
 from app.models.enums import LoginMethod
 from app.models.service_meta_class import MetaService
 
@@ -334,3 +335,13 @@ class SrvOutPutHandler(metaclass=MetaService):
     @staticmethod
     def container_registry_share_project_success(role, project, username):
         logger.succeed(f'Shared project {project} with {username} as {role}')
+
+    @staticmethod
+    def newer_version_available(version):
+        message = (
+            f'\nNewer version available! pilotcli v{version} is available.\n'
+            + f'Please visit https://github.com/{AppConfig.Env.github_url}/releases/latest\n'
+        )
+        logger.info(message)
+
+        return message
