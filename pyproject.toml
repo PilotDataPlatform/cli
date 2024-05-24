@@ -7,7 +7,6 @@ authors = ["Indoc Systems"]
 [tool.poetry.dependencies]
 python = ">=3.7,<3.11"
 click = "7.1.2"
-PyJWT = "1.7.1"
 questionary = "^1.10.0"
 tqdm = "4.56.0"
 cryptography = "3.4.8"
@@ -20,6 +19,7 @@ httpx = "^0.23.0"
 qrcode = "^7.4.2"
 pytest-click = "^1.1.0"
 pyinstaller = "^5.13.0"
+pygithub = "2.2.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "6.2.5"
