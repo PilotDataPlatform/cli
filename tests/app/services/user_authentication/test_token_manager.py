@@ -14,14 +14,14 @@ from tests.conftest import decoded_token
 class TestSrvTokenManager:
     def test_is_api_key_returns_true_when_audience_has_api_key_entry(self):
         user_config = UserConfig()
-        user_config.access_token = jwt.encode({'aud': 'api-key'}, key='').decode()
+        user_config.access_token = jwt.encode({'aud': 'api-key'}, key='')
         manager = SrvTokenManager()
 
         assert manager.is_api_key() is True
 
     def test_refresh_calls_refresh_api_key_method_when_is_api_key_method_returns_true(self, mocker, fake):
         user_config = UserConfig()
-        user_config.access_token = jwt.encode({'aud': 'api-key'}, key='').decode()
+        user_config.access_token = jwt.encode({'aud': 'api-key'}, key='')
         manager = SrvTokenManager()
         refresh_api_key_mock = mocker.patch.object(manager, 'refresh_api_key')
 
@@ -31,7 +31,7 @@ class TestSrvTokenManager:
 
     def test_refresh_api_key_calls_keycloak_and_stores_access_token_in_config(self, requests_mock, settings):
         manager = SrvTokenManager()
-        access_token = jwt.encode({}, key='').decode()
+        access_token = jwt.encode({}, key='')
         requests_mock.get(
             f'{AppConfig.Connections.url_keycloak_realm}/api-key/{manager.config.api_key}',
             json={'access_token': access_token},
