@@ -77,8 +77,6 @@ class SrvTokenManager(metaclass=MetaService):
         return 0
 
     def refresh(self, azp: str) -> None:
-        if self.is_api_key():
-            return self.refresh_api_key()
 
         url = AppConfig.Connections.url_keycloak_token
         payload = {
@@ -98,12 +96,3 @@ class SrvTokenManager(metaclass=MetaService):
             SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TOKEN, if_exit=True)
         else:
             SrvErrorHandler.default_handle(response.content)
-
-    def refresh_api_key(self) -> None:
-        access_token = exchange_api_key(self.config.api_key)
-        if access_token is None:
-            return SrvErrorHandler.default_handle(
-                f'Unable to get access token using "{LoginMethod.API_KEY.value}" method. Unable to proceed.', True
-            )
-
-        self.update_token(access_token, '')
