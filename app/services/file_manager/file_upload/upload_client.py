@@ -167,7 +167,7 @@ class UploadClient:
         # generate a list of locations for uploaded files to check duplication
         # at same time, generate a dict of mapping with object_path: FileObject
         locations = [x.object_path for x in file_objects]
-        object_path_file_object_map = {x.object_path: x for x in file_objects}
+        object_path_file_object_map = {x.object_path.lower(): x for x in file_objects}
 
         payload = {
             'locations': locations,
@@ -182,9 +182,15 @@ class UploadClient:
         if response.status_code == 200:
             exist_files = response.json().get('result', [])
             for exist_file_path in exist_files:
-                object_path_file_object_map.pop(exist_file_path)
+                object_path_file_object_map.pop(exist_file_path.lower())
         else:
             SrvErrorHandler.default_handle('Error when checking file duplication', if_exit=True)
+
+        # reconstruct non exist file objects which will be uploaded
+        # without lower() function.
+        return_list = {}
+        for _, item in object_path_file_object_map.items():
+            return_list.update({item.object_path: item})
 
         return list(object_path_file_object_map.values()), exist_files
 
