@@ -122,14 +122,22 @@ class FileMoveClient:
         Summary:
             Move file.
         """
-
         self.create_object_path_if_not_exist(self.dest_item_path)
+
+        # Inner function to create shared prefix if needed for PATCH request to bff for move
+        def get_prefix(item_path: str):
+            item_root = search_item(self.project_code, self.zone, self.src_item_path.split('/')[0]).get('result')
+            if item_root.get('type') == 'project_folder':
+                return 'shared/'
+            return ''
+        src_item_prefix = get_prefix(self.src_item_path)
+        dest_item_prefix = get_prefix(self.dest_item_path)
 
         try:
             url = AppConfig.Connections.url_bff + f'/v1/{self.project_code}/files'
             payload = {
-                'src_item_path': self.src_item_path,
-                'dest_item_path': self.dest_item_path,
+                'src_item_path': src_item_prefix + self.src_item_path,
+                'dest_item_path': dest_item_prefix + self.dest_item_path,
                 'zone': self.zone,
             }
             headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
