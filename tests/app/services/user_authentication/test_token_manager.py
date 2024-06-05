@@ -19,7 +19,7 @@ class TestSrvTokenManager:
 
         assert manager.is_api_key() is True
 
-    def test_refresh_calls_refresh_api_key_method_when_is_api_key_method_returns_true(self, requests_mock, fake):
+    def test_refresh_calls_refresh_token_method_when_is_api_key_method_returns_true(self, requests_mock, fake):
         user_config = UserConfig()
         user_config.access_token = jwt.encode({'aud': 'api-key'}, key='').decode()
         user_config.refresh_token = jwt.encode({'refresh': 'token'}, key='').decode()

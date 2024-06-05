@@ -5,7 +5,8 @@
 import time
 from typing import Any
 from typing import Dict
-from typing import Union, Tuple
+from typing import Tuple
+from typing import Union
 from uuid import uuid4
 
 import jwt
@@ -20,7 +21,7 @@ from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.output_manager.message_handler import SrvOutPutHandler
 
 
-def exchange_api_key(api_key: str) -> Union[Tuple[str, str], None]:
+def exchange_api_key(api_key: str) -> Union[Tuple[str, str], Tuple[None, None]]:
     """Exchange API Key with JWT token using Keycloak."""
 
     url = f'{AppConfig.Connections.url_keycloak_realm}/api-key/{api_key}'
@@ -30,7 +31,8 @@ def exchange_api_key(api_key: str) -> Union[Tuple[str, str], None]:
     except RequestException:
         return None, None
 
-    return response.json()['access_token'], response.json()['refresh_token']
+    response = response.json()
+    return response['access_token'], response['refresh_token']
 
 
 def login_using_api_key(api_key: str) -> bool:
