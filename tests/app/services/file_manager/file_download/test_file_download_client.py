@@ -19,7 +19,7 @@ from tests.conftest import decoded_token
 @pytest.mark.parametrize('file_status', [EFileStatus.SUCCEED, EFileStatus.FAILED, EFileStatus.WAITING])
 def test_file_download_client_prepare_download_success(mocker, httpx_mock, file_status: EFileStatus):
     test_file_path = 'test_file_path'
-    hash_token = jwt.encode({'file_path': test_file_path}, key='unittest', algorithm='HS256').decode('utf-8')
+    hash_token = jwt.encode({'file_path': test_file_path}, key='unittest')
 
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',

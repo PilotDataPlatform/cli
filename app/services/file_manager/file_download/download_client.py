@@ -98,7 +98,7 @@ class SrvFileDownload(metaclass=MetaService):
             # fetch the info from hash token
             response = res.json().get('result')
             self.hash_code = response.get('payload', {}).get('hash_code')
-            download_info = jwt.decode(self.hash_code, options={'verify_signature': False})
+            download_info = jwt.decode(self.hash_code, options={'verify_signature': False}, algorithms=['HS256'])
             file_path = download_info.get('file_path')
             pre_status = EFileStatus(response.get('status'))
         elif res.status_code == 403:

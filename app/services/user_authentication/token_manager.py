@@ -35,11 +35,11 @@ class SrvTokenManager(metaclass=MetaService):
 
     def decode_access_token(self):
         tokens = self.get_token()
-        return jwt.decode(tokens[0], verify=False)
+        return jwt.decode(tokens[0], options={'verify_signature': False}, algorithms=['RS256'])
 
     def decode_refresh_token(self):
         tokens = self.get_token()
-        return jwt.decode(tokens[1], verify=False)
+        return jwt.decode(tokens[1], options={'verify_signature': False}, algorithms=['RS256'])
 
     def is_api_key(self) -> bool:
         token = self.decode_access_token()

@@ -10,7 +10,7 @@ import requests
 import app.services.output_manager.error_handler as error_handler
 from app.commands.entry_point import command_groups
 from app.commands.entry_point import entry_point
-from app.services.output_manager.help_page import update_message
+from app.services.output_manager.help_page import get_cli_help_message
 from app.utils.aggregated import doc
 
 
@@ -29,7 +29,7 @@ class ComplexCLI(click.MultiCommand):
 
 
 @click.command(cls=ComplexCLI)
-@doc(update_message)
+@doc(get_cli_help_message())
 def cli():
     try:
         entry_point()
