@@ -6,6 +6,7 @@ from typing import Union
 
 import click
 import pkg_resources
+from packaging.version import Version
 
 import app.services.output_manager.help_page as user_help
 import app.services.output_manager.message_handler as mhandler
@@ -59,7 +60,7 @@ def login(api_key: Union[str, None]):
 
     # message user if there is a newer version of the CLI
     latest_version = get_latest_cli_version()
-    if pkg_resources.get_distribution('app').version < latest_version:
+    if Version(pkg_resources.get_distribution('app').version) < latest_version:
         mhandler.SrvOutPutHandler.newer_version_available(latest_version)
 
 

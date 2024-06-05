@@ -5,6 +5,7 @@
 import enum
 
 import pkg_resources
+from packaging.version import Version
 
 import app.services.output_manager.message_handler as mhandler
 from app.resources.custom_help import HelpPage
@@ -24,7 +25,7 @@ def get_cli_help_message():
 
     # message user if there is a newer version of the CLI
     latest_version = get_latest_cli_version()
-    if pkg_resources.get_distribution('app').version < latest_version:
+    if Version(pkg_resources.get_distribution('app').version) < latest_version:
         update_message += mhandler.SrvOutPutHandler.newer_version_available(latest_version)
 
     return update_message
