@@ -36,7 +36,7 @@ def encryption(message_to_encrypt, secret):
         algorithm=hashes.SHA256(),
         length=32,
         salt=base64.b64decode(secret),  # input binary string secret key
-        iterations=100000,
+        iterations=600000,
         backend=default_backend(),
     )
     # generate key to involve current device information
