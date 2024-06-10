@@ -42,7 +42,7 @@ def login_using_api_key(api_key: str) -> bool:
     if access_token is None:
         return False
 
-    decoded_token = jwt.decode(access_token, verify=False)
+    decoded_token = jwt.decode(access_token, options={'verify_signature': False}, algorithms=['RS256'])
     username = decoded_token['preferred_username']
 
     user_config = UserConfig()
@@ -102,7 +102,7 @@ def validate_user_device_login(device_code: str, expires: int, interval: int) ->
         return False
 
     resp_dict = resp.json()
-    decode_token = jwt.decode(resp_dict['access_token'], verify=False)
+    decode_token = jwt.decode(resp_dict['access_token'], options={'verify_signature': False}, algorithms=['RS256'])
     user_config = UserConfig()
     user_config.api_key = ''
     user_config.access_token = resp_dict['access_token']

@@ -5,6 +5,8 @@
 from typing import Union
 
 import click
+import pkg_resources
+from packaging.version import Version
 
 import app.services.output_manager.help_page as user_help
 import app.services.output_manager.message_handler as mhandler
@@ -15,6 +17,7 @@ from app.services.user_authentication.user_login_logout import user_device_id_lo
 from app.services.user_authentication.user_login_logout import user_logout
 from app.services.user_authentication.user_login_logout import validate_user_device_login
 from app.utils.aggregated import doc
+from app.utils.aggregated import get_latest_cli_version
 
 
 @click.command()
@@ -54,6 +57,11 @@ def login(api_key: Union[str, None]):
             mhandler.SrvOutPutHandler.login_success()
         else:
             mhandler.SrvOutPutHandler.validation_login_input_device_error()
+
+    # message user if there is a newer version of the CLI
+    latest_version = get_latest_cli_version()
+    if Version(pkg_resources.get_distribution('app').version) < latest_version:
+        mhandler.SrvOutPutHandler.newer_version_available(latest_version)
 
 
 @click.command()
