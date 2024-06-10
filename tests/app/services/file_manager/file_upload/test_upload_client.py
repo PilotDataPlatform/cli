@@ -8,6 +8,8 @@ from multiprocessing import TimeoutError
 from multiprocessing.pool import ThreadPool
 from time import sleep
 
+import pytest
+
 from app.configs.app_config import AppConfig
 from app.services.file_manager.file_upload.models import FileObject
 from app.services.file_manager.file_upload.upload_client import UploadClient
@@ -153,7 +155,8 @@ def test_resumable_pre_upload_failed_with_404(httpx_mock, mocker):
         AssertionError('SystemExit not raised')
 
 
-def test_check_upload_duplication_success(httpx_mock, mocker):
+@pytest.mark.parametrize('case_insensitive', [True, False])
+def test_check_upload_duplication_success(httpx_mock, mocker, case_insensitive):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
         return_value=decoded_token(),
@@ -167,12 +170,12 @@ def test_check_upload_duplication_success(httpx_mock, mocker):
     httpx_mock.add_response(
         method='POST',
         url=url,
-        json={'result': [dup_obj.object_path]},
+        json={'result': [dup_obj.object_path.upper() if case_insensitive else dup_obj.object_path]},
     )
 
     not_dup_list, dup_list = upload_client.check_upload_duplication([dup_obj, not_dup_object])
     assert not_dup_list == [not_dup_object]
-    assert dup_list == [dup_obj.object_path]
+    assert dup_list == [dup_obj.object_path.upper() if case_insensitive else dup_obj.object_path]
 
 
 def test_check_upload_duplication_fail_with_500(httpx_mock, mocker, capfd):
