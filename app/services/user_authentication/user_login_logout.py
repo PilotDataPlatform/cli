@@ -5,6 +5,7 @@
 import time
 from typing import Any
 from typing import Dict
+from typing import Tuple
 from typing import Union
 from uuid import uuid4
 
@@ -20,7 +21,7 @@ from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.output_manager.message_handler import SrvOutPutHandler
 
 
-def exchange_api_key(api_key: str) -> Union[str, None]:
+def exchange_api_key(api_key: str) -> Union[Tuple[str, str], Tuple[None, None]]:
     """Exchange API Key with JWT token using Keycloak."""
 
     url = f'{AppConfig.Connections.url_keycloak_realm}/api-key/{api_key}'
@@ -28,15 +29,16 @@ def exchange_api_key(api_key: str) -> Union[str, None]:
         response = requests.get(url, timeout=5)
         response.raise_for_status()
     except RequestException:
-        return None
+        return None, None
 
-    return response.json()['access_token']
+    response = response.json()
+    return response['access_token'], response['refresh_token']
 
 
 def login_using_api_key(api_key: str) -> bool:
     """Try to log in using API Key and store results in user config."""
 
-    access_token = exchange_api_key(api_key)
+    access_token, refresh_token = exchange_api_key(api_key)
     if access_token is None:
         return False
 
@@ -46,7 +48,7 @@ def login_using_api_key(api_key: str) -> bool:
     user_config = UserConfig()
     user_config.api_key = api_key
     user_config.access_token = access_token
-    user_config.refresh_token = ''
+    user_config.refresh_token = refresh_token
     user_config.username = username
     user_config.last_active = str(int(time.time()))
     user_config.session_id = 'cli-' + str(uuid4())

@@ -18,8 +18,10 @@ def test_login_command_with_api_key_option_calls_keycloak_and_stores_response_in
     username = fake.user_name()
     api_key = fake.pystr(20)
     access_token = jwt.encode({'preferred_username': username}, key='')
+    refresh_token = jwt.encode({'type': 'refresh', 'token': fake.pystr(20)}, key='')
     requests_mock.get(
-        f'{AppConfig.Connections.url_keycloak_realm}/api-key/{api_key}', json={'access_token': access_token}
+        f'{AppConfig.Connections.url_keycloak_realm}/api-key/{api_key}',
+        json={'access_token': access_token, 'refresh_token': refresh_token},
     )
     mocker.patch('app.commands.user.get_latest_cli_version', return_value=Version('1.0.0'))
 
@@ -30,6 +32,7 @@ def test_login_command_with_api_key_option_calls_keycloak_and_stores_response_in
 
     user = UserConfig()
     assert user.access_token == access_token
+    assert user.refresh_token == refresh_token
     assert user.username == username
 
 
