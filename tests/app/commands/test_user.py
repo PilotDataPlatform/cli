@@ -17,8 +17,8 @@ def test_login_command_with_api_key_option_calls_keycloak_and_stores_response_in
 ):
     username = fake.user_name()
     api_key = fake.pystr(20)
-    access_token = jwt.encode({'preferred_username': username}, key='').decode()
-    refresh_token = jwt.encode({'type': 'refresh', 'token': fake.pystr(20)}, key='').decode()
+    access_token = jwt.encode({'preferred_username': username}, key='')
+    refresh_token = jwt.encode({'type': 'refresh', 'token': fake.pystr(20)}, key='')
     requests_mock.get(
         f'{AppConfig.Connections.url_keycloak_realm}/api-key/{api_key}',
         json={'access_token': access_token, 'refresh_token': refresh_token},
