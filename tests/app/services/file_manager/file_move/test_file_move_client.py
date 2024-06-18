@@ -29,7 +29,7 @@ def test_file_move_success(mocker, httpx_mock):
         json={'result': item_info},
     )
 
-    file_move_client = FileMoveClient('zone', project_code, 'src_item_path', 'dest_item_path')
+    file_move_client = FileMoveClient('zone', project_code, 'users/src_item_path', 'users/dest_item_path')
     res = file_move_client.move_file()
     assert res == item_info
 
@@ -54,12 +54,12 @@ def test_file_move_error_with_permission_denied_403(mocker, httpx_mock, capfd):
         status_code=403,
     )
 
-    file_move_client = FileMoveClient('zone', project_code, 'src_item_path', 'dest_item_path')
+    file_move_client = FileMoveClient('zone', project_code, 'users/src_item_path', 'users/dest_item_path')
     try:
         file_move_client.move_file()
     except SystemExit:
         out, _ = capfd.readouterr()
-        assert out == 'Failed to move src_item_path to dest_item_path: error_msg\n'
+        assert out == 'Failed to move users/src_item_path to users/dest_item_path: error_msg\n'
 
 
 def test_file_move_error_with_wrong_input_422(mocker, httpx_mock, capfd):
@@ -78,16 +78,16 @@ def test_file_move_error_with_wrong_input_422(mocker, httpx_mock, capfd):
     httpx_mock.add_response(
         url=AppConfig.Connections.url_bff + f'/v1/{project_code}/files',
         method='PATCH',
-        json={'detail': [{'loc': ['body', 'src_item_path'], 'msg': 'error_msg', 'type': 'value_error'}]},
+        json={'detail': [{'loc': ['body', 'users/src_item_path'], 'msg': 'error_msg', 'type': 'value_error'}]},
         status_code=422,
     )
 
-    file_move_client = FileMoveClient('zone', project_code, 'src_item_path', 'dest_item_path')
+    file_move_client = FileMoveClient('zone', project_code, 'users/src_item_path', 'users/dest_item_path')
     try:
         file_move_client.move_file()
     except SystemExit:
         out, _ = capfd.readouterr()
-        assert out == 'Failed to move src_item_path to dest_item_path: \nerror_msg\n'
+        assert out == 'Failed to move users/src_item_path to users/dest_item_path: \nerror_msg\n'
 
 
 @pytest.mark.parametrize('skip_confirmation', [True, False])
@@ -123,7 +123,11 @@ def test_move_file_dest_parent_not_exist_success(mocker, httpx_mock, skip_confir
     )
 
     file_move_client = FileMoveClient(
-        'zone', project_code, 'src_item_path', 'dest_item_path/test_folder/test_file', skip_confirm=skip_confirmation
+        'zone',
+        project_code,
+        'users/src_item_path',
+        'users/dest_item_path/test_folder/test_file',
+        skip_confirm=skip_confirmation,
     )
     res = file_move_client.move_file()
     assert res == item_info
