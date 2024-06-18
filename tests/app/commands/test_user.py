@@ -103,3 +103,17 @@ def test_login_command_with_newer_version_available_message(
     assert get_latest_cli_version_mock.called_once()
     if Version(current_version) < Version(new_version):
         assert mhandler.SrvOutPutHandler.newer_version_available(new_version) in result.output
+
+
+# nothing should be printed out
+def test_login_command_when_github_link_fails(mocker, cli_runner, fake, monkeypatch):
+    api_key = fake.pystr(20)
+    monkeypatch.setenv('PILOT_API_KEY', api_key)
+    mocker.patch('app.commands.user.login_using_api_key', return_value=True)
+
+    get_latest_cli_version_mock = mocker.patch('app.utils.aggregated.Github.get_repo')
+    get_latest_cli_version_mock.side_effect = Exception('Error')
+    mocker.patch('pkg_resources.get_distribution', return_value=mocker.Mock(version='1.0.0'))
+
+    result = cli_runner.invoke(login)
+    assert result.exit_code == 0

@@ -223,8 +223,11 @@ def remove_the_output_file(filepath: str) -> None:
 
 
 def get_latest_cli_version() -> Version:
-    g = Github()
-    cli_repo = g.get_repo(AppConfig.Env.github_url)
-    latest_release = cli_repo.get_latest_release()
+    try:
+        g = Github()
+        cli_repo = g.get_repo(AppConfig.Env.github_url)
+        latest_release = cli_repo.get_latest_release()
 
-    return Version(latest_release.tag_name)
+        return Version(latest_release.tag_name)
+    except Exception:
+        return Version('0.0.0')
