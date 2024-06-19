@@ -26,7 +26,7 @@ def get_cli_help_message():
     # message user if there is a newer version of the CLI
     latest_version = get_latest_cli_version()
     if Version(pkg_resources.get_distribution('app').version) < latest_version:
-        update_message += mhandler.SrvOutPutHandler.newer_version_available(latest_version)
+        update_message += mhandler.SrvOutPutHandler.newer_version_available(latest_version, print_message=False)
 
     return update_message
 

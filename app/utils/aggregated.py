@@ -225,6 +225,9 @@ def remove_the_output_file(filepath: str) -> None:
 def get_latest_cli_version() -> Version:
     try:
         g = Github()
+        remaining = g.get_rate_limit().core.remaining
+        if remaining < 10:
+            raise Exception('Github API rate limit exceeded.')
         cli_repo = g.get_repo(AppConfig.Env.github_url)
         latest_release = cli_repo.get_latest_release()
 
