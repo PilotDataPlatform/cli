@@ -337,11 +337,12 @@ class SrvOutPutHandler(metaclass=MetaService):
         logger.succeed(f'Shared project {project} with {username} as {role}')
 
     @staticmethod
-    def newer_version_available(version):
+    def newer_version_available(version, print_message=True):
         message = (
             f'\nNewer version available! pilotcli v{version} is available.\n'
             + f'Please visit https://github.com/{AppConfig.Env.github_url}/releases/latest\n'
         )
-        logger.info(message)
+        if print_message:
+            logger.warning(message)
 
         return message
