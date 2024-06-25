@@ -36,7 +36,12 @@ class TestSrvTokenManager:
             status_code=401,
         )
 
+        login_using_api_key_mock = mocker.patch(
+            'app.services.user_authentication.token_manager.login_using_api_key', return_value=False
+        )
+        out, _ = capsys.readouterr()
         with pytest.raises(SystemExit):
             manager.refresh('test_azp')
         out, _ = capsys.readouterr()
         assert out.rstrip() == 'Your login session has expired. Please try again or log in again.'
+        assert login_using_api_key_mock.call_count == 1

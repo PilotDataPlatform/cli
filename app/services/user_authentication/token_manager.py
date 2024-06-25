@@ -13,6 +13,7 @@ from app.configs.user_config import UserConfig
 from app.models.service_meta_class import MetaService
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
+from app.services.user_authentication.user_login_logout import login_using_api_key
 
 
 class SrvTokenManager(metaclass=MetaService):
@@ -80,6 +81,8 @@ class SrvTokenManager(metaclass=MetaService):
         if response.status_code == 200:
             self.update_token(response.json()['access_token'], response.json()['refresh_token'])
         elif response.status_code == 401:
-            SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TOKEN, if_exit=True)
+            is_valid = login_using_api_key(self.config.api_key)
+            if not is_valid:
+                SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TOKEN, if_exit=True)
         else:
             SrvErrorHandler.default_handle(response.content)
