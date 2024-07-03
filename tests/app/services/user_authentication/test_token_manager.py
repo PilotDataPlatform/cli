@@ -17,6 +17,7 @@ class TestSrvTokenManager:
         user_config.access_token = jwt.encode({'aud': 'api-key'}, key='')
         user_config.refresh_token = jwt.encode({'refresh': 'token'}, key='')
         manager = SrvTokenManager()
+        mocker.patch.object(manager, 'is_api_key', return_value=True)
         refresh_api_key_mock = mocker.patch.object(manager, 'refresh_api_key')
         requests_mock.post(
             AppConfig.Connections.url_keycloak_token,
