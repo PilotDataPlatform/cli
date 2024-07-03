@@ -4,6 +4,7 @@
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Set
 
 from pydantic import computed_field
 from pydantic_settings import BaseSettings
@@ -20,6 +21,7 @@ class Settings(BaseSettings):
     config_file: str = 'config.ini'
 
     keycloak_device_client_id: str = 'cli'
+    keycloak_api_key_audience: Set[str] = {'cli'}
 
     vm_info: str = ''
 
