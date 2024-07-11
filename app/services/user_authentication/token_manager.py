@@ -47,6 +47,7 @@ class SrvTokenManager(metaclass=MetaService):
         1: need refresh
         2: need login again
         """
+
         decoded_access_token = self.decode_access_token()
         expiry_at = int(decoded_access_token['exp'])
         now = time.time()
@@ -58,7 +59,16 @@ class SrvTokenManager(metaclass=MetaService):
         ]
 
         if azp_token_condition or expiry_at <= now:
-            return 2
+            # check if refresh token and apikey is available
+            decoded_refresh_token = self.decode_refresh_token()
+            expiry_at = int(decoded_refresh_token['exp'])
+            if expiry_at <= now:
+                is_valid = login_using_api_key(self.config.api_key)
+                if not is_valid:
+                    SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TOKEN, if_exit=True)
+                    return 2
+                return 1
+            return 1
 
         if diff <= AppConfig.Env.token_warn_need_refresh:
             return 1
@@ -80,6 +90,7 @@ class SrvTokenManager(metaclass=MetaService):
         response = requests.post(url, data=payload, headers=headers)
         if response.status_code == 200:
             self.update_token(response.json()['access_token'], response.json()['refresh_token'])
+            # pass
         elif response.status_code == 401:
             is_valid = login_using_api_key(self.config.api_key)
             if not is_valid:
