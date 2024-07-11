@@ -40,6 +40,13 @@ class SrvTokenManager(metaclass=MetaService):
         tokens = self.get_token()
         return jwt.decode(tokens[1], options={'verify_signature': False}, algorithms=['RS256'])
 
+    def is_api_key(self) -> bool:
+        token = self.decode_access_token()
+        audience = token['aud']
+        if isinstance(audience, list):
+            return ConfigClass.keycloak_api_key_audience.issubset(set(audience))
+        return False
+
     def check_valid(self, required_azp):
         """
         check token validation
