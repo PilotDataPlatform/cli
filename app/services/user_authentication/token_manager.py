@@ -10,11 +10,9 @@ import requests
 from app.configs.app_config import AppConfig
 from app.configs.config import ConfigClass
 from app.configs.user_config import UserConfig
-from app.models.enums import LoginMethod
 from app.models.service_meta_class import MetaService
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
-from app.services.user_authentication.user_login_logout import exchange_api_key
 from app.services.user_authentication.user_login_logout import login_using_api_key
 
 
@@ -56,27 +54,34 @@ class SrvTokenManager(metaclass=MetaService):
         1: need refresh
         2: need login again
         """
+
         decoded_access_token = self.decode_access_token()
         expiry_at = int(decoded_access_token['exp'])
         now = time.time()
         diff = expiry_at - now
 
-        if not self.is_api_key():
-            azp_token_condition = decoded_access_token['azp'] not in [
-                required_azp,
-                ConfigClass.keycloak_device_client_id,
-            ]
+        azp_token_condition = decoded_access_token['azp'] not in [
+            required_azp,
+            ConfigClass.keycloak_device_client_id,
+        ]
 
-            if azp_token_condition or expiry_at <= now:
-                return 2
+        if azp_token_condition or expiry_at <= now:
+            # check if refresh token and apikey is available
+            decoded_refresh_token = self.decode_refresh_token()
+            expiry_at = int(decoded_refresh_token['exp'])
+            if expiry_at <= now:
+                is_valid = login_using_api_key(self.config.api_key)
+                if not is_valid:
+                    SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TOKEN, if_exit=True)
+                    return 2
+                return 1
+            return 1
 
         if diff <= AppConfig.Env.token_warn_need_refresh:
             return 1
         return 0
 
     def refresh(self, azp: str) -> None:
-        if self.is_api_key():
-            return self.refresh_api_key()
 
         url = AppConfig.Connections.url_keycloak_token
         payload = {
@@ -92,17 +97,10 @@ class SrvTokenManager(metaclass=MetaService):
         response = requests.post(url, data=payload, headers=headers)
         if response.status_code == 200:
             self.update_token(response.json()['access_token'], response.json()['refresh_token'])
+            # pass
         elif response.status_code == 401:
             is_valid = login_using_api_key(self.config.api_key)
             if not is_valid:
                 SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TOKEN, if_exit=True)
         else:
             SrvErrorHandler.default_handle(response.content)
-
-    def refresh_api_key(self) -> None:
-        access_token, _ = exchange_api_key(self.config.api_key)
-        if access_token is None:
-            return SrvErrorHandler.default_handle(
-                f'Unable to get access token using "{LoginMethod.API_KEY.value}" method. Unable to proceed.', True
-            )
-        self.update_token(access_token, '')
