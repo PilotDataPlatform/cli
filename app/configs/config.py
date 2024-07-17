@@ -2,6 +2,7 @@
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
+import logging
 from functools import lru_cache
 from pathlib import Path
 from typing import Set
@@ -16,6 +17,7 @@ class Settings(BaseSettings):
 
     project: str = 'pilot'
     app_name: str = 'pilotcli'
+    log_level: str = 'WARNING'
 
     config_path: str = str(Path.home() / f'.{app_name}')
     config_file: str = 'config.ini'
@@ -30,6 +32,11 @@ class Settings(BaseSettings):
 
     api_url: str = 'https://api.pilot.indocresearch.com/pilot'
     keycloak_realm_url: str = 'https://iam.pilot.indocresearch.com/realms/pilot'
+
+    def __init__(self, **data):
+        super().__init__(**data)
+
+        logging.basicConfig(level=self.log_level)
 
     @computed_field
     def url_bff(self) -> str:

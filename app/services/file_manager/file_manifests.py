@@ -4,12 +4,11 @@
 
 import json
 
-import requests
-
 import app.services.output_manager.message_handler as message_handler
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.models.service_meta_class import MetaService
+from app.services.clients.base_client import BaseClient
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
@@ -27,12 +26,15 @@ def dupe_checking_hook(pairs):
 decoder = json.JSONDecoder(object_pairs_hook=dupe_checking_hook)
 
 
-class SrvFileManifests(metaclass=MetaService):
+class SrvFileManifests(BaseClient, metaclass=MetaService):
     app_config = AppConfig()
     user = UserConfig()
 
     def __init__(self, interactive=True):
+        super().__init__(self.app_config.Connections.url_bff)
+
         self.interactive = interactive
+        self.endpoint_v1 = self.app_config.Connections.url_bff + '/v1'
 
     @staticmethod
     def read_manifest_template(path):
@@ -44,64 +46,41 @@ class SrvFileManifests(metaclass=MetaService):
 
     @require_valid_token()
     def validate_template(self, manifest_json):
-        url = self.app_config.Connections.url_bff + '/v1/validate/manifest'
-        headers = {
-            'Authorization': 'Bearer ' + self.user.access_token,
-        }
-        res = requests.post(url, headers=headers, json=manifest_json)
-        res_json = res.json()
-        code = res_json.get('code')
-        if code == 200:
-            result = res_json['result']
+        res = self._post('/validate/manifest', json=manifest_json)
+        if res.status_code == 200:
+            result = res.json()['result']
             message_handler.SrvOutPutHandler.file_manifest_validation(result)
-            return result == 'valid', res_json
-        elif code == 403:
+            return result == 'valid', result
+        elif res.status_code == 403:
             SrvErrorHandler.customized_handle(ECustomizedError.CODE_NOT_FOUND, self.interactive)
-        else:
-            return False, res_json
+
+        return False, res.content
 
     @require_valid_token()
     def attach(self, manifest_json: dict, item_id: str, zone: str):
-        url = self.app_config.Connections.url_bff + '/v1/manifest/attach'
-        manifest_json['item_id'] = item_id
-        manifest_json['zone'] = zone
-        headers = {
-            'Authorization': 'Bearer ' + self.user.access_token,
-        }
-        res = requests.post(url, headers=headers, json=manifest_json)
+        manifest_json.update({'item_id': item_id, 'zone': zone})
+        res = self._post('/manifest/attach', json=manifest_json)
         if res.status_code == 200:
             result = res.json()
             result['code'] = res.status_code
             return result
-        else:
-            return res.json()
+
+        return None
 
     @require_valid_token()
     def list_manifest(self, project_code):
-        get_url = self.app_config.Connections.url_bff + '/v1/manifest'
-        headers = {
-            'Authorization': 'Bearer ' + self.user.access_token,
-        }
-        params = {'project_code': project_code}
-        res = requests.get(get_url, params=params, headers=headers)
+        res = self._get('/manifest', params={'project_code': project_code})
         return res
 
     @require_valid_token()
     def export_manifest(self, project_code, attribute_name):
-        get_url = AppConfig.Connections.url_bff + '/v1/manifest/export'
-        headers = {
-            'Authorization': 'Bearer ' + self.user.access_token,
-        }
-        params = {'project_code': project_code, 'name': attribute_name}
-        res = requests.get(get_url, params=params, headers=headers)
-        result = res.json().get('result')
-        code = res.json().get('code')
-        if code == 404:
+        res = self._get('/manifest/export', params={'project_code': project_code, 'name': attribute_name})
+        if res.status_code == 404:
             SrvErrorHandler.customized_handle(ECustomizedError.MANIFEST_NOT_EXIST, True, value=attribute_name)
-        elif code == 403:
+        elif res.status_code == 403:
             SrvErrorHandler.customized_handle(ECustomizedError.CODE_NOT_FOUND, True)
-        else:
-            return result
+
+        return res.json().get('result')
 
     def export_template(self, project_code, manifest_def):
         manifest_name = manifest_def.get('name')
