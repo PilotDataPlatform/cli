@@ -32,7 +32,7 @@ def exchange_api_key(api_key: str) -> Union[Tuple[str, str], Tuple[None, None]]:
         return None, None
 
     response = response.json()
-    return response.get('access_token'), ''
+    return response.get('access_token'), response.get('refresh_token')
 
 
 def login_using_api_key(api_key: str) -> bool:
