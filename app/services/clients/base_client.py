@@ -14,6 +14,7 @@ from httpx import Response
 
 from app.configs.config import ConfigClass
 from app.configs.user_config import UserConfig
+from app.services.user_authentication.token_manager import SrvTokenManager
 
 logger = logging.getLogger('pilot.cli.base_client')
 
@@ -22,6 +23,7 @@ class BaseClient:
     """Client for any inherited service clients."""
 
     user = UserConfig()
+    token_manager = SrvTokenManager()
 
     def __init__(self, endpoint: str, timeout: int = 10) -> None:
         self.endpoint_v1 = f'{endpoint}/v1'
@@ -41,8 +43,14 @@ class BaseClient:
                 response = self.client.request(method, url, json=json, params=params, headers=self.headers)
                 if response.status_code not in self.retry_status:
                     break
+
+                logger.debug(f'token: {self.user.access_token}')
                 logger.info(f'Request "{method} {url}" and params {params} received status {response.status_code}.')
+
                 time.sleep(self.retry_interval)
+                if response.status_code == 401:
+                    self.token_manager.refresh(ConfigClass.keycloak_device_client_id)
+                    self.headers['Authorization'] = 'Bearer ' + self.user.access_token
         except RequestError:
             message = f'Unable to query data from auth service with url "{method} {url}" and params "{params}".'
             logger.exception(message)
