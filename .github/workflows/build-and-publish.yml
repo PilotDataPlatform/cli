@@ -162,6 +162,12 @@ jobs:
         with:
           python-version: 3.9
 
+      - name: Create virtual environment
+        run: python -m venv .venv
+
+      - name: Activate virtual environment
+        run: source .venv/Scripts/activate
+
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
@@ -182,7 +188,18 @@ jobs:
         run: timeout 10s poetry run pip --version || rm -rf .venv
 
       - name: Install dependencies
-        run: poetry install --no-interaction
+        run: poetry install --no-interaction --extras "windows"
 
       - name: Build binary
-        run: poetry run pyinstaller -F --distpath ./app/bundled_app/macos --specpath ./app/build/macos --workpath ./app/build/macos --paths=./.venv/lib/python3.9/site-packages ./app/pilotcli.py -n ${{ github.sha }}
+        run: poetry run pyinstaller -F --distpath ./app/bundled_app/windows --specpath ./app/build/windows --workpath ./app/build/windows --paths=./.venv/lib/python3.9/site-packages ./app/pilotcli.py -n ${{ github.sha }}
+
+      - name: Upload Release Binary
+        id: upload-release-binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.push-binary-linux.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+          asset_path: ./app/bundled_app/windows/${{ github.sha }}
+          asset_name: pilotcli_windows
+          asset_content_type: application/octet-stream
