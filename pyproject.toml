@@ -20,6 +20,7 @@ qrcode = "^7.4.2"
 pytest-click = "^1.1.0"
 pyinstaller = "^5.13.0"
 pygithub = "2.2.0"
+pywin32 = "^306"
 
 [tool.poetry.dev-dependencies]
 pytest = "6.2.5"
