@@ -3,8 +3,7 @@
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
 import configparser
-import os
-import stat
+import platform
 import sys
 import time
 from pathlib import Path
@@ -12,6 +11,11 @@ from typing import Iterable
 from typing import Union
 
 from app.configs.config import ConfigClass
+from app.configs.utils import check_owner_linux
+from app.configs.utils import check_owner_windows
+from app.configs.utils import check_user_permission_linux
+from app.configs.utils import check_user_permission_windows
+from app.configs.utils import create_directory_with_permissions_windows
 from app.models.singleton import Singleton
 from app.services.crypto.crypto import decryption
 from app.services.crypto.crypto import encryption
@@ -19,12 +23,6 @@ from app.services.crypto.crypto import generate_secret
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 
-from app.configs.utils import check_owner_windows, check_owner_linux, check_user_permission_linux, check_user_permission_windows
-
-import win32security
-import platform
-import ntsecuritycon as con
-            
 
 class UserConfig(metaclass=Singleton):
     """The class to maintain the user access/fresh token Note here: the base class is Singleton, meaning no matter how

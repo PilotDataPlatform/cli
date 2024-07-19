@@ -3,18 +3,18 @@
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
 import os
+import stat
 from pathlib import Path
 from typing import Iterable
 
-
-import win32security
-import platform
 import ntsecuritycon as con
+import win32security
+
 
 # windows related functions
 def create_directory_with_permissions_windows(config_path: Path):
     config_path.mkdir(exist_ok=False)
-    user, domain, _ = win32security.LookupAccountName("", os.getlogin())
+    user, domain, _ = win32security.LookupAccountName('', os.getlogin())
     sd = win32security.SECURITY_DESCRIPTOR()
     sd.Initialize()
 
@@ -26,10 +26,11 @@ def create_directory_with_permissions_windows(config_path: Path):
     # Apply the security descriptor to the directory
     win32security.SetFileSecurity(str(config_path), win32security.DACL_SECURITY_INFORMATION, sd)
 
+
 def check_user_permission_windows(path: Path) -> str:
     file_path = str(path)
     # Get the current user's SID
-    user_sid, domain, type = win32security.LookupAccountName("", os.getlogin())
+    user_sid, _, _ = win32security.LookupAccountName('', os.getlogin())
     user_sid_str = win32security.ConvertSidToStringSid(user_sid)
 
     # Get the security descriptor of the file/folder
@@ -54,11 +55,12 @@ def check_user_permission_windows(path: Path) -> str:
 
     return (
         f'Permissions for "{path}" are too open. '
-        f'Expected permissions are (con.FILE_GENERIC_READ&con.FILE_GENERIC_EXECUTE | access_mask & con.FILE_ALL_ACCESS).'
+        f'Expected permissions are \n'
+        '(con.FILE_GENERIC_READ&con.FILE_GENERIC_EXECUTE | access_mask & con.FILE_ALL_ACCESS).'
     )
 
+
 def check_owner_windows(path: Path) -> str:
-    path_stat = path.stat()
     sd = win32security.GetFileSecurity(str(path), win32security.OWNER_SECURITY_INFORMATION)
     owner_sid = sd.GetSecurityDescriptorOwner()
     path_uid, _, _ = win32security.LookupAccountSid(None, owner_sid)
@@ -77,7 +79,8 @@ def check_owner_linux(path: Path) -> str:
     if path_uid != expected_uid:
         return f'"{path}" is owned by the user id {path_uid}. Expected user id is {expected_uid}.'
 
-def check_user_permission_linux(file_path: str, expected_bits: Iterable[int]) -> str:
+
+def check_user_permission_linux(path: Path, expected_bits: Iterable[int]) -> str:
     path_stat = path.stat()
     path_protection_bits = stat.S_IMODE(path_stat.st_mode)
     if path_protection_bits not in expected_bits:
