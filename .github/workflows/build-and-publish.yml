@@ -197,7 +197,9 @@ jobs:
         shell: pwsh
 
       - name: Build binary
-        run: poetry run pyinstaller -F --distpath ./app/bundled_app/windows --specpath ./app/build/windows --workpath ./app/build/windows --paths=./.venv/lib/python3.9/site-packages ./app/pilotcli.py -n ${{ github.sha }}
+        run: |
+          .\.venv\Scripts\Activate
+          poetry run pyinstaller -F --distpath ./app/bundled_app/windows --specpath ./app/build/windows --workpath ./app/build/windows --paths=./.venv/lib/python3.9/site-packages ./app/pilotcli.py -n ${{ github.sha }}
         shell: pwsh
 
       - name: Upload Release Binary
