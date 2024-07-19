@@ -7,12 +7,12 @@ import stat
 from pathlib import Path
 from typing import Iterable
 
-import ntsecuritycon as con
-import win32security
-
 
 # windows related functions
 def create_directory_with_permissions_windows(config_path: Path):
+    import ntsecuritycon as con
+    import win32security
+
     config_path.mkdir(exist_ok=False)
     user, domain, _ = win32security.LookupAccountName('', os.getlogin())
     sd = win32security.SECURITY_DESCRIPTOR()
@@ -28,6 +28,9 @@ def create_directory_with_permissions_windows(config_path: Path):
 
 
 def check_user_permission_windows(path: Path) -> str:
+    import ntsecuritycon as con
+    import win32security
+
     file_path = str(path)
     # Get the current user's SID
     user_sid, _, _ = win32security.LookupAccountName('', os.getlogin())
@@ -61,6 +64,8 @@ def check_user_permission_windows(path: Path) -> str:
 
 
 def check_owner_windows(path: Path) -> str:
+    import win32security
+
     sd = win32security.GetFileSecurity(str(path), win32security.OWNER_SECURITY_INFORMATION)
     owner_sid = sd.GetSecurityDescriptorOwner()
     path_uid, _, _ = win32security.LookupAccountSid(None, owner_sid)
