@@ -23,7 +23,7 @@ class BaseClient:
     """Client for any inherited service clients."""
 
     user = UserConfig()
-    token_manager = SrvTokenManager()
+    token_manager: SrvTokenManager
 
     def __init__(self, endpoint: str, timeout: int = 10) -> None:
         self.endpoint_v1 = f'{endpoint}/v1'
@@ -32,6 +32,7 @@ class BaseClient:
         self.retry_status = [401, 503]
         self.retry_count = 3
         self.retry_interval = 0.1
+        self.token_manager = SrvTokenManager()
 
     def _request(
         self, method: str, url: str, json: Optional[Any] = None, params: Optional[Mapping[str, Any]] = None

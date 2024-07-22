@@ -17,7 +17,7 @@ class Settings(BaseSettings):
 
     project: str = 'pilot'
     app_name: str = 'pilotcli'
-    log_level: str = 'DEBUG'
+    log_level: str = 'ERROR'
 
     config_path: str = str(Path.home() / f'.{app_name}')
     config_file: str = 'config.ini'
