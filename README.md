@@ -19,6 +19,8 @@ Command line tool that allows the user to execute data operations on the platfor
 1. Install dependencies (optional: run in edit mode).
     ```
        poetry install
+       # for windows use poetry install --extras "windows"
+
        poetry run python app/pilotcli.py --help
     ```
 2. Add environment variables if needed.

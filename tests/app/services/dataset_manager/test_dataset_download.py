@@ -127,7 +127,7 @@ def test_pre_dataset_version_download(httpx_mock, mocker):
 
     httpx_mock.add_response(
         method='GET',
-        url=AppConfig.Connections.url_dataset + f'/{dataset_download_cliet.dataset_geid}/download/pre',
+        url=AppConfig.Connections.url_dataset + f'/{dataset_download_cliet.dataset_geid}/download/pre?version=',
         json={'result': {'source': 'test.txt'}},
         status_code=200,
     )
