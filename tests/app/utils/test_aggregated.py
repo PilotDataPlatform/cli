@@ -8,6 +8,8 @@ from app.configs.app_config import AppConfig
 from app.models.item import ItemType
 from app.utils.aggregated import check_item_duplication
 from app.utils.aggregated import identify_target_folder
+from app.utils.aggregated import normalize_input_paths
+from app.utils.aggregated import normalize_join
 from app.utils.aggregated import search_item
 from app.utils.aggregated import validate_folder_name
 from tests.conftest import decoded_token
@@ -164,3 +166,20 @@ def test_identify_target_folder_fail_with_invalid_input(mocker):
     mocker.patch('app.utils.aggregated.validate_folder_name', return_value=False)
     with pytest.raises(SystemExit):
         identify_target_folder('project_code')
+
+
+def test_normalize_input_paths():
+    @normalize_input_paths(['str_input', 'tuple_input'])
+    def test_func(str_input, tuple_input):
+        return str_input, tuple_input
+
+    result = test_func(str_input='project_code\\folder1', tuple_input=('.\\folder2\\test.txt', '.\\folder3\\test2.txt'))
+    assert result == ('project_code/folder1', ('./folder2/test.txt', './folder3/test2.txt'))
+
+
+def test_normalize_join():
+    # linux path, windows path
+    input_paths = ['project_code\\folder1', 'folder2\\test.txt']
+    expected_result = 'project_code/folder1/folder2/test.txt'
+    result = normalize_join(input_paths[0], input_paths[1])
+    assert result == expected_result

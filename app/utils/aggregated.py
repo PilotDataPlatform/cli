@@ -250,7 +250,7 @@ def normalize_input_paths(options: list[str]):
                 if arg is None:
                     new_arg = None
                 elif isinstance(arg, tuple):
-                    new_arg = [x.replace('\\', '/') for x in arg]
+                    new_arg = tuple([x.replace('\\', '/') for x in arg])
                 else:
                     new_arg = arg.replace('\\', '/')
                 kwargs[option] = new_arg
