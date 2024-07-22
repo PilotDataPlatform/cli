@@ -7,6 +7,7 @@ from os import makedirs
 from os.path import basename
 from os.path import dirname
 from os.path import exists
+from os.path import join
 from sys import exit
 from typing import Any
 from typing import Dict
@@ -22,7 +23,6 @@ from app.models.item import ItemType
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import customized_error_msg
 from app.utils.aggregated import get_attribute_template_by_id
-from app.utils.aggregated import normalize_join
 from app.utils.aggregated import search_item
 
 
@@ -59,9 +59,9 @@ class FileMetaClient:
         self.file_name = basename(self.object_path).rsplit('.', 1)[0]
 
         # location of metadata files
-        self.general_location = normalize_join(general_folder, f'{self.file_name}-general.json')
-        self.attribute_location = normalize_join(attribute_folder, f'{self.file_name}-attribute.json')
-        self.tag_location = normalize_join(tag_folder, f'{self.file_name}-tag.json')
+        self.general_location = join(general_folder, f'{self.file_name}-general.json')
+        self.attribute_location = join(attribute_folder, f'{self.file_name}-attribute.json')
+        self.tag_location = join(tag_folder, f'{self.file_name}-tag.json')
         self._check_duplication(self.general_location, self.attribute_location, self.tag_location)
 
     def _check_duplication(self, general_loc: str, attribute_loc: str, tag_loc: str) -> None:
@@ -112,7 +112,7 @@ class FileMetaClient:
         project_code, object_path = self.file_path.split('/', 1)
         root_folder, object_path = object_path.split('/', 1)
         root_type = ItemType.get_type_from_keyword(root_folder)
-        object_path = normalize_join(root_type.get_prefix_by_type(), object_path)
+        object_path = join(root_type.get_prefix_by_type(), object_path)
         item_res = search_item(project_code, self.zone, object_path)
         if item_res.get('code') == 404:
             logger.error(f'Cannot find item {self.file_path} at {self.zone}.')

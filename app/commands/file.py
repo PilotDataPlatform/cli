@@ -120,7 +120,7 @@ def cli():
     show_default=True,
 )
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD))
-@normalize_input_paths(['files', 'attribute'])
+@normalize_input_paths(['files'])
 def file_put(**kwargs):  # noqa: C901
     """"""
 
