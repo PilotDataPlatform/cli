@@ -29,6 +29,7 @@ from app.services.output_manager.error_handler import customized_error_msg
 from app.utils.aggregated import batch_generator
 from app.utils.aggregated import get_file_in_folder
 from app.utils.aggregated import get_file_info_by_geid
+from app.utils.aggregated import normalize_join
 from app.utils.aggregated import search_item
 
 
@@ -172,7 +173,7 @@ def simple_upload(  # noqa: C901
     for file in upload_file_path:
         # first remove the input path from the file path
         file_path_sub = file.replace(input_path + '/', '') if input_path else file
-        object_path = os.path.join(target_folder, file_path_sub)
+        object_path = normalize_join(target_folder, file_path_sub)
 
         # generate a placeholder for each file
         file_object = FileObject(object_path, file)

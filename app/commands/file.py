@@ -31,6 +31,8 @@ from app.utils.aggregated import fit_terminal_width
 from app.utils.aggregated import get_file_info_by_geid
 from app.utils.aggregated import get_zone
 from app.utils.aggregated import identify_target_folder
+from app.utils.aggregated import normalize_input_paths
+from app.utils.aggregated import normalize_join
 from app.utils.aggregated import remove_the_output_file
 from app.utils.aggregated import search_item
 
@@ -118,6 +120,7 @@ def cli():
     show_default=True,
 )
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD))
+@normalize_input_paths(['files', 'attribute'])
 def file_put(**kwargs):  # noqa: C901
     """"""
 
@@ -432,7 +435,7 @@ def file_download(**kwargs):
         for path in paths:
             project_code, root_folder, object_path = path.strip('/').split('/', 2)
             root_type = ItemType.get_type_from_keyword(root_folder)
-            object_path = os.path.join(root_type.get_prefix_by_type(), object_path)
+            object_path = normalize_join(root_type.get_prefix_by_type(), object_path)
 
             # search the target item and download to local
             item = search_item(project_code, zone, object_path)
