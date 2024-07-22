@@ -185,8 +185,6 @@ def file_put(**kwargs):  # noqa: C901
         if not upload_message:
             upload_message = AppConfig.Env.default_upload_message
 
-    return
-
     # for the path formating there will be following cases:
     # - file:
     #   1. the project path exist, then will be AS_FILE. nothing will be changed.
