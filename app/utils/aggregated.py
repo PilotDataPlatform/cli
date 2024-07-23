@@ -12,7 +12,6 @@ from typing import Tuple
 
 import httpx
 import requests
-from github import Github
 from packaging.version import Version
 
 import app.services.logger_services.log_functions as logger
@@ -224,13 +223,17 @@ def remove_the_output_file(filepath: str) -> None:
 
 def get_latest_cli_version() -> Version:
     try:
-        g = Github()
-        remaining = g.get_rate_limit().core.remaining
-        if remaining < 10:
-            raise Exception('Github API rate limit exceeded.')
-        cli_repo = g.get_repo(AppConfig.Env.github_url)
-        latest_release = cli_repo.get_latest_release()
+        user_config = UserConfig()
+        if not user_config.is_access_token_exists():
+            return Version('0.0.0')
 
-        return Version(latest_release.tag_name)
-    except Exception:
+        url = AppConfig.Connections.url_download_greenroom + 'v2/download/cli'
+        headers = {'Authorization': 'Bearer ' + user_config.access_token}
+        response = resilient_session().get(url, headers=headers)
+        response.raise_for_status()
+        result = response.json().get('result', {})
+        latest_version = result.get('linux', {}).get('version', '0.0.0')
+
+        return Version(latest_version)
+    except (SystemExit, Exception):
         return Version('0.0.0')
