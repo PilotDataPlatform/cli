@@ -14,7 +14,8 @@ from httpx import Response
 
 from app.configs.config import ConfigClass
 from app.configs.user_config import UserConfig
-from app.services.user_authentication.token_manager import SrvTokenManager
+
+# from app.services.user_authentication.token_manager import SrvTokenManager
 
 logger = logging.getLogger('pilot.cli.base_client')
 
@@ -23,37 +24,54 @@ class BaseClient:
     """Client for any inherited service clients."""
 
     user = UserConfig()
-    token_manager: SrvTokenManager
 
     def __init__(self, endpoint: str, timeout: int = 10) -> None:
-        self.endpoint_v1 = f'{endpoint}/v1'
+        self.endpoint = endpoint
         self.client = Client(timeout=timeout)
         self.headers = {'Authorization': 'Bearer ' + self.user.access_token, 'VM-Info': ConfigClass.vm_info}
         self.retry_status = [401, 503]
         self.retry_count = 3
         self.retry_interval = 0.1
-        self.token_manager = SrvTokenManager()
 
     def _request(
-        self, method: str, url: str, json: Optional[Any] = None, params: Optional[Mapping[str, Any]] = None
+        self,
+        method: str,
+        url: str,
+        json: Optional[Any] = None,
+        params: Optional[Mapping[str, Any]] = None,
+        headers: Optional[Mapping[str, Any]] = None,
+        data: Optional[Mapping[str, Any]] = None,
+    ) -> Response:
+        """Send request with retry."""
+
+        for _ in range(self.retry_count):
+            response = self._single_request(method, url, json, params, headers, data)
+            if response.status_code not in self.retry_status:
+                return response
+            time.sleep(self.retry_interval)
+
+        logger.debug(f'failed with over {self.retry_count} retries.')
+
+        return None
+
+    def _single_request(
+        self,
+        method: str,
+        url: str,
+        json: Optional[Any] = None,
+        params: Optional[Mapping[str, Any]] = None,
+        headers: Optional[Mapping[str, Any]] = None,
+        data: Optional[Mapping[str, Any]] = None,
     ) -> Response:
         """Send request."""
         try:
-            url = f'{self.endpoint_v1}/{url}'
-            for _ in range(self.retry_count):
-                response = self.client.request(method, url, json=json, params=params, headers=self.headers)
-                if response.status_code not in self.retry_status:
-                    break
+            url = f'{self.endpoint}/{url}'
+            if headers:
+                self.headers.update(headers)
 
-                logger.debug(f'token: {self.user.access_token}')
-                logger.info(f'Request "{method} {url}" and params {params} received status {response.status_code}.')
-
-                time.sleep(self.retry_interval)
-                if response.status_code == 401:
-                    self.token_manager.refresh(ConfigClass.keycloak_device_client_id)
-                    self.headers['Authorization'] = 'Bearer ' + self.user.access_token
+            response = self.client.request(method, url, json=json, params=params, headers=self.headers, data=data)
         except RequestError:
-            message = f'Unable to query data from auth service with url "{method} {url}" and params "{params}".'
+            message = f'Unable to query data with url "{method} {url}".'
             logger.exception(message)
             raise Exception(message)
 
@@ -63,9 +81,16 @@ class BaseClient:
         """Send GET request."""
         return self._request('GET', url, params=params)
 
-    def _post(self, url: str, json: Optional[Any] = None, params: Optional[Mapping[str, Any]] = None) -> Response:
+    def _post(
+        self,
+        url: str,
+        json: Optional[Any] = None,
+        params: Optional[Mapping[str, Any]] = None,
+        headers: Optional[Mapping[str, Any]] = None,
+        data: Optional[Mapping[str, Any]] = None,
+    ) -> Response:
         """Send POST request."""
-        return self._request('POST', url, json=json, params=params)
+        return self._request('POST', url, json=json, params=params, headers=headers, data=data)
 
     def _put(self, url: str, json: Optional[Any] = None, params: Optional[Mapping[str, Any]] = None) -> Response:
         """Send PUT request."""

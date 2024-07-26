@@ -8,7 +8,7 @@ import app.services.output_manager.message_handler as message_handler
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.models.service_meta_class import MetaService
-from app.services.clients.base_client import BaseClient
+from app.services.clients.base_auth_client import BaseAuthClient
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
@@ -26,7 +26,7 @@ def dupe_checking_hook(pairs):
 decoder = json.JSONDecoder(object_pairs_hook=dupe_checking_hook)
 
 
-class SrvFileManifests(BaseClient, metaclass=MetaService):
+class SrvFileManifests(BaseAuthClient, metaclass=MetaService):
     app_config = AppConfig()
     user = UserConfig()
 
@@ -34,7 +34,7 @@ class SrvFileManifests(BaseClient, metaclass=MetaService):
         super().__init__(self.app_config.Connections.url_bff)
 
         self.interactive = interactive
-        self.endpoint_v1 = self.app_config.Connections.url_bff + '/v1'
+        self.endpoint = self.app_config.Connections.url_bff + '/v1'
 
     @staticmethod
     def read_manifest_template(path):
