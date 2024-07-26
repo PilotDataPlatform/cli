@@ -10,7 +10,7 @@ from typing import Union
 from uuid import uuid4
 
 import jwt
-from requests import RequestException
+from httpx import HTTPStatusError
 
 from app.configs.app_config import AppConfig
 from app.configs.config import ConfigClass
@@ -26,7 +26,7 @@ def exchange_api_key(api_key: str) -> Union[Tuple[str, str], Tuple[None, None]]:
     http_client = BaseClient(AppConfig.Connections.url_keycloak_realm)
     try:
         response = http_client._get(f'api-key/{api_key}')
-    except RequestException:
+    except HTTPStatusError:
         return None, None
 
     response = response.json()
@@ -69,7 +69,7 @@ def user_device_id_login() -> Dict[str, Any]:
             'device_code': device_data['device_code'],
             'verification_uri_complete': device_data['verification_uri_complete'],
         }
-    except RequestException:
+    except HTTPStatusError:
         return {}
 
 
@@ -84,22 +84,23 @@ def validate_user_device_login(device_code: str, expires: int, interval: int) ->
         'client_id': ConfigClass.keycloak_device_client_id,
         'grant_type': 'urn:ietf:params:oauth:grant-type:device_code',
     }
-    waiting_result = True
+    waiting_result, get_result = True, False
     start = time.time()
     SrvOutPutHandler.check_login_device_validation()
     while waiting_result:
-        time.sleep(0.1)
+        time.sleep(interval)
         try:
             resp = http_client._post('token', data=data, headers=headers)
-        except RequestException:
+            if resp.status_code == 200:
+                waiting_result = False
+                get_result = True
+        except HTTPStatusError:
             pass
         end = time.time()
         if end - start >= expires:
             waiting_result = False
-        elif resp.status_code == 200:
-            waiting_result = False
 
-    if resp.status_code != 200:
+    if get_result is False:
         return False
 
     resp_dict = resp.json()

@@ -47,6 +47,7 @@ class BaseClient:
         for _ in range(self.retry_count):
             response = self._single_request(method, url, json, params, headers, data)
             if response.status_code not in self.retry_status:
+                response.raise_for_status()
                 return response
             time.sleep(self.retry_interval)
 
