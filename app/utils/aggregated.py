@@ -59,13 +59,7 @@ def search_item(project_code, zone, folder_relative_path, container_type='projec
 
 @require_valid_token()
 def get_attribute_template_by_id(template_id: str) -> Dict[str, Any]:
-    # token = UserConfig().access_token
-    http_client = BaseAuthClient(AppConfig.Connections.url_bff)
-    # url = AppConfig.Connections.url_portal + f'/v1/data/manifest/{template_id}'
-    # headers = {'Authorization': 'Bearer ' + token}
-    # res = resilient_session().get(url, headers=headers)
-    # if res.status_code != 200:
-    #     SrvErrorHandler.default_handle(res.text, True)
+    http_client = BaseAuthClient(AppConfig.Connections.url_portal)
     try:
         res = http_client._get(f'v1/data/manifest/{template_id}')
     except HTTPStatusError as e:
@@ -78,11 +72,7 @@ def get_attribute_template_by_id(template_id: str) -> Dict[str, Any]:
 
 @require_valid_token()
 def get_file_info_by_geid(geid: list):
-    # token = UserConfig().access_token
     payload = {'geid': geid}
-    # headers = {'Authorization': 'Bearer ' + token}
-    # url = AppConfig.Connections.url_bff + '/v1/query/geid'
-    # res = resilient_session().post(url, headers=headers, json=payload)
     http_client = BaseAuthClient(AppConfig.Connections.url_bff)
     try:
         res = http_client._post('v1/query/geid', json=payload)
@@ -107,8 +97,6 @@ def check_item_duplication(item_list: List[str], zone: int, project_code: str) -
         - list of item path that already exists in the project
     '''
 
-    # url = AppConfig.Connections.url_base + '/portal/v1/files/exists'
-    # headers = {'Authorization': 'Bearer ' + UserConfig().access_token}
     httpx_client = BaseAuthClient(AppConfig.Connections.url_base)
     payload = {
         'locations': item_list,
@@ -116,9 +104,6 @@ def check_item_duplication(item_list: List[str], zone: int, project_code: str) -
         'container_type': 'project',
         'zone': zone,
     }
-    # response = resilient_session().post(url, json=payload, headers=headers)
-    # if response.status_code != 200:
-    #     SrvErrorHandler.default_handle(response.text, True)
 
     try:
         response = httpx_client._post('portal/v1/files/exists', json=payload)
@@ -253,10 +238,6 @@ def get_latest_cli_version() -> Version:
         if not user_config.is_access_token_exists():
             return Version('0.0.0')
 
-        # url = AppConfig.Connections.url_download_greenroom + 'v2/download/cli'
-        # headers = {'Authorization': 'Bearer ' + user_config.access_token}
-        # response = resilient_session().get(url, headers=headers)
-        # response.raise_for_status()
         response = httpx_client._get('v2/download/cli')
         result = response.json().get('result', {})
         latest_version = result.get('linux', {}).get('version', '0.0.0')
