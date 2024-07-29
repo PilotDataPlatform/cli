@@ -95,7 +95,7 @@ def test_login_command_with_newer_version_available_message(
     access_token_exists = mocker.patch('app.utils.aggregated.UserConfig.is_access_token_exists', return_value=True)
 
     httpx_mock.add_response(
-        url=AppConfig.Connections.url_download_greenroom + 'v2/download/cli',
+        url=AppConfig.Connections.url_download_greenroom + '/v2/download/cli',
         status_code=200,
         json={'result': {'linux': {'version': new_version}}},
     )
@@ -118,7 +118,7 @@ def test_login_command_when_url_link_fails(mocker, cli_runner, fake, monkeypatch
     access_token_exists = mocker.patch('app.utils.aggregated.UserConfig.is_access_token_exists', return_value=True)
 
     httpx_mock.add_response(
-        url=AppConfig.Connections.url_download_greenroom + 'v2/download/cli',
+        url=AppConfig.Connections.url_download_greenroom + '/v2/download/cli',
         status_code=404,
         json={'error': 'Not Found'},
     )

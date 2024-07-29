@@ -11,7 +11,7 @@ from typing import List
 from typing import Tuple
 
 import httpx
-import requests
+from httpx import HTTPStatusError
 from packaging.version import Version
 
 import app.services.logger_services.log_functions as logger
@@ -19,6 +19,7 @@ from app.configs.app_config import AppConfig
 from app.configs.config import ConfigClass
 from app.configs.user_config import UserConfig
 from app.models.item import ItemType
+from app.services.clients.base_auth_client import BaseAuthClient
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
@@ -33,47 +34,63 @@ def resilient_session():
 
 @require_valid_token()
 def search_item(project_code, zone, folder_relative_path, container_type='project'):
-    token = UserConfig().access_token
-    url = AppConfig.Connections.url_bff + '/v1/project/{}/search'.format(project_code)
+    http_client = BaseAuthClient(AppConfig.Connections.url_bff)
     params = {
         'zone': zone,
         'project_code': project_code,
         'path': folder_relative_path,
         'container_type': container_type,
     }
-    headers = {'Authorization': 'Bearer ' + token}
-    res = requests.get(url, params=params, headers=headers)
-    if res.status_code == 403:
-        SrvErrorHandler.customized_handle(ECustomizedError.PERMISSION_DENIED, project_code)
-    elif res.status_code == 404:
-        pass
-    elif res.status_code == 401:
-        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TOKEN, if_exit=True)
-    elif res.status_code != 200:
-        SrvErrorHandler.default_handle(res.text, True)
+    try:
+        res = http_client._get(f'v1/project/{project_code}/search', params=params)
+    except HTTPStatusError as e:
+        res = e.response
+        if res.status_code == 403:
+            SrvErrorHandler.customized_handle(ECustomizedError.PERMISSION_DENIED, project_code)
+        elif res.status_code == 404:
+            pass
+        elif res.status_code == 401:
+            SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TOKEN, if_exit=True)
+        elif res.status_code != 200:
+            SrvErrorHandler.default_handle(res.text, True)
 
     return res.json()
 
 
 @require_valid_token()
 def get_attribute_template_by_id(template_id: str) -> Dict[str, Any]:
-    token = UserConfig().access_token
-    url = AppConfig.Connections.url_portal + f'/v1/data/manifest/{template_id}'
-    headers = {'Authorization': 'Bearer ' + token}
-    res = resilient_session().get(url, headers=headers)
-    if res.status_code != 200:
-        SrvErrorHandler.default_handle(res.text, True)
+    # token = UserConfig().access_token
+    http_client = BaseAuthClient(AppConfig.Connections.url_bff)
+    # url = AppConfig.Connections.url_portal + f'/v1/data/manifest/{template_id}'
+    # headers = {'Authorization': 'Bearer ' + token}
+    # res = resilient_session().get(url, headers=headers)
+    # if res.status_code != 200:
+    #     SrvErrorHandler.default_handle(res.text, True)
+    try:
+        res = http_client._get(f'v1/data/manifest/{template_id}')
+    except HTTPStatusError as e:
+        res = e.response
+        if res.status_code != 200:
+            SrvErrorHandler.default_handle(res.text, True)
 
     return res.json().get('result', {})
 
 
 @require_valid_token()
 def get_file_info_by_geid(geid: list):
-    token = UserConfig().access_token
+    # token = UserConfig().access_token
     payload = {'geid': geid}
-    headers = {'Authorization': 'Bearer ' + token}
-    url = AppConfig.Connections.url_bff + '/v1/query/geid'
-    res = resilient_session().post(url, headers=headers, json=payload)
+    # headers = {'Authorization': 'Bearer ' + token}
+    # url = AppConfig.Connections.url_bff + '/v1/query/geid'
+    # res = resilient_session().post(url, headers=headers, json=payload)
+    http_client = BaseAuthClient(AppConfig.Connections.url_bff)
+    try:
+        res = http_client._post('v1/query/geid', json=payload)
+    except HTTPStatusError as e:
+        res = e.response
+        if res.status_code != 200:
+            SrvErrorHandler.default_handle(res.text, True)
+
     return res.json()['result']
 
 
@@ -90,17 +107,25 @@ def check_item_duplication(item_list: List[str], zone: int, project_code: str) -
         - list of item path that already exists in the project
     '''
 
-    url = AppConfig.Connections.url_base + '/portal/v1/files/exists'
-    headers = {'Authorization': 'Bearer ' + UserConfig().access_token}
+    # url = AppConfig.Connections.url_base + '/portal/v1/files/exists'
+    # headers = {'Authorization': 'Bearer ' + UserConfig().access_token}
+    httpx_client = BaseAuthClient(AppConfig.Connections.url_base)
     payload = {
         'locations': item_list,
         'container_code': project_code,
         'container_type': 'project',
         'zone': zone,
     }
-    response = resilient_session().post(url, json=payload, headers=headers)
-    if response.status_code != 200:
-        SrvErrorHandler.default_handle(response.text, True)
+    # response = resilient_session().post(url, json=payload, headers=headers)
+    # if response.status_code != 200:
+    #     SrvErrorHandler.default_handle(response.text, True)
+
+    try:
+        response = httpx_client._post('portal/v1/files/exists', json=payload)
+    except HTTPStatusError as e:
+        response = e.response
+        if response.status_code != 200:
+            SrvErrorHandler.default_handle(response.text, True)
 
     return response.json().get('result')
 
@@ -222,15 +247,17 @@ def remove_the_output_file(filepath: str) -> None:
 
 
 def get_latest_cli_version() -> Version:
+    httpx_client = BaseAuthClient(AppConfig.Connections.url_download_greenroom)
     try:
         user_config = UserConfig()
         if not user_config.is_access_token_exists():
             return Version('0.0.0')
 
-        url = AppConfig.Connections.url_download_greenroom + 'v2/download/cli'
-        headers = {'Authorization': 'Bearer ' + user_config.access_token}
-        response = resilient_session().get(url, headers=headers)
-        response.raise_for_status()
+        # url = AppConfig.Connections.url_download_greenroom + 'v2/download/cli'
+        # headers = {'Authorization': 'Bearer ' + user_config.access_token}
+        # response = resilient_session().get(url, headers=headers)
+        # response.raise_for_status()
+        response = httpx_client._get('v2/download/cli')
         result = response.json().get('result', {})
         latest_version = result.get('linux', {}).get('version', '0.0.0')
 
