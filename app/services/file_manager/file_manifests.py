@@ -46,7 +46,7 @@ class SrvFileManifests(BaseAuthClient, metaclass=MetaService):
 
     @require_valid_token()
     def validate_template(self, manifest_json):
-        res = self._post('/validate/manifest', json=manifest_json)
+        res = self._post('validate/manifest', json=manifest_json)
         if res.status_code == 200:
             result = res.json()['result']
             message_handler.SrvOutPutHandler.file_manifest_validation(result)
@@ -59,7 +59,7 @@ class SrvFileManifests(BaseAuthClient, metaclass=MetaService):
     @require_valid_token()
     def attach(self, manifest_json: dict, item_id: str, zone: str):
         manifest_json.update({'item_id': item_id, 'zone': zone})
-        res = self._post('/manifest/attach', json=manifest_json)
+        res = self._post('manifest/attach', json=manifest_json)
         if res.status_code == 200:
             result = res.json()
             result['code'] = res.status_code
@@ -69,12 +69,12 @@ class SrvFileManifests(BaseAuthClient, metaclass=MetaService):
 
     @require_valid_token()
     def list_manifest(self, project_code):
-        res = self._get('/manifest', params={'project_code': project_code})
+        res = self._get('manifest', params={'project_code': project_code})
         return res
 
     @require_valid_token()
     def export_manifest(self, project_code, attribute_name):
-        res = self._get('/manifest/export', params={'project_code': project_code, 'name': attribute_name})
+        res = self._get('manifest/export', params={'project_code': project_code, 'name': attribute_name})
         if res.status_code == 404:
             SrvErrorHandler.customized_handle(ECustomizedError.MANIFEST_NOT_EXIST, True, value=attribute_name)
         elif res.status_code == 403:
