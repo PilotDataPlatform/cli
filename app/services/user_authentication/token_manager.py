@@ -82,7 +82,6 @@ class SrvTokenManager(metaclass=MetaService):
         return 0
 
     def refresh(self, azp: str) -> None:
-
         url = AppConfig.Connections.url_keycloak_token
         payload = {
             'grant_type': 'refresh_token',
@@ -97,8 +96,9 @@ class SrvTokenManager(metaclass=MetaService):
         response = requests.post(url, data=payload, headers=headers)
         if response.status_code == 200:
             self.update_token(response.json()['access_token'], response.json()['refresh_token'])
-            # pass
-        elif response.status_code == 401:
+
+        # 401 is invalid token and 400 is session inactive we do refresh
+        elif response.status_code in [400, 401, 500]:
             is_valid = login_using_api_key(self.config.api_key)
             if not is_valid:
                 SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TOKEN, if_exit=True)

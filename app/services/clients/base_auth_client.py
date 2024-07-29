@@ -9,6 +9,7 @@ from typing import Mapping
 from requests import Response
 
 from app.configs.config import ConfigClass
+from app.configs.user_config import UserConfig
 from app.services.clients.base_client import BaseClient
 from app.services.user_authentication.token_manager import SrvTokenManager
 
@@ -16,11 +17,13 @@ from app.services.user_authentication.token_manager import SrvTokenManager
 class BaseAuthClient(BaseClient):
 
     token_manager: SrvTokenManager
+    user = UserConfig()
 
     def __init__(self, endpoint: str, timeout: int = 10) -> None:
         super().__init__(endpoint, timeout)
 
         self.token_manager = SrvTokenManager()
+        self.headers = {'Authorization': 'Bearer ' + self.user.access_token, 'VM-Info': ConfigClass.vm_info}
 
     def _request(
         self,

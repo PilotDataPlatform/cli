@@ -140,14 +140,16 @@ def test_resumable_upload_command_failed_with_file_not_exists(mocker, cli_runner
     assert result.output == customized_error_msg(ECustomizedError.INVALID_RESUMABLE) + '\n'
 
 
-def test_file_list_with_pagination_with_folder_success(requests_mock, mocker, cli_runner):
+def test_file_list_with_pagination_with_folder_success(httpx_mock, mocker, cli_runner):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
         return_value=decoded_token(),
     )
 
-    requests_mock.get(
-        'http://bff_cli' + '/v1/testproject/files/query',
+    httpx_mock.add_response(
+        method='GET',
+        url='http://bff_cli/v1/testproject/files/query?project_code=testproject&folder=users%2F'
+        'admin&source_type=project&zone=greenroom&page=0&page_size=10',
         json={
             'code': 200,
             'error_msg': '',
@@ -164,7 +166,7 @@ def test_file_list_with_pagination_with_folder_success(requests_mock, mocker, cl
     assert outputs[0] == 'file1  file2   '
 
 
-def test_file_list_with_pagination_with_root_folder(requests_mock, mocker, cli_runner):
+def test_file_list_with_pagination_with_root_folder(httpx_mock, mocker, cli_runner):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
         return_value=decoded_token(),
@@ -174,8 +176,10 @@ def test_file_list_with_pagination_with_root_folder(requests_mock, mocker, cli_r
     folder_with_underline = 'folder_1'
     folder_with_space = 'folder 1'
     root_folder = 'root_folder'
-    requests_mock.get(
-        'http://bff_cli' + '/v1/testproject/files/query',
+    httpx_mock.add_response(
+        method='GET',
+        url='http://bff_cli/v1/testproject/files/query?project_code=testproject&folder=users%2F'
+        'admin&source_type=project&zone=greenroom&page=0&page_size=10',
         json={
             'code': 200,
             'error_msg': '',
@@ -197,14 +201,16 @@ def test_file_list_with_pagination_with_root_folder(requests_mock, mocker, cli_r
     assert outputs[1] == f'"{folder_with_space}"  {root_folder}   '
 
 
-def test_empty_file_list_with_pagination(requests_mock, mocker, cli_runner):
+def test_empty_file_list_with_pagination(httpx_mock, mocker, cli_runner):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
         return_value=decoded_token(),
     )
 
-    requests_mock.get(
-        'http://bff_cli' + '/v1/testproject/files/query',
+    httpx_mock.add_response(
+        method='GET',
+        url='http://bff_cli/v1/testproject/files/query?project_code=testproject&'
+        'folder=&source_type=project&zone=greenroom&page=0&page_size=10',
         json={'code': 200, 'error_msg': '', 'result': []},
     )
     mocker.patch.object(questionary, 'select')

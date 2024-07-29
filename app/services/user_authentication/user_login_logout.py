@@ -26,6 +26,7 @@ def exchange_api_key(api_key: str) -> Union[Tuple[str, str], Tuple[None, None]]:
     http_client = BaseClient(AppConfig.Connections.url_keycloak_realm)
     try:
         response = http_client._get(f'api-key/{api_key}')
+        response.raise_for_status()
     except HTTPStatusError:
         return None, None
 

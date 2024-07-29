@@ -13,9 +13,6 @@ from httpx import RequestError
 from httpx import Response
 
 from app.configs.config import ConfigClass
-from app.configs.user_config import UserConfig
-
-# from app.services.user_authentication.token_manager import SrvTokenManager
 
 logger = logging.getLogger('pilot.cli.base_client')
 
@@ -23,12 +20,10 @@ logger = logging.getLogger('pilot.cli.base_client')
 class BaseClient:
     """Client for any inherited service clients."""
 
-    user = UserConfig()
-
     def __init__(self, endpoint: str, timeout: int = 10) -> None:
         self.endpoint = endpoint
         self.client = Client(timeout=timeout)
-        self.headers = {'Authorization': 'Bearer ' + self.user.access_token, 'VM-Info': ConfigClass.vm_info}
+        self.headers = {'VM-Info': ConfigClass.vm_info}
         self.retry_status = [401, 503]
         self.retry_count = 3
         self.retry_interval = 0.1
