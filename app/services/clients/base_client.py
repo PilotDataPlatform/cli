@@ -48,6 +48,7 @@ class BaseClient:
 
         logger.debug(f'failed with over {self.retry_count} retries.')
 
+        response.raise_for_status()
         return None
 
     def _single_request(

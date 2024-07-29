@@ -45,4 +45,5 @@ class BaseAuthClient(BaseClient):
                 self.token_manager.refresh(ConfigClass.keycloak_device_client_id)
                 self.headers['Authorization'] = 'Bearer ' + self.user.access_token
 
+        response.raise_for_status()
         return None
