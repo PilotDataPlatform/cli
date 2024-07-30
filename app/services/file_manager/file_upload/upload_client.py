@@ -21,6 +21,7 @@ from app.configs.app_config import AppConfig
 from app.configs.config import ConfigClass
 from app.configs.user_config import UserConfig
 from app.models.upload_form import generate_on_success_form
+from app.services.clients.base_auth_client import BaseAuthClient
 from app.services.file_manager.file_upload.models import FileObject
 from app.services.file_manager.file_upload.models import UploadType
 from app.services.output_manager.error_handler import ECustomizedError
@@ -33,7 +34,7 @@ from app.utils.aggregated import resilient_session
 from .exception import INVALID_CHUNK_ETAG
 
 
-class UploadClient:
+class UploadClient(BaseAuthClient):
     """
     Summary:
         The upload client is per upload base. it stores some immutable.
@@ -58,6 +59,7 @@ class UploadClient:
         source_id: str = '',
         attributes: dict = None,
     ):
+        super().__init__(AppConfig.Connections.url_bff)
         self.user = UserConfig()
         self.operator = self.user.username
         self.upload_message = upload_message
