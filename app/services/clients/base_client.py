@@ -97,6 +97,12 @@ class BaseClient:
         """Send DELETE request."""
         return self._request('DELETE', url, params=params, json=json)
 
-    def _patch(self, url: str, json: Optional[Any] = None, params: Optional[Mapping[str, Any]] = None) -> Response:
+    def _patch(
+        self,
+        url: str,
+        json: Optional[Any] = None,
+        params: Optional[Mapping[str, Any]] = None,
+        headers: Optional[Mapping[str, Any]] = None,
+    ) -> Response:
         """Send PATCH request."""
         return self._request('PATCH', url, json=json, params=params)
