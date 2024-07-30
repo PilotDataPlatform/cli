@@ -23,7 +23,11 @@ class BaseAuthClient(BaseClient):
         super().__init__(endpoint, timeout)
 
         self.token_manager = SrvTokenManager()
-        self.headers = {'Authorization': 'Bearer ' + self.user.access_token, 'VM-Info': ConfigClass.vm_info}
+        self.headers = {
+            'Authorization': 'Bearer ' + self.user.access_token,
+            'VM-Info': ConfigClass.vm_info,
+            'Session-ID': self.user.session_id,
+        }
 
     def _request(
         self,

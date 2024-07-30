@@ -88,12 +88,9 @@ class SrvFileDownload(BaseAuthClient, metaclass=MetaService):
             'container_code': self.project_code,
             'container_type': 'project',
         }
-        headers = {
-            'Session-ID': self.session_id,
-        }
         try:
             self.endpoint = self.appconfig.Connections.url_bff + '/v1'
-            res = self._post(f'project/{self.project_code}/files/download', json=payload, headers=headers)
+            res = self._post(f'project/{self.project_code}/files/download', json=payload)
         except httpx.HTTPStatusError as e:
             res = e.response
             if res.status_code == 403:

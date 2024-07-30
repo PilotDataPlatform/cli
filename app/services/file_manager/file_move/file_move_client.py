@@ -128,8 +128,7 @@ class FileMoveClient(BaseAuthClient):
                 'dest_item_path': self.dest_item_path,
                 'zone': self.zone,
             }
-            headers = {'Session-ID': self.user.session_id}
-            response = self._patch(f'{self.project_code}/files', json=payload, headers=headers)
+            response = self._patch(f'{self.project_code}/files', json=payload)
 
             return response.json().get('result')
         except HTTPStatusError as e:
