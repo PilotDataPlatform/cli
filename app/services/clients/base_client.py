@@ -74,9 +74,11 @@ class BaseClient:
 
         return response
 
-    def _get(self, url: str, params: Optional[Mapping[str, Any]] = None) -> Response:
+    def _get(
+        self, url: str, params: Optional[Mapping[str, Any]] = None, headers: Optional[Mapping[str, Any]] = None
+    ) -> Response:
         """Send GET request."""
-        return self._request('GET', url, params=params)
+        return self._request('GET', url, params=params, headers=headers)
 
     def _post(
         self,
@@ -89,9 +91,16 @@ class BaseClient:
         """Send POST request."""
         return self._request('POST', url, json=json, params=params, headers=headers, data=data)
 
-    def _put(self, url: str, json: Optional[Any] = None, params: Optional[Mapping[str, Any]] = None) -> Response:
+    def _put(
+        self,
+        url: str,
+        json: Optional[Any] = None,
+        params: Optional[Mapping[str, Any]] = None,
+        headers: Optional[Mapping[str, Any]] = None,
+        data: Optional[Mapping[str, Any]] = None,
+    ) -> Response:
         """Send PUT request."""
-        return self._request('PUT', url, json=json, params=params)
+        return self._request('PUT', url, json=json, params=params, headers=headers, data=data)
 
     def _delete(self, url: str, params: Optional[Mapping[str, Any]] = None, json: Optional[Any] = None) -> Response:
         """Send DELETE request."""

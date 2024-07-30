@@ -7,6 +7,7 @@ import json
 import math
 import os
 import time
+from logging import getLogger
 from multiprocessing.pool import ApplyResult
 from multiprocessing.pool import ThreadPool
 from typing import Any
@@ -15,6 +16,7 @@ from typing import List
 from typing import Tuple
 
 import httpx
+from httpx import HTTPStatusError
 
 import app.services.output_manager.message_handler as mhandler
 from app.configs.app_config import AppConfig
@@ -29,9 +31,10 @@ from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
 from app.services.user_authentication.token_manager import SrvTokenManager
 from app.utils.aggregated import get_file_info_by_geid
-from app.utils.aggregated import resilient_session
 
 from .exception import INVALID_CHUNK_ETAG
+
+logger = getLogger(__name__)
 
 
 class UploadClient(BaseAuthClient):
@@ -59,15 +62,12 @@ class UploadClient(BaseAuthClient):
         source_id: str = '',
         attributes: dict = None,
     ):
-        super().__init__(AppConfig.Connections.url_bff)
+        super().__init__('')
+
         self.user = UserConfig()
         self.operator = self.user.username
         self.upload_message = upload_message
         self.chunk_size = AppConfig.Env.chunk_size
-        self.base_url = {
-            AppConfig.Env.green_zone: AppConfig.Connections.url_upload_greenroom,
-            AppConfig.Env.core_zone: AppConfig.Connections.url_upload_core,
-        }.get(zone.lower())
 
         prefix = {
             AppConfig.Env.green_zone: AppConfig.Env.greenroom_bucket_prefix,
@@ -120,8 +120,6 @@ class UploadClient(BaseAuthClient):
                 - chunk_info(dict): the mapping for chunks that already been uploaded.
         """
 
-        headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
-        url = AppConfig.Connections.url_bff + f'/v1/project/{self.project_code}/files/resumable'
         rid_file_object_map = {x.resumable_id: x for x in unfinished_file_objects}
 
         payload = {
@@ -137,9 +135,15 @@ class UploadClient(BaseAuthClient):
             ],
         }
 
-        response = resilient_session().post(url, json=payload, headers=headers, timeout=None)
-        if response.status_code == 404:
-            SrvErrorHandler.customized_handle(ECustomizedError.UPLOAD_ID_NOT_EXIST, True)
+        try:
+            self.endpoint = AppConfig.Connections.url_bff + '/v1'
+            response = self._post(f'project/{self.project_code}/files/resumable', json=payload)
+        except HTTPStatusError as e:
+            response = e.response
+            if response.status_code == 404:
+                SrvErrorHandler.customized_handle(ECustomizedError.UPLOAD_ID_NOT_EXIST, True)
+            else:
+                SrvErrorHandler.default_handle('Error when resuming upload', True)
 
         # make the response into file objects
         uploaded_infos = response.json().get('result', [])
@@ -162,9 +166,6 @@ class UploadClient(BaseAuthClient):
             - non_exist_file_objects(List[FileObject]): the file that need to be uploaded.
             - exist_files(List[str]): the file that has been uploaded. will be skipped
         """
-        headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
-        url = AppConfig.Connections.url_base + '/portal/v1/files/exists'
-        zone_int = 0 if self.zone == 'greenroom' else 1
 
         # generate a list of locations for uploaded files to check duplication
         # at same time, generate a dict of mapping with object_path: FileObject
@@ -175,18 +176,20 @@ class UploadClient(BaseAuthClient):
             'locations': locations,
             'container_code': self.project_code,
             'container_type': 'project',
-            'zone': zone_int,
+            'zone': 0 if self.zone == 'greenroom' else 1,
         }
-        response = resilient_session().post(url, json=payload, headers=headers)
+        try:
+            self.endpoint = AppConfig.Connections.url_base + '/portal/v1'
+            response = self._post('files/exists', json=payload)
+        except HTTPStatusError as e:
+            response = e.response
+            SrvErrorHandler.default_handle('Error when checking file duplication', True)
 
         # pop the file object if the file has been uploaded
         # return the file objects that need to be uploaded
-        if response.status_code == 200:
-            exist_files = response.json().get('result', [])
-            for exist_file_path in exist_files:
-                object_path_file_object_map.pop(exist_file_path.lower())
-        else:
-            SrvErrorHandler.default_handle('Error when checking file duplication', if_exit=True)
+        exist_files = response.json().get('result', [])
+        for exist_file_path in exist_files:
+            object_path_file_object_map.pop(exist_file_path.lower())
 
         # reconstruct non exist file objects which will be uploaded
         # without lower() function.
@@ -212,8 +215,6 @@ class UploadClient(BaseAuthClient):
                 - chunk_info(dict): the mapping for chunks that already been uploaded.
         """
 
-        headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
-        url = AppConfig.Connections.url_bff + '/v1/project/{}/files'.format(self.project_code)
         payload = {
             'project_code': self.project_code,
             'operator': self.operator,
@@ -228,35 +229,38 @@ class UploadClient(BaseAuthClient):
             ],
         }
 
-        response = resilient_session().post(url, json=payload, headers=headers)
-        if response.status_code == 200:
-            result = response.json().get('result')
-            file_mapping = {x.object_path: x for x in file_objects}
-            file_objets = []
-            for job in result:
-                object_path = job.get('target_names')[0]
-                # get the file object from mapping and update the attribute
-                file_object = file_mapping.get(object_path)
-                file_object.resumable_id = job.get('payload').get('resumable_identifier')
-                file_object.item_id = job.get('payload').get('item_id')
-                file_object.job_id = job.get('job_id')
-                file_objets.append(file_object)
+        try:
+            self.endpoint = AppConfig.Connections.url_bff + '/v1'
+            response = self._post(f'project/{self.project_code}/files', json=payload)
+        except HTTPStatusError as e:
+            response = e.response
+            if response.status_code == 403:
+                SrvErrorHandler.customized_handle(ECustomizedError.PERMISSION_DENIED, self.regular_file)
+            elif response.status_code == 401:
+                SrvErrorHandler.customized_handle(ECustomizedError.PROJECT_DENIED, self.regular_file)
+            elif response.status_code == 409:
+                SrvErrorHandler.customized_handle(ECustomizedError.FILE_EXIST, self.regular_file)
+            elif response.status_code == 400:
+                SrvErrorHandler.customized_handle(ECustomizedError.FILE_LOCKED, True)
+            elif response.status_code == 500:
+                SrvErrorHandler.customized_handle(ECustomizedError.FILE_LOCKED, True)
+            else:
+                SrvErrorHandler.default_handle(response.content, True)
 
-            mhandler.SrvOutPutHandler.preupload_success()
-            return file_objets
-        elif response.status_code == 403:
-            SrvErrorHandler.customized_handle(ECustomizedError.PERMISSION_DENIED, self.regular_file)
-        elif response.status_code == 401:
-            SrvErrorHandler.customized_handle(ECustomizedError.PROJECT_DENIED, self.regular_file)
-        elif response.status_code == 409:
-            SrvErrorHandler.customized_handle(ECustomizedError.FILE_EXIST, self.regular_file)
-            raise Exception('file exist')
-        elif response.status_code == 400 and 'Invalid operation, locked' in response.json().get('error_msg'):
-            SrvErrorHandler.customized_handle(ECustomizedError.FILE_LOCKED, True)
-        elif response.status_code == 500 and 'Invalid operation, locked' in response.json().get('error_msg'):
-            SrvErrorHandler.customized_handle(ECustomizedError.FILE_LOCKED, True)
-        else:
-            SrvErrorHandler.default_handle(str(response.status_code) + ': ' + str(response.content), self.regular_file)
+        result = response.json().get('result')
+        file_mapping = {x.object_path: x for x in file_objects}
+        file_objets = []
+        for job in result:
+            object_path = job.get('target_names')[0]
+            # get the file object from mapping and update the attribute
+            file_object = file_mapping.get(object_path)
+            file_object.resumable_id = job.get('payload').get('resumable_identifier')
+            file_object.item_id = job.get('payload').get('item_id')
+            file_object.job_id = job.get('job_id')
+            file_objets.append(file_object)
+
+        mhandler.SrvOutPutHandler.preupload_success()
+        return file_objets
 
     def output_manifest(self, file_objects: List[FileObject], output_path: str) -> Dict[str, Any]:
         """
@@ -352,57 +356,39 @@ class UploadClient(BaseAuthClient):
             - None
         """
 
-        # retry three times
-        for i in range(AppConfig.Env.resilient_retry):
-            if i > 0:
-                SrvErrorHandler.default_handle('retry number %s' % i)
+        file_object.update_progress(0)
 
-            file_object.update_progress(0)
+        # request upload service to generate presigned url for the chunk
+        params = {
+            'bucket': self.bucket,
+            'key': file_object.item_id,
+            'upload_id': file_object.resumable_id,
+            'chunk_number': chunk_number,
+            'chunk_size': chunk_size,
+        }
+        headers = {
+            'Content-MD5': etag,
+        }
+        try:
+            self.endpoint = {
+                AppConfig.Env.green_zone: AppConfig.Connections.url_upload_greenroom + '/v1',
+                AppConfig.Env.core_zone: AppConfig.Connections.url_upload_core + '/v1',
+            }.get(self.zone.lower())
+            response = self._get('files/chunks/presigned', params=params, headers=headers)
+            presigned_chunk_url = response.json().get('result')
+            res = httpx.put(presigned_chunk_url, data=chunk, timeout=None)
 
-            # request upload service to generate presigned url for the chunk
-            params = {
-                'bucket': self.bucket,
-                'key': file_object.item_id,
-                'upload_id': file_object.resumable_id,
-                'chunk_number': chunk_number,
-                'chunk_size': chunk_size,
-            }
-            headers = {
-                'Authorization': 'Bearer ' + self.user.access_token,
-                'Session-ID': self.user.session_id,
-                'Content-MD5': etag,
-            }
-            response = httpx.get(
-                self.base_url + '/v1/files/chunks/presigned',
-                params=params,
-                headers=headers,
-                timeout=None,
-            )
+        except HTTPStatusError as e:
+            response = e.response
+            logger.error(response.content)
+            SrvErrorHandler.default_handle(response.content, True)
 
-            # then use the presigned url directly uplad to minio
-            if response.status_code == 200:
-                presigned_chunk_url = response.json().get('result')
-                res = httpx.put(presigned_chunk_url, data=chunk, timeout=None)
+        # update the progress bar
+        file_object.update_progress(len(chunk))
+        if chunk_number == file_object.total_chunks:
+            file_object.close_progress()
 
-                if res.status_code not in [200, 201]:
-                    error_msg = 'Fail to upload the chunck %s: %s' % (chunk_number, str(res.text))
-                    raise Exception(error_msg)
-
-                # update the progress bar
-                file_object.update_progress(len(chunk))
-                if chunk_number == file_object.total_chunks:
-                    file_object.close_progress()
-
-                return res
-            else:
-                SrvErrorHandler.default_handle('Chunk Error: retry number %s' % i)
-                if i == 2:
-                    SrvErrorHandler.default_handle('retry over 3 times')
-                    SrvErrorHandler.default_handle(response.content)
-
-            # wait certain amount of time and retry
-            # the time will be longer for more retry
-            time.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
+        return res
 
     def on_succeed(self, file_object: FileObject, tags: List[str], chunk_result: List[ApplyResult]) -> None:
         """
@@ -420,34 +406,26 @@ class UploadClient(BaseAuthClient):
         # check if all the chunks have been uploaded
         [res.wait() for res in chunk_result]
 
-        for i in range(AppConfig.Env.resilient_retry):
-            url = self.base_url + '/v1/files'
-            payload = generate_on_success_form(
-                self.project_code,
-                self.operator,
-                file_object,
-                [],
-                upload_message=self.upload_message,
-            )
-            headers = {
-                'Authorization': 'Bearer ' + self.user.access_token,
-                'Refresh-token': self.user.refresh_token,
-                'Session-ID': self.user.session_id,
-            }
-            response = resilient_session().post(url, json=payload, headers=headers)
-            res_json = response.json()
+        payload = generate_on_success_form(
+            self.project_code,
+            self.operator,
+            file_object,
+            [],
+            upload_message=self.upload_message,
+        )
+        try:
+            self.endpoint = {
+                AppConfig.Env.green_zone: AppConfig.Connections.url_upload_greenroom + '/v1',
+                AppConfig.Env.core_zone: AppConfig.Connections.url_upload_core + '/v1',
+            }.get(self.zone.lower())
 
-            if res_json.get('code') == 200:
-                # mhandler.SrvOutPutHandler.start_finalizing()
-                result = res_json['result']
-                return result
-            else:
-                SrvErrorHandler.default_handle('Combine Error: retry number %s' % i)
-                SrvErrorHandler.default_handle(response.content)
-                if i == 2:
-                    SrvErrorHandler.default_handle('retry over 3 times')
+            response = self._post('files', json=payload)
+        except HTTPStatusError as e:
+            response = e.response
+            SrvErrorHandler.default_handle(response.content, True)
 
-            time.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
+        result = response.json().get('result')
+        return result
 
     def check_status(self, file_object: FileObject) -> bool:
         """
