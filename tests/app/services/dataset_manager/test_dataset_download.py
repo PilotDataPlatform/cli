@@ -30,7 +30,7 @@ def test_dateset_pre_download_status_waiting(httpx_mock, mocker):
 
     httpx_mock.add_response(
         method='GET',
-        url=AppConfig.Connections.url_download_core + f'v1/download/status/{dataset_download_cliet.hash_code}',
+        url=AppConfig.Connections.url_download_core + f'/v1/download/status/{dataset_download_cliet.hash_code}',
         json={'result': {'status': 'WAITING'}},
         status_code=200,
     )
@@ -46,7 +46,7 @@ def test_dateset_pre_download_status_success(httpx_mock, mocker):
 
     httpx_mock.add_response(
         method='GET',
-        url=AppConfig.Connections.url_download_core + f'v1/download/status/{dataset_download_cliet.hash_code}',
+        url=AppConfig.Connections.url_download_core + f'/v1/download/status/{dataset_download_cliet.hash_code}',
         json={'result': {'status': 'SUCCEED'}},
         status_code=200,
     )
@@ -62,7 +62,7 @@ def test_check_dateset_pre_download_status(httpx_mock, mocker):
 
     httpx_mock.add_response(
         method='GET',
-        url=AppConfig.Connections.url_download_core + f'v1/download/status/{dataset_download_cliet.hash_code}',
+        url=AppConfig.Connections.url_download_core + f'/v1/download/status/{dataset_download_cliet.hash_code}',
         json={'result': {'status': 'SUCCEED'}},
         status_code=200,
     )
@@ -111,7 +111,7 @@ def test_download_dataset(httpx_mock, mocker):
 
     httpx_mock.add_response(
         method='GET',
-        url=AppConfig.Connections.url_download_core + 'v1/download/status/hash_code',
+        url=AppConfig.Connections.url_download_core + '/v1/download/status/hash_code',
         json={'result': {'status': 'SUCCEED'}},
         status_code=200,
     )

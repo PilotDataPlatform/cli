@@ -2,46 +2,44 @@
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
-import requests
+from httpx import HTTPStatusError
 
 import app.services.logger_services.log_functions as logger
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.models.service_meta_class import MetaService
+from app.services.clients.base_auth_client import BaseAuthClient
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 
 from ..user_authentication.decorator import require_valid_token
 
 
-class SrvDatasetDetailManager(metaclass=MetaService):
+class SrvDatasetDetailManager(BaseAuthClient, metaclass=MetaService):
     def __init__(self, interactive=True):
+        super().__init__(AppConfig.Connections.url_bff)
+
         self.user = UserConfig()
         self.interactive = interactive
+        self.endpoint = AppConfig.Connections.url_bff + '/v1'
 
     @require_valid_token()
     def dataset_detail(self, code, page=0, page_size=10):
-        url = AppConfig.Connections.url_bff + f'/v1/dataset/{code}'
-        headers = {
-            'Authorization': 'Bearer ' + self.user.access_token,
-        }
         params = {'page': page, 'page_size': page_size}
         try:
-            response = requests.get(url, headers=headers, params=params)
-            res = response.json()
-            status_code = res.get('code')
-            if status_code == 200:
-                result = res.get('result')
-                self.format_dataset_detail(result) if self.interactive else None
-                return result
-            elif status_code == 404:
+            response = self._get(f'dataset/{code}', params=params)
+        except HTTPStatusError as e:
+            response = e.response
+            if response.status_code == 404:
                 SrvErrorHandler.customized_handle(ECustomizedError.DATASET_NOT_EXIST, self.interactive)
-            elif status_code == 403:
+            elif response.status_code == 403:
                 SrvErrorHandler.customized_handle(ECustomizedError.DATASET_PERMISSION, self.interactive)
             else:
-                SrvErrorHandler.default_handle(response.content, self.interactive)
-        except Exception:
-            SrvErrorHandler.default_handle(response.content, self.interactive)
+                SrvErrorHandler.default_handle(response.content, True)
+
+        result = response.json().get('result')
+        self.format_dataset_detail(result) if self.interactive else None
+        return result
 
     @staticmethod
     def format_dataset_detail(dataset_info):

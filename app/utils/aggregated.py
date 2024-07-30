@@ -10,26 +10,17 @@ from typing import Dict
 from typing import List
 from typing import Tuple
 
-import httpx
 from httpx import HTTPStatusError
 from packaging.version import Version
 
 import app.services.logger_services.log_functions as logger
 from app.configs.app_config import AppConfig
-from app.configs.config import ConfigClass
 from app.configs.user_config import UserConfig
 from app.models.item import ItemType
 from app.services.clients.base_auth_client import BaseAuthClient
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
-
-
-def resilient_session():
-    # each resilient session will
-    headers = {'VM-Info': ConfigClass.vm_info}
-    client = httpx.Client(headers=headers, timeout=None)
-    return client
 
 
 @require_valid_token()
