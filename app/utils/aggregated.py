@@ -51,7 +51,7 @@ def search_item(project_code, zone, folder_relative_path, container_type='projec
             pass
         elif res.status_code == 401:
             SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TOKEN, if_exit=True)
-        elif res.status_code != 200:
+        else:
             SrvErrorHandler.default_handle(res.text, True)
 
     return res.json()
@@ -64,8 +64,7 @@ def get_attribute_template_by_id(template_id: str) -> Dict[str, Any]:
         res = http_client._get(f'v1/data/manifest/{template_id}')
     except HTTPStatusError as e:
         res = e.response
-        if res.status_code != 200:
-            SrvErrorHandler.default_handle(res.text, True)
+        SrvErrorHandler.default_handle(res.text, True)
 
     return res.json().get('result', {})
 
@@ -78,8 +77,7 @@ def get_file_info_by_geid(geid: list):
         res = http_client._post('v1/query/geid', json=payload)
     except HTTPStatusError as e:
         res = e.response
-        if res.status_code != 200:
-            SrvErrorHandler.default_handle(res.text, True)
+        SrvErrorHandler.default_handle(res.text, True)
 
     return res.json()['result']
 
@@ -109,8 +107,7 @@ def check_item_duplication(item_list: List[str], zone: int, project_code: str) -
         response = httpx_client._post('portal/v1/files/exists', json=payload)
     except HTTPStatusError as e:
         response = e.response
-        if response.status_code != 200:
-            SrvErrorHandler.default_handle(response.text, True)
+        SrvErrorHandler.default_handle(response.text, True)
 
     return response.json().get('result')
 
