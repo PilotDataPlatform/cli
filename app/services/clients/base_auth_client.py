@@ -6,7 +6,7 @@ import time
 from typing import Any
 from typing import Mapping
 
-from requests import Response
+from httpx import Response
 
 from app.configs.config import ConfigClass
 from app.configs.user_config import UserConfig

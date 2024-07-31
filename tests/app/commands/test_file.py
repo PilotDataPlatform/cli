@@ -221,7 +221,7 @@ def test_empty_file_list_with_pagination(httpx_mock, mocker, cli_runner):
 
 
 @pytest.mark.parametrize('parent_folder_type', [ItemType.NAMEFOLDER, ItemType.SHAREDFOLDER])
-def test_file_download_success(requests_mock, mocker, cli_runner, parent_folder_type):
+def test_file_download_success(mocker, cli_runner, parent_folder_type):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
         return_value=decoded_token(),

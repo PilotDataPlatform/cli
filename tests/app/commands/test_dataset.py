@@ -8,7 +8,6 @@ from app.configs.app_config import AppConfig
 
 def test_download_not_exited_dataset_version(httpx_mock, mocker, cli_runner, capsys):
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
-    # requests_mock.get(
     httpx_mock.add_response(
         method='GET',
         url='http://bff_cli/v1/dataset/testdataset?page=0&page_size=500',

@@ -112,6 +112,8 @@ def test_search_file_error_handling_with_401(httpx_mock, mocker, capsys):
         text='Authentication failed.',
         status_code=401,
     )
+    mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.refresh', return_value=None)
+
     with pytest.raises(SystemExit):
         search_item(test_project_code, 'zone', 'folder_relative_path', 'project')
     out, _ = capsys.readouterr()

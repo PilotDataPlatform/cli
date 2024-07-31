@@ -13,7 +13,6 @@ test_dataset_code = 'test_code'
 
 def test_get_dataset_detail(httpx_mock, mocker, capsys):
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
-    # requests_mock.get(
     httpx_mock.add_response(
         method='GET',
         url=f'http://bff_cli/v1/dataset/{test_dataset_code}?page=0&page_size=10',
@@ -71,7 +70,6 @@ def test_get_dataset_detail(httpx_mock, mocker, capsys):
 def test_get_dataset_detail_not_exist(httpx_mock, mocker, capsys):
     fake_dataset_code = 'fake-code'
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
-    # requests_mock.get(
     httpx_mock.add_response(
         method='GET',
         url=f'http://bff_cli/v1/dataset/{fake_dataset_code}?page=0&page_size=10',
@@ -88,7 +86,6 @@ def test_get_dataset_detail_not_exist(httpx_mock, mocker, capsys):
 def test_get_dataset_detail_not_access(httpx_mock, mocker, capsys):
     fake_dataset_code = 'restrict-code'
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
-    # requests_mock.get(
     httpx_mock.add_response(
         method='GET',
         url=f'http://bff_cli/v1/dataset/{fake_dataset_code}?page=0&page_size=10',
