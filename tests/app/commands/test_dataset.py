@@ -41,8 +41,8 @@ def test_download_not_exited_dataset_version(httpx_mock, mocker, cli_runner, cap
     )
 
     httpx_mock.add_response(
-        method='GET',
-        url=AppConfig.Connections.url_dataset + '/fake-id/download/pre?version=1.0',
+        method='POST',
+        url=AppConfig.Connections.url_dataset + '/fake-id/download/pre/version/1.0',
         json={'error': 'version does not exist'},
         status_code=404,
     )

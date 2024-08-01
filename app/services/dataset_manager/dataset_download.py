@@ -42,10 +42,9 @@ class SrvDatasetDownloadManager(BaseAuthClient, metaclass=MetaService):
 
     @require_valid_token()
     def pre_dataset_version_download(self):
-        payload = {'version': self.version}
         try:
             self.endpoint = AppConfig.Connections.url_dataset
-            response = self._get(f'{self.dataset_geid}/download/pre', params=payload)
+            response = self._post(f'{self.dataset_geid}/download/pre/version/{self.version}')
         except HTTPStatusError as e:
             response = e.response
             if response.status_code == 404:
@@ -110,7 +109,7 @@ class SrvDatasetDownloadManager(BaseAuthClient, metaclass=MetaService):
                 unit_divisor=1024,
                 bar_format='{desc} |{bar:30} {percentage:3.0f}% {remaining}',
             ) as bar:
-                for data in r.iter_content(chunk_size=1024):
+                for data in r.iter_bytes(chunk_size=1024):
                     size = file.write(data)
                     bar.update(size)
         return output_path
@@ -153,8 +152,11 @@ class SrvDatasetDownloadManager(BaseAuthClient, metaclass=MetaService):
     def download_dataset_version(self, version) -> None:
         self.version = version
         pre_result = self.pre_dataset_version_download()
-        self.download_url = pre_result.get('result').get('source')
+        self.hash_code = pre_result.get('result').get('payload').get('hash_code')
+        self.download_url = f'{AppConfig.Connections.url_download_core}/v1/download/{self.hash_code}'
 
+        status = self.check_download_preparing_status()
+        SrvOutPutHandler.download_status(status)
         saved_filename = self.send_download_request()
         if os.path.isfile(saved_filename):
             SrvOutPutHandler.download_success(saved_filename)
