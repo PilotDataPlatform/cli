@@ -244,8 +244,8 @@ class SrvOutPutHandler(metaclass=MetaService):
         logger.succeed(f'File has been downloaded successfully and saved to: {file_name}')
 
     @staticmethod
-    def dataset_current_version(version):
-        logger.succeed(f'Current dataset version: {version}')
+    def dataset_targe_version(version):
+        logger.succeed(f'Target dataset version: {version}')
 
     @staticmethod
     def download_status(status):

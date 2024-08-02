@@ -61,9 +61,11 @@ def dataset_list(page, page_size, detached):
 
 
 @click.command(name='show-detail')
-@click.argument('code', type=click.STRING, nargs=1)
-@click.option('--page', default=0, required=False, help=' The page to be listed', show_default=True)
-@click.option('--page-size', default=10, required=False, help='number of objects per page', show_default=True)
+@click.argument('dataset-code', type=click.STRING, nargs=1)
+@click.option(
+    '--page', default=0, required=False, help=' The page to be listed for dataset versions', show_default=True
+)
+@click.option('--page-size', default=10, required=False, help='number of versions per page', show_default=True)
 @click.option(
     '-d',
     '--detached',
@@ -74,14 +76,14 @@ def dataset_list(page, page_size, detached):
     show_default=True,
 )
 @doc(dataset_help.dataset_help_page(dataset_help.DatasetHELP.DATASET_SHOW_DETAIL))
-def dataset_show_detail(code, page, page_size, detached):
+def dataset_show_detail(dataset_code, page, page_size, detached):
     if detached:
         detail_mgr = SrvDatasetDetailManager()
-        detail_mgr.dataset_detail(code, page, page_size)
+        detail_mgr.dataset_detail(dataset_code, page, page_size)
     else:
         while True:
             detail_mgr = SrvDatasetDetailManager()
-            detail_info = detail_mgr.dataset_detail(code, page, page_size)
+            detail_info = detail_mgr.dataset_detail(dataset_code, page, page_size)
             versions = detail_info.get('version_detail')
             if len(versions) < page_size and page == 0:
                 break
@@ -126,5 +128,5 @@ def dataset_download(code, output_path, version):
         if not version:
             srv_download.download_dataset()
         else:
-            message_handler.SrvOutPutHandler.dataset_current_version(version)
+            message_handler.SrvOutPutHandler.dataset_targe_version(version)
             srv_download.download_dataset_version(version)

@@ -44,10 +44,10 @@ def test_download_not_exited_dataset_version(httpx_mock, mocker, cli_runner, cap
         method='POST',
         url=AppConfig.Connections.url_dataset + '/fake-id/download/pre/version/1.0',
         json={'error': 'version does not exist'},
-        status_code=404,
+        status_code=500,
     )
 
     result = cli_runner.invoke(dataset_download, ['testdataset', '.', '-v', '1.0'])
     outputs = result.output.split('\n')
-    assert outputs[0] == 'Current dataset version: 1.0'
+    assert outputs[0] == 'Target dataset version: 1.0'
     assert outputs[1] == 'Version not available: 1.0'
