@@ -30,7 +30,7 @@ def test_dateset_pre_download_status_waiting(httpx_mock, mocker):
 
     httpx_mock.add_response(
         method='GET',
-        url=AppConfig.Connections.url_download_core + f'v1/download/status/{dataset_download_cliet.hash_code}',
+        url=AppConfig.Connections.url_download_core + f'/v1/download/status/{dataset_download_cliet.hash_code}',
         json={'result': {'status': 'WAITING'}},
         status_code=200,
     )
@@ -46,7 +46,7 @@ def test_dateset_pre_download_status_success(httpx_mock, mocker):
 
     httpx_mock.add_response(
         method='GET',
-        url=AppConfig.Connections.url_download_core + f'v1/download/status/{dataset_download_cliet.hash_code}',
+        url=AppConfig.Connections.url_download_core + f'/v1/download/status/{dataset_download_cliet.hash_code}',
         json={'result': {'status': 'SUCCEED'}},
         status_code=200,
     )
@@ -62,7 +62,7 @@ def test_check_dateset_pre_download_status(httpx_mock, mocker):
 
     httpx_mock.add_response(
         method='GET',
-        url=AppConfig.Connections.url_download_core + f'v1/download/status/{dataset_download_cliet.hash_code}',
+        url=AppConfig.Connections.url_download_core + f'/v1/download/status/{dataset_download_cliet.hash_code}',
         json={'result': {'status': 'SUCCEED'}},
         status_code=200,
     )
@@ -111,7 +111,7 @@ def test_download_dataset(httpx_mock, mocker):
 
     httpx_mock.add_response(
         method='GET',
-        url=AppConfig.Connections.url_download_core + 'v1/download/status/hash_code',
+        url=AppConfig.Connections.url_download_core + '/v1/download/status/hash_code',
         json={'result': {'status': 'SUCCEED'}},
         status_code=200,
     )
@@ -122,12 +122,14 @@ def test_download_dataset(httpx_mock, mocker):
 
 def test_pre_dataset_version_download(httpx_mock, mocker):
     dataset_download_cliet = SrvDatasetDownloadManager('output_path', 'dataset_code', 'dataset_geid')
+    dataset_download_cliet.version = 'test_version'
 
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
 
     httpx_mock.add_response(
-        method='GET',
-        url=AppConfig.Connections.url_dataset + f'/{dataset_download_cliet.dataset_geid}/download/pre',
+        method='POST',
+        url=AppConfig.Connections.url_dataset
+        + f'/{dataset_download_cliet.dataset_geid}/download/pre/version/test_version',
         json={'result': {'source': 'test.txt'}},
         status_code=200,
     )
@@ -149,11 +151,19 @@ def test_download_dataset_version(httpx_mock, mocker):
         'app.services.output_manager.message_handler.SrvOutPutHandler.download_success', return_value=None
     )
 
+    hash_code = 'test_hash_code'
+    httpx_mock.add_response(
+        method='POST',
+        url=AppConfig.Connections.url_dataset
+        + f'/{dataset_download_cliet.dataset_geid}/download/pre/version/test_version',
+        json={'result': {'payload': {'hash_code': hash_code}}},
+        status_code=200,
+    )
+
     httpx_mock.add_response(
         method='GET',
-        url=AppConfig.Connections.url_dataset
-        + f'/{dataset_download_cliet.dataset_geid}/download/pre?version=test_version',
-        json={'result': {'source': 'test.txt'}},
+        url=AppConfig.Connections.url_download_core + f'/v1/download/status/{hash_code}',
+        json={'result': {'status': 'SUCCEED'}},
         status_code=200,
     )
 

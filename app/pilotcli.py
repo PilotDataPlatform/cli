@@ -6,7 +6,6 @@ from multiprocessing import freeze_support
 
 import click
 import pkg_resources
-import requests
 from packaging.version import Version
 
 import app.services.output_manager.error_handler as error_handler
@@ -44,8 +43,6 @@ class ComplexCLI(click.MultiCommand):
 def cli():
     try:
         entry_point()
-    except requests.exceptions.ConnectionError:
-        error_handler.SrvErrorHandler.customized_handle(error_handler.ECustomizedError.ERROR_CONNECTION, True)
     except Exception as e:
         error_handler.SrvErrorHandler.default_handle(e, True)
 

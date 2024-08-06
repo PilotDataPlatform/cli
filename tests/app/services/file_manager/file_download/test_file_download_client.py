@@ -31,7 +31,7 @@ def test_file_download_client_prepare_download_success(mocker, httpx_mock, file_
     download_client.project_code = 'test_project'
 
     httpx_mock.add_response(
-        url=download_client.appconfig.Connections.url_v2_download_pre % (download_client.project_code),
+        url=f'http://bff_cli/v1/project/{download_client.project_code}/files/download',
         method='POST',
         status_code=200,
         json={
@@ -68,7 +68,7 @@ def test_file_download_client_prepare_download_failed(mocker, httpx_mock, capfd,
     download_client.project_code = 'test_project'
 
     httpx_mock.add_response(
-        url=download_client.appconfig.Connections.url_v2_download_pre % (download_client.project_code),
+        url=f'http://bff_cli/v1/project/{download_client.project_code}/files/download',
         method='POST',
         status_code=status_code,
         json={'error_msg': 'number of file must greater than 0'},

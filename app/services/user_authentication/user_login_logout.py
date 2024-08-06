@@ -10,12 +10,12 @@ from typing import Union
 from uuid import uuid4
 
 import jwt
-import requests
-from requests import RequestException
+from httpx import HTTPStatusError
 
 from app.configs.app_config import AppConfig
 from app.configs.config import ConfigClass
 from app.configs.user_config import UserConfig
+from app.services.clients.base_client import BaseClient
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.output_manager.message_handler import SrvOutPutHandler
@@ -23,12 +23,10 @@ from app.services.output_manager.message_handler import SrvOutPutHandler
 
 def exchange_api_key(api_key: str) -> Union[Tuple[str, str], Tuple[None, None]]:
     """Exchange API Key with JWT token using Keycloak."""
-
-    url = f'{AppConfig.Connections.url_keycloak_realm}/api-key/{api_key}'
+    http_client = BaseClient(AppConfig.Connections.url_keycloak_realm)
     try:
-        response = requests.get(url, timeout=5)
-        response.raise_for_status()
-    except RequestException:
+        response = http_client._get(f'api-key/{api_key}')
+    except HTTPStatusError:
         return None, None
 
     response = response.json()
@@ -59,12 +57,11 @@ def login_using_api_key(api_key: str) -> bool:
 
 def user_device_id_login() -> Dict[str, Any]:
     """Get device code URL for user login."""
-
-    url = f'{AppConfig.Connections.url_keycloak}/auth/device'
+    http_client = BaseClient(AppConfig.Connections.url_keycloak)
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
     data = {'client_id': ConfigClass.keycloak_device_client_id}
-    resp = requests.post(url, headers=headers, data=data)
-    if resp.status_code == 200:
+    try:
+        resp = http_client._post('auth/device', data=data, headers=headers)
         device_data = resp.json()
         return {
             'expires': device_data['expires_in'],
@@ -72,33 +69,38 @@ def user_device_id_login() -> Dict[str, Any]:
             'device_code': device_data['device_code'],
             'verification_uri_complete': device_data['verification_uri_complete'],
         }
-    return {}
+    except HTTPStatusError:
+        return {}
 
 
 def validate_user_device_login(device_code: str, expires: int, interval: int) -> bool:
     """Validate user device authentication."""
 
     time.sleep(interval)
-    url = AppConfig.Connections.url_keycloak_token
+    http_client = BaseClient(AppConfig.Connections.url_keycloak)
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
     data = {
         'device_code': device_code,
         'client_id': ConfigClass.keycloak_device_client_id,
         'grant_type': 'urn:ietf:params:oauth:grant-type:device_code',
     }
-    waiting_result = True
+    waiting_result, get_result = True, False
     start = time.time()
     SrvOutPutHandler.check_login_device_validation()
     while waiting_result:
-        time.sleep(0.1)
-        resp = requests.post(url, headers=headers, data=data)
+        time.sleep(interval)
+        try:
+            resp = http_client._post('token', data=data, headers=headers)
+            if resp.status_code == 200:
+                waiting_result = False
+                get_result = True
+        except HTTPStatusError:
+            pass
         end = time.time()
         if end - start >= expires:
             waiting_result = False
-        elif resp.status_code == 200:
-            waiting_result = False
 
-    if resp.status_code != 200:
+    if get_result is False:
         return False
 
     resp_dict = resp.json()
@@ -141,46 +143,3 @@ def check_is_active(if_print=True):
 def user_logout():
     user_config = UserConfig()
     user_config.clear()
-
-
-def request_default_tokens(username, password):
-    url = AppConfig.Connections.url_authn
-    payload = {'username': username, 'password': password}
-    headers = {'Content-Type': 'application/json'}
-    response = requests.post(url, json=payload, headers=headers)
-    if response.status_code == 200:
-        return [response.json()['result']['access_token'], response.json()['result']['refresh_token']]
-    elif response.status_code == 401:
-        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_CREDENTIALS, True)
-    else:
-        if response.text:
-            SrvErrorHandler.default_handle(response.text, True)
-        SrvErrorHandler.default_handle(response.content, True)
-
-
-def request_harbor_tokens(username, password):
-    url = AppConfig.Connections.url_keycloak
-    payload = {
-        'grant_type': 'password',
-        'username': username,
-        'password': password,
-        'client_id': 'harbor',
-        'client_secret': ConfigClass.harbor_client_secret,
-    }
-    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-    response = requests.post(url, data=payload, headers=headers, verify=False)
-    if response.status_code == 200:
-        return [response.json()['access_token'], response.json()['refresh_token']]
-    elif response.status_code == 401:
-        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_CREDENTIALS, True)
-    else:
-        if response.text:
-            SrvErrorHandler.default_handle(response.text, True)
-        SrvErrorHandler.default_handle(response.content, True)
-
-
-def get_tokens(username, password, azp=None):
-    if not azp or azp == 'kong':
-        return request_default_tokens(username, password)
-    elif azp == 'harbor':
-        return request_harbor_tokens(username, password)

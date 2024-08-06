@@ -8,7 +8,7 @@ import app.services.output_manager.message_handler as message_handler
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.models.service_meta_class import MetaService
-from app.services.clients.base_client import BaseClient
+from app.services.clients.base_auth_client import BaseAuthClient
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
@@ -26,7 +26,7 @@ def dupe_checking_hook(pairs):
 decoder = json.JSONDecoder(object_pairs_hook=dupe_checking_hook)
 
 
-class SrvFileManifests(BaseClient, metaclass=MetaService):
+class SrvFileManifests(BaseAuthClient, metaclass=MetaService):
     app_config = AppConfig()
     user = UserConfig()
 
@@ -34,7 +34,7 @@ class SrvFileManifests(BaseClient, metaclass=MetaService):
         super().__init__(self.app_config.Connections.url_bff)
 
         self.interactive = interactive
-        self.endpoint_v1 = self.app_config.Connections.url_bff + '/v1'
+        self.endpoint = self.app_config.Connections.url_bff + '/v1'
 
     @staticmethod
     def read_manifest_template(path):
@@ -46,7 +46,7 @@ class SrvFileManifests(BaseClient, metaclass=MetaService):
 
     @require_valid_token()
     def validate_template(self, manifest_json):
-        res = self._post('/validate/manifest', json=manifest_json)
+        res = self._post('validate/manifest', json=manifest_json)
         if res.status_code == 200:
             result = res.json()['result']
             message_handler.SrvOutPutHandler.file_manifest_validation(result)
@@ -59,7 +59,7 @@ class SrvFileManifests(BaseClient, metaclass=MetaService):
     @require_valid_token()
     def attach(self, manifest_json: dict, item_id: str, zone: str):
         manifest_json.update({'item_id': item_id, 'zone': zone})
-        res = self._post('/manifest/attach', json=manifest_json)
+        res = self._post('manifest/attach', json=manifest_json)
         if res.status_code == 200:
             result = res.json()
             result['code'] = res.status_code
@@ -69,12 +69,12 @@ class SrvFileManifests(BaseClient, metaclass=MetaService):
 
     @require_valid_token()
     def list_manifest(self, project_code):
-        res = self._get('/manifest', params={'project_code': project_code})
+        res = self._get('manifest', params={'project_code': project_code})
         return res
 
     @require_valid_token()
     def export_manifest(self, project_code, attribute_name):
-        res = self._get('/manifest/export', params={'project_code': project_code, 'name': attribute_name})
+        res = self._get('manifest/export', params={'project_code': project_code, 'name': attribute_name})
         if res.status_code == 404:
             SrvErrorHandler.customized_handle(ECustomizedError.MANIFEST_NOT_EXIST, True, value=attribute_name)
         elif res.status_code == 403:

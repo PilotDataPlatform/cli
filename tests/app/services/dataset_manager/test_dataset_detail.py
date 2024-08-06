@@ -11,10 +11,11 @@ from app.services.output_manager.error_handler import customized_error_msg
 test_dataset_code = 'test_code'
 
 
-def test_get_dataset_detail(requests_mock, mocker, capsys):
+def test_get_dataset_detail(httpx_mock, mocker, capsys):
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
-    requests_mock.get(
-        'http://bff_cli' + f'/v1/dataset/{test_dataset_code}',
+    httpx_mock.add_response(
+        method='GET',
+        url=f'http://bff_cli/v1/dataset/{test_dataset_code}?page=0&page_size=10',
         json={
             'code': 200,
             'error_msg': '',
@@ -45,7 +46,7 @@ def test_get_dataset_detail(requests_mock, mocker, capsys):
     )
     dataset_mgr = SrvDatasetDetailManager()
     dataset_mgr.dataset_detail(test_dataset_code)
-    out, err = capsys.readouterr()
+    out, _ = capsys.readouterr()
     print_out = out.split('\n')
     assert print_out[0] == '--------------------------------------------------------------------------------'
     assert print_out[1] == '|        Title        |                       test dataset                     |'
@@ -66,29 +67,33 @@ def test_get_dataset_detail(requests_mock, mocker, capsys):
     assert print_out[16] == '--------------------------------------------------------------------------------'
 
 
-def test_get_dataset_detail_not_exist(requests_mock, mocker, capsys):
+def test_get_dataset_detail_not_exist(httpx_mock, mocker, capsys):
     fake_dataset_code = 'fake-code'
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
-    requests_mock.get(
-        'http://bff_cli' + f'/v1/dataset/{fake_dataset_code}',
+    httpx_mock.add_response(
+        method='GET',
+        url=f'http://bff_cli/v1/dataset/{fake_dataset_code}?page=0&page_size=10',
         json={'code': 404, 'error_msg': 'Cannot found given dataset code', 'result': {}},
+        status_code=404,
     )
     with pytest.raises(SystemExit):
         dataset_mgr = SrvDatasetDetailManager()
         dataset_mgr.dataset_detail(fake_dataset_code)
-    out, err = capsys.readouterr()
+    out, _ = capsys.readouterr()
     assert out.rstrip('\n') == customized_error_msg(ECustomizedError.DATASET_NOT_EXIST)
 
 
-def test_get_dataset_detail_not_access(requests_mock, mocker, capsys):
+def test_get_dataset_detail_not_access(httpx_mock, mocker, capsys):
     fake_dataset_code = 'restrict-code'
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
-    requests_mock.get(
-        'http://bff_cli' + f'/v1/dataset/{fake_dataset_code}',
+    httpx_mock.add_response(
+        method='GET',
+        url=f'http://bff_cli/v1/dataset/{fake_dataset_code}?page=0&page_size=10',
         json={'code': 403, 'error_msg': 'Permission Denied', 'result': {}},
+        status_code=403,
     )
     with pytest.raises(SystemExit):
         dataset_mgr = SrvDatasetDetailManager()
         dataset_mgr.dataset_detail(fake_dataset_code)
-    out, err = capsys.readouterr()
+    out, _ = capsys.readouterr()
     assert out.rstrip('\n') == customized_error_msg(ECustomizedError.DATASET_PERMISSION)

@@ -19,10 +19,11 @@ def test_check_is_not_login(mocker):
         assert actual == expected_result
 
 
-def test_user_device_id_login_success(monkeypatch, requests_mock):
+def test_user_device_id_login_success(monkeypatch, httpx_mock):
     monkeypatch.setattr(AppConfig.Connections, 'url_keycloak', 'http://url_keycloak')
-    requests_mock.post(
-        'http://url_keycloak/auth/device',
+    httpx_mock.add_response(
+        method='POST',
+        url='http://url_keycloak/auth/device',
         json={
             'expires_in': 10,
             'interval': 1,
@@ -39,21 +40,31 @@ def test_user_device_id_login_success(monkeypatch, requests_mock):
     }
 
 
-def test_user_device_id_login_error(monkeypatch, requests_mock):
+def test_user_device_id_login_error(monkeypatch, httpx_mock):
     monkeypatch.setattr(AppConfig.Connections, 'url_keycloak', 'http://url_keycloak')
-    requests_mock.post('http://url_keycloak/auth/device', status_code=400, json={})
+    httpx_mock.add_response(
+        method='POST',
+        url='http://url_keycloak/auth/device',
+        status_code=400,
+        json={},
+    )
     result = user_device_id_login()
     assert result == {}
 
 
-def test_validate_user_device_login_success(monkeypatch, requests_mock):
+def test_validate_user_device_login_success(monkeypatch, httpx_mock):
     monkeypatch.setattr(AppConfig.Connections, 'url_keycloak_token', 'http://url_keycloak/token')
     token = (
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwicHJlZmVycmVkX3VzZXJuYW'
         '1lIjoiSm9obiBEb2UiLCJpYXQiOjE1MTYyMzkwMjJ9.0sw4vF5BGhhnv2BMfrxQuNMgFU3mxZpVPsOfkvPWgjs'
     )
-    requests_mock.post('http://url_keycloak/token', json={'access_token': token, 'refresh_token': 'refresh'})
-    result = validate_user_device_login('any', 1, 0.1)
+    httpx_mock.add_response(
+        method='POST',
+        url='http://url_keycloak/token',
+        json={'access_token': token, 'refresh_token': 'refresh'},
+    )
+
+    result = validate_user_device_login('any', 1, 0.5)
     assert result
     user = UserConfig()
     assert user.username == 'John Doe'
@@ -61,8 +72,13 @@ def test_validate_user_device_login_success(monkeypatch, requests_mock):
     assert user.refresh_token == 'refresh'
 
 
-def test_validate_user_device_login_error(monkeypatch, requests_mock):
+def test_validate_user_device_login_error(monkeypatch, httpx_mock):
     monkeypatch.setattr(AppConfig.Connections, 'url_keycloak_token', 'http://url_keycloak/token')
-    requests_mock.post('http://url_keycloak/token', status_code=400, json={})
+    httpx_mock.add_response(
+        method='POST',
+        url='http://url_keycloak/token',
+        status_code=400,
+        json={},
+    )
     result = validate_user_device_login('any', 0.2, 0.1)
     assert not result

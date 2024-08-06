@@ -15,10 +15,12 @@ from tests.conftest import decoded_token
 test_project_code = 'testproject'
 
 
-def test_search_file_should_return_200(requests_mock, mocker):
+def test_search_file_should_return_200(httpx_mock, mocker):
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
-    requests_mock.get(
-        f'http://bff_cli/v1/project/{test_project_code}/search',
+    httpx_mock.add_response(
+        method='GET',
+        url=f'http://bff_cli/v1/project/{test_project_code}/search?zone=zone&'
+        f'project_code={test_project_code}&path=folder_relative_path&container_type=project',
         json={
             'code': 200,
             'error_msg': '',
@@ -65,11 +67,14 @@ def test_search_file_should_return_200(requests_mock, mocker):
     assert res['result'] == expected_result
 
 
-def test_search_item_returns_response_when_status_code_is_404(requests_mock, mocker, fake):
+def test_search_item_returns_response_when_status_code_is_404(httpx_mock, mocker, fake):
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
     expected_response = {'result': {'id': fake.uuid4()}}
-    requests_mock.get(
-        f'http://bff_cli/v1/project/{test_project_code}/search',
+
+    httpx_mock.add_response(
+        method='GET',
+        url=f'http://bff_cli/v1/project/{test_project_code}/search?zone=zone&'
+        f'project_code={test_project_code}&path=folder_relative_path&container_type=project',
         json=expected_response,
         status_code=404,
     )
@@ -79,10 +84,12 @@ def test_search_item_returns_response_when_status_code_is_404(requests_mock, moc
     assert response == expected_response
 
 
-def test_search_file_error_handling_with_403(requests_mock, mocker, capsys):
+def test_search_file_error_handling_with_403(httpx_mock, mocker, capsys):
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
-    requests_mock.get(
-        f'http://bff_cli/v1/project/{test_project_code}/search',
+    httpx_mock.add_response(
+        method='GET',
+        url=f'http://bff_cli/v1/project/{test_project_code}/search?zone=zone&'
+        f'project_code={test_project_code}&path=folder_relative_path&container_type=project',
         json={},
         status_code=403,
     )
@@ -95,13 +102,18 @@ def test_search_file_error_handling_with_403(requests_mock, mocker, capsys):
     )
 
 
-def test_search_file_error_handling_with_401(requests_mock, mocker, capsys):
+def test_search_file_error_handling_with_401(httpx_mock, mocker, capsys):
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
-    requests_mock.get(
-        f'http://bff_cli/v1/project/{test_project_code}/search',
+    mocker.patch('app.services.user_authentication.token_manager.login_using_api_key', return_value=True)
+    httpx_mock.add_response(
+        method='GET',
+        url=f'http://bff_cli/v1/project/{test_project_code}/search?zone=zone&'
+        f'project_code={test_project_code}&path=folder_relative_path&container_type=project',
         text='Authentication failed.',
         status_code=401,
     )
+    mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.refresh', return_value=None)
+
     with pytest.raises(SystemExit):
         search_item(test_project_code, 'zone', 'folder_relative_path', 'project')
     out, _ = capsys.readouterr()

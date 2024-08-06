@@ -76,11 +76,11 @@ class Settings(BaseSettings):
 
     @computed_field
     def url_download_greenroom(self) -> str:
-        return f'{self.api_url}/portal/download/gr/'
+        return f'{self.api_url}/portal/download/gr'
 
     @computed_field
     def url_download_core(self) -> str:
-        return f'{self.api_url}/portal/download/core/'
+        return f'{self.api_url}/portal/download/core'
 
     @computed_field
     def url_v2_download_pre(self) -> str:
