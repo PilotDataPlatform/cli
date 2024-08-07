@@ -24,7 +24,8 @@ from app.services.output_manager.error_handler import customized_error_msg
 from tests.conftest import decoded_token
 
 
-def test_file_upload_command_success_with_attribute(mocker, cli_runner):
+@pytest.mark.parametrize('ending_slash', ['', '/'])
+def test_file_upload_command_success_with_attribute(mocker, cli_runner, ending_slash):
     mocker.patch('app.commands.file.validate_upload_event', return_value={'source_file': '', 'attribute': 'test'})
     mocker.patch('app.commands.file.assemble_path', return_value=('test', {'id': 'id'}, True, 'test'))
 
@@ -48,7 +49,7 @@ def test_file_upload_command_success_with_attribute(mocker, cli_runner):
             file_put,
             [
                 '--project-path',
-                f'test_project/{ItemType.NAMEFOLDER.get_prefix_by_type()}admin',
+                f'test_project/{ItemType.NAMEFOLDER.get_prefix_by_type()}admin' + ending_slash,
                 '--thread',
                 1,
                 '--attribute',
