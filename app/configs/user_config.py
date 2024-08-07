@@ -127,6 +127,9 @@ class UserConfig(metaclass=Singleton):
     def is_logged_in(self) -> bool:
         return bool(self.api_key or (self.access_token and self.refresh_token))
 
+    def is_access_token_exists(self) -> bool:
+        return len(self.config['USER']['access_token']) > 0
+
     @property
     def username(self):
         return decryption(self.config['USER']['username'], self.secret)

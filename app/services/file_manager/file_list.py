@@ -4,21 +4,23 @@
 
 import click
 import questionary
-import requests
 
 import app.services.logger_services.log_functions as logger
 from app.configs.app_config import AppConfig
-from app.configs.user_config import UserConfig
 from app.models.item import ItemType
 from app.models.service_meta_class import MetaService
+from app.services.clients.base_auth_client import BaseAuthClient
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
 from app.utils.aggregated import fit_terminal_width
 
 
-class SrvFileList(metaclass=MetaService):
-    user = UserConfig()
+class SrvFileList(BaseAuthClient, metaclass=MetaService):
+    def __init__(self):
+        super().__init__(AppConfig.Connections.url_bff)
+
+        self.endpoint = AppConfig.Connections.url_bff + '/v1'
 
     @require_valid_token()
     def list_files(self, paths, zone, page, page_size):
@@ -32,10 +34,6 @@ class SrvFileList(metaclass=MetaService):
             folder_rel_path = folder_rel_path.replace(project_path[1], root_folder.get_prefix_by_type()[:-1], 1)
 
         # now query the backend to get the file list
-        get_url = AppConfig.Connections.url_bff + f'/v1/{project_code}/files/query'
-        headers = {
-            'Authorization': 'Bearer ' + self.user.access_token,
-        }
         params = {
             'project_code': project_code,
             'folder': folder_rel_path,
@@ -44,7 +42,7 @@ class SrvFileList(metaclass=MetaService):
             'page': page,
             'page_size': page_size,
         }
-        response = requests.get(get_url, params=params, headers=headers)
+        response = self._get(f'{project_code}/files/query', params=params)
         res_json = response.json()
         if res_json.get('code') == 403 and res_json.get('error_msg') != 'Folder not exist':
             SrvErrorHandler.customized_handle(ECustomizedError.PERMISSION_DENIED, True)

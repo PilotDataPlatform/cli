@@ -1,11 +1,11 @@
 [tool.poetry]
 name = "app"
-version = "3.0.11a0"
+version = "3.0.13"
 description = "This service is designed to support pilot platform"
 authors = ["Indoc Systems"]
 
 [tool.poetry.dependencies]
-python = ">=3.7,<3.11"
+python = ">=3.10,<3.11"
 click = "7.1.2"
 questionary = "^1.10.0"
 tqdm = "4.56.0"

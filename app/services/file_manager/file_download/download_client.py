@@ -17,16 +17,18 @@ from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.models.item import ItemZone
 from app.models.service_meta_class import MetaService
+from app.services.clients.base_auth_client import BaseAuthClient
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
-from app.utils.aggregated import resilient_session
 
 from .model import EFileStatus
 
 
-class SrvFileDownload(metaclass=MetaService):
+class SrvFileDownload(BaseAuthClient, metaclass=MetaService):
     def __init__(self, zone: str, interactive=True):
+        super().__init__(AppConfig.Connections.url_download_greenroom)
+
         self.appconfig = AppConfig()
         self.user = UserConfig()
         self.operator = self.user.username
@@ -40,6 +42,8 @@ class SrvFileDownload(metaclass=MetaService):
         self.core = self.appconfig.Env.core_zone
         self.green = self.appconfig.Env.green_zone
         self.zone = zone
+
+        self.endpoint = self.appconfig.Connections.url_download_greenroom + '/v1'
 
     def print_prepare_msg(self, message):
         space_width = len(message)
@@ -84,42 +88,43 @@ class SrvFileDownload(metaclass=MetaService):
             'container_code': self.project_code,
             'container_type': 'project',
         }
-        headers = {
-            'Authorization': 'Bearer ' + self.user.access_token,
-            'Refresh-token': self.user.refresh_token,
-            'Session-ID': self.session_id,
-        }
-        url = self.appconfig.Connections.url_v2_download_pre % (self.project_code)
-        res = resilient_session().post(url, headers=headers, json=payload)
-        res_json = res.json()
+        try:
+            self.endpoint = self.appconfig.Connections.url_bff + '/v1'
+            res = self._post(f'project/{self.project_code}/files/download', json=payload)
+        except httpx.HTTPStatusError as e:
+            res = e.response
+            if res.status_code == 403:
+                SrvErrorHandler.customized_handle(ECustomizedError.NO_FILE_PERMMISION, if_exit=self.interactive)
+            elif res.status_code == 400:
+                SrvErrorHandler.customized_handle(ECustomizedError.FOLDER_EMPTY, if_exit=self.interactive)
+            else:
+                SrvErrorHandler.customized_handle(ECustomizedError.DOWNLOAD_FAIL, if_exit=self.interactive)
+        finally:
+            self.endpoint = self.appconfig.Connections.url_download_greenroom + '/v1'
+
         self.check_point = True
 
-        if res.status_code == 200:
-            # fetch the info from hash token
-            response = res.json().get('result')
-            self.hash_code = response.get('payload', {}).get('hash_code')
-            download_info = jwt.decode(self.hash_code, options={'verify_signature': False}, algorithms=['HS256'])
-            file_path = download_info.get('file_path')
-            pre_status = EFileStatus(response.get('status'))
-        elif res.status_code == 403:
-            SrvErrorHandler.customized_handle(ECustomizedError.NO_FILE_PERMMISION, if_exit=self.interactive)
-        elif res.status_code == 400 and 'number of file must greater than 0' in res_json.get('error_msg'):
-            SrvErrorHandler.customized_handle(ECustomizedError.FOLDER_EMPTY, if_exit=self.interactive)
-        else:
-            SrvErrorHandler.customized_handle(ECustomizedError.DOWNLOAD_FAIL, if_exit=self.interactive)
+        # fetch the info from hash token
+        response = res.json().get('result')
+        self.hash_code = response.get('payload', {}).get('hash_code')
+        download_info = jwt.decode(self.hash_code, options={'verify_signature': False}, algorithms=['HS256'])
+        file_path = download_info.get('file_path')
+        pre_status = EFileStatus(response.get('status'))
 
         return pre_status, file_path
 
     @require_valid_token()
     def download_status(self):
-        url = self.url + f'v1/download/status/{self.hash_code}'
-        res = resilient_session().get(url)
+
+        try:
+            res = self._get(f'download/status/{self.hash_code}')
+        except httpx.HTTPStatusError as e:
+            res = e.response
+            SrvErrorHandler.default_handle(res.content, self.interactive)
+
         res_json = res.json().get('result')
-        if res.status_code == 200:
-            status = EFileStatus(res_json.get('status'))
-            return status
-        else:
-            SrvErrorHandler.default_handle(res_json.get('error_msg'), self.interactive)
+        status = EFileStatus(res_json.get('status'))
+        return status
 
     def generate_download_url(self):
         download_url = self.url + f'v1/download/{self.hash_code}'
@@ -256,7 +261,7 @@ class SrvFileDownload(metaclass=MetaService):
                 self.zone = k.split('_')[1]
                 self.file_geid = v.get('files')
                 self.total_size = v.get('total_size')
-                self.url = self.get_download_url(self.zone)
+                self.endpoint = self.get_download_url(self.zone)
         return presigned_task, item_name
 
     @require_valid_token()

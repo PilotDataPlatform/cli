@@ -5,10 +5,11 @@
 from app.services.project_manager.project import SrvProjectManager
 
 
-def test_list_project(requests_mock, mocker, capsys):
+def test_list_project(httpx_mock, mocker, capsys):
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
-    requests_mock.get(
-        'http://bff_cli' + '/v1/projects',
+    httpx_mock.add_response(
+        method='GET',
+        url='http://bff_cli/v1/projects?page=0&page_size=10&order=created_at&order_by=desc',
         json={
             'code': 200,
             'error_msg': '',
@@ -36,7 +37,7 @@ def test_list_project(requests_mock, mocker, capsys):
     )
     project_mgr = SrvProjectManager()
     project_mgr.list_projects(page=0, page_size=10, order='created_at', order_by='desc')
-    out, err = capsys.readouterr()
+    out, _ = capsys.readouterr()
     print_out = out.split('\n')
     assert print_out[0] == '              Project Name                            Project Code              '
     assert print_out[1] == '---------------------------------------------------------------------------'
@@ -47,12 +48,16 @@ def test_list_project(requests_mock, mocker, capsys):
     assert print_out[6] == 'Page: 0, Number of projects: 3'
 
 
-def test_list_project_no_project(requests_mock, mocker, capsys):
+def test_list_project_no_project(httpx_mock, mocker, capsys):
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
-    requests_mock.get('http://bff_cli' + '/v1/projects', json={'code': 200, 'error_msg': '', 'result': []})
+    httpx_mock.add_response(
+        method='GET',
+        url='http://bff_cli/v1/projects?page=0&page_size=10&order=created_at&order_by=desc',
+        json={'code': 200, 'error_msg': '', 'result': []},
+    )
     project_mgr = SrvProjectManager()
     project_mgr.list_projects(page=0, page_size=10, order='created_at', order_by='desc')
-    out, err = capsys.readouterr()
+    out, _ = capsys.readouterr()
     print_out = out.split('\n')
     assert print_out[0] == '              Project Name                            Project Code              '
     assert print_out[1] == '---------------------------------------------------------------------------'
@@ -60,10 +65,11 @@ def test_list_project_no_project(requests_mock, mocker, capsys):
     assert print_out[3] == 'Page: 0, Number of projects: 0'
 
 
-def test_list_project_desc_by_code(requests_mock, mocker, capsys):
+def test_list_project_desc_by_code(httpx_mock, mocker, capsys):
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
-    requests_mock.get(
-        'http://bff_cli' + '/v1/projects',
+    httpx_mock.add_response(
+        method='GET',
+        url='http://bff_cli/v1/projects?page=0&page_size=10&order=code&order_by=desc',
         json={
             'code': 200,
             'error_msg': '',
@@ -83,7 +89,7 @@ def test_list_project_desc_by_code(requests_mock, mocker, capsys):
     )
     project_mgr = SrvProjectManager()
     project_mgr.list_projects(page=0, page_size=10, order='code', order_by='desc')
-    out, err = capsys.readouterr()
+    out, _ = capsys.readouterr()
     print_out = out.split('\n')
     assert print_out[0] == '              Project Name                            Project Code              '
     assert print_out[1] == '---------------------------------------------------------------------------'
@@ -101,10 +107,11 @@ def test_list_project_desc_by_code(requests_mock, mocker, capsys):
     assert print_out[13] == 'Page: 0, Number of projects: 10'
 
 
-def test_list_project_desc_by_name(requests_mock, mocker, capsys):
+def test_list_project_desc_by_name(httpx_mock, mocker, capsys):
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
-    requests_mock.get(
-        'http://bff_cli' + '/v1/projects',
+    httpx_mock.add_response(
+        method='GET',
+        url='http://bff_cli/v1/projects?page=0&page_size=10&order=code&order_by=desc',
         json={
             'code': 200,
             'error_msg': '',
@@ -124,7 +131,7 @@ def test_list_project_desc_by_name(requests_mock, mocker, capsys):
     )
     project_mgr = SrvProjectManager()
     project_mgr.list_projects(page=0, page_size=10, order='code', order_by='desc')
-    out, err = capsys.readouterr()
+    out, _ = capsys.readouterr()
     print_out = out.split('\n')
     assert print_out[0] == '              Project Name                            Project Code              '
     assert print_out[1] == '---------------------------------------------------------------------------'
@@ -142,10 +149,11 @@ def test_list_project_desc_by_name(requests_mock, mocker, capsys):
     assert print_out[13] == 'Page: 0, Number of projects: 10'
 
 
-def test_list_project_desc_by_name_with_page_size(requests_mock, mocker, capsys):
+def test_list_project_desc_by_name_with_page_size(httpx_mock, mocker, capsys):
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
-    requests_mock.get(
-        'http://bff_cli' + '/v1/projects',
+    httpx_mock.add_response(
+        method='GET',
+        url='http://bff_cli/v1/projects?page=0&page_size=3&order=code&order_by=desc',
         json={
             'code': 200,
             'error_msg': '',
@@ -158,7 +166,7 @@ def test_list_project_desc_by_name_with_page_size(requests_mock, mocker, capsys)
     )
     project_mgr = SrvProjectManager()
     project_mgr.list_projects(page=0, page_size=3, order='code', order_by='desc')
-    out, err = capsys.readouterr()
+    out, _ = capsys.readouterr()
     print_out = out.split('\n')
     assert print_out[0] == '              Project Name                            Project Code              '
     assert print_out[1] == '---------------------------------------------------------------------------'
@@ -169,10 +177,11 @@ def test_list_project_desc_by_name_with_page_size(requests_mock, mocker, capsys)
     assert print_out[6] == 'Page: 0, Number of projects: 3'
 
 
-def test_list_project_desc_by_name_with_page_size_and_page(requests_mock, mocker, capsys):
+def test_list_project_desc_by_name_with_page_size_and_page(httpx_mock, mocker, capsys):
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
-    requests_mock.get(
-        'http://bff_cli' + '/v1/projects',
+    httpx_mock.add_response(
+        method='GET',
+        url='http://bff_cli/v1/projects?page=1&page_size=3&order=code&order_by=desc',
         json={
             'code': 200,
             'error_msg': '',
@@ -185,7 +194,7 @@ def test_list_project_desc_by_name_with_page_size_and_page(requests_mock, mocker
     )
     project_mgr = SrvProjectManager()
     project_mgr.list_projects(page=1, page_size=3, order='code', order_by='desc')
-    out, err = capsys.readouterr()
+    out, _ = capsys.readouterr()
     print_out = out.split('\n')
     assert print_out[0] == '              Project Name                            Project Code              '
     assert print_out[1] == '---------------------------------------------------------------------------'

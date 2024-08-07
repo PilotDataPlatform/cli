@@ -125,7 +125,7 @@ def file_put(**kwargs):  # noqa: C901
     """"""
 
     files = kwargs.get('files')
-    project_path = kwargs.get('project_path')
+    project_path = kwargs.get('project_path').strip('/')
     tag_files = kwargs.get('tag')
     zone = kwargs.get('zone')
     upload_message = kwargs.get('upload_message')

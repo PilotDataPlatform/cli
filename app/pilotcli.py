@@ -5,16 +5,26 @@
 from multiprocessing import freeze_support
 
 import click
-import requests
+import pkg_resources
+from packaging.version import Version
 
 import app.services.output_manager.error_handler as error_handler
+import app.services.output_manager.message_handler as mhandler
 from app.commands.entry_point import command_groups
 from app.commands.entry_point import entry_point
 from app.services.output_manager.help_page import get_cli_help_message
 from app.utils.aggregated import doc
+from app.utils.aggregated import get_latest_cli_version
 
 
 class ComplexCLI(click.MultiCommand):
+    def format_help_text(self, ctx, formatter):
+        latest_version = get_latest_cli_version()
+        if Version(pkg_resources.get_distribution('app').version) < latest_version:
+            self.help += mhandler.SrvOutPutHandler.newer_version_available(latest_version, False)
+
+        click.MultiCommand.format_help_text(self, ctx, formatter)
+
     def list_commands(self, ctx):
         rv = command_groups()
         rv.sort()
@@ -33,8 +43,6 @@ class ComplexCLI(click.MultiCommand):
 def cli():
     try:
         entry_point()
-    except requests.exceptions.ConnectionError:
-        error_handler.SrvErrorHandler.customized_handle(error_handler.ECustomizedError.ERROR_CONNECTION, True)
     except Exception as e:
         error_handler.SrvErrorHandler.default_handle(e, True)
 

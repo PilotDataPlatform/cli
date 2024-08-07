@@ -28,6 +28,8 @@ def mock_settings(monkeypatch, mocker):
     monkeypatch.setattr(AppConfig.Connections, 'url_upload_greenroom', 'http://upload_gr')
     monkeypatch.setattr(AppConfig.Connections, 'url_upload_core', 'http://upload_core')
     monkeypatch.setattr(AppConfig.Connections, 'url_keycloak_realm', 'http://url_keycloak_realm')
+    monkeypatch.setattr(AppConfig.Connections, 'url_keycloak', 'http://url_keycloak')
+    monkeypatch.setattr(AppConfig.Connections, 'url_portal', 'http://bff_cli')
     monkeypatch.setattr(UserConfig, 'username', 'test-user')
     monkeypatch.setattr(UserConfig, 'password', 'test-password')
     monkeypatch.setattr(UserConfig, 'api_key', 'test-api-key')

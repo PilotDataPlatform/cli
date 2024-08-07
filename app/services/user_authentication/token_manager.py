@@ -5,19 +5,21 @@
 import time
 
 import jwt
-import requests
+from httpx import HTTPStatusError
 
 from app.configs.app_config import AppConfig
 from app.configs.config import ConfigClass
 from app.configs.user_config import UserConfig
 from app.models.service_meta_class import MetaService
+from app.services.clients.base_client import BaseClient
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.user_login_logout import login_using_api_key
 
 
-class SrvTokenManager(metaclass=MetaService):
+class SrvTokenManager(BaseClient, metaclass=MetaService):
     def __init__(self):
+        super().__init__(AppConfig.Connections.url_keycloak_token, 10)
         user_config = UserConfig()
         if user_config.is_logged_in():
             self.config = user_config
@@ -82,8 +84,7 @@ class SrvTokenManager(metaclass=MetaService):
         return 0
 
     def refresh(self, azp: str) -> None:
-
-        url = AppConfig.Connections.url_keycloak_token
+        # url = AppConfig.Connections.url_keycloak_token
         payload = {
             'grant_type': 'refresh_token',
             'refresh_token': self.config.refresh_token,
@@ -94,13 +95,18 @@ class SrvTokenManager(metaclass=MetaService):
             payload.update({'client_id': ConfigClass.harbor_client_secret})
 
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        response = requests.post(url, data=payload, headers=headers)
-        if response.status_code == 200:
-            self.update_token(response.json()['access_token'], response.json()['refresh_token'])
-            # pass
-        elif response.status_code == 401:
-            is_valid = login_using_api_key(self.config.api_key)
-            if not is_valid:
-                SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TOKEN, if_exit=True)
-        else:
-            SrvErrorHandler.default_handle(response.content)
+        self.endpoint, url = AppConfig.Connections.url_keycloak_token.rsplit('/', 1)
+        # response = requests.post(url, data=payload, headers=headers)
+        try:
+            response = self._post(url, data=payload, headers=headers)
+        except HTTPStatusError as e:
+            response = e.response
+            # 401 is invalid token and 400 is session inactive we do refresh
+            if response.status_code in [400, 401, 500]:
+                is_valid = login_using_api_key(self.config.api_key)
+                if not is_valid:
+                    SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TOKEN, if_exit=True)
+            else:
+                SrvErrorHandler.default_handle(response.content)
+
+        self.update_token(response.json()['access_token'], response.json()['refresh_token'])

@@ -24,7 +24,8 @@ from app.services.output_manager.error_handler import customized_error_msg
 from tests.conftest import decoded_token
 
 
-def test_file_upload_command_success_with_attribute(mocker, cli_runner):
+@pytest.mark.parametrize('ending_slash', ['', '/'])
+def test_file_upload_command_success_with_attribute(mocker, cli_runner, ending_slash):
     mocker.patch('app.commands.file.validate_upload_event', return_value={'source_file': '', 'attribute': 'test'})
     mocker.patch('app.commands.file.assemble_path', return_value=('test', {'id': 'id'}, True, 'test'))
 
@@ -48,7 +49,7 @@ def test_file_upload_command_success_with_attribute(mocker, cli_runner):
             file_put,
             [
                 '--project-path',
-                f'test_project/{ItemType.NAMEFOLDER.get_prefix_by_type()}admin',
+                f'test_project/{ItemType.NAMEFOLDER.get_prefix_by_type()}admin' + ending_slash,
                 '--thread',
                 1,
                 '--attribute',
@@ -92,39 +93,42 @@ def test_file_upload_failed_with_invalid_attribute_file(cli_runner):
 
 
 def test_resumable_upload_command_success(mocker, cli_runner):
-    mocker.patch('os.path.exists', return_value=True)
-    # mock the open function
-    mocked_open_data = mocker.mock_open(read_data='test')
-    mocker.patch('builtins.open', mocked_open_data)
-    mocker.patch('json.load', return_value={'file_objects': {'test_item_id': {'file_name': 'test.json'}}, 'zone': 1})
-    mocker.patch('app.commands.file.resume_upload', return_value=None)
-    mocker.patch('os.remove', return_value=None)
-    result = cli_runner.invoke(file_resume, ['--resumable-manifest', 'test.json', '--thread', 1])
+    runner = click.testing.CliRunner()
+    with runner.isolated_filesystem():
+        mocker.patch('os.path.exists', return_value=True)
+        with open('test.json', 'w') as f:
+            json.dump({'file_objects': {'test_item_id': {'file_name': 'test.json'}}, 'zone': 1}, f)
+
+        mocker.patch('app.commands.file.resume_upload', return_value=None)
+        mocker.patch('os.remove', return_value=None)
+        result = cli_runner.invoke(file_resume, ['--resumable-manifest', 'test.json', '--thread', 1])
+
     assert result.exit_code == 0
 
 
 def test_resumable_upload_command_with_file_attribute_success(mocker, cli_runner):
-    mocker.patch('os.path.exists', return_value=True)
-    # mock the open function
-    mocked_open_data = mocker.mock_open(read_data='test')
-    mocker.patch('builtins.open', mocked_open_data)
-    mocker.patch(
-        'json.load',
-        return_value={
-            'file_objects': {'test_item_id': {'file_name': 'test.json'}},
-            'zone': 1,
-            'attributes': {'M1': {'attr1': '1'}},
-        },
-    )
-    mocker.patch('app.commands.file.resume_upload', return_value=None)
+    runner = click.testing.CliRunner()
+    with runner.isolated_filesystem():
+        mocker.patch('os.path.exists', return_value=True)
+        with open('test.json', 'w') as f:
+            json.dump(
+                {
+                    'file_objects': {'test_item_id': {'file_name': 'test.json'}},
+                    'zone': 1,
+                    'attributes': {'M1': {'attr1': '1'}},
+                },
+                f,
+            )
 
-    attribute_fun_mock = mocker.patch(
-        'app.services.file_manager.file_manifests.SrvFileManifests.attach_manifest', return_value=None
-    )
+        mocker.patch('app.commands.file.resume_upload', return_value=None)
 
-    mocker.patch('os.remove', return_value=None)
+        attribute_fun_mock = mocker.patch(
+            'app.services.file_manager.file_manifests.SrvFileManifests.attach_manifest', return_value=None
+        )
 
-    result = cli_runner.invoke(file_resume, ['--resumable-manifest', 'test.json', '--thread', 1])
+        mocker.patch('os.remove', return_value=None)
+
+        result = cli_runner.invoke(file_resume, ['--resumable-manifest', 'test.json', '--thread', 1])
     assert result.exit_code == 0
     attribute_fun_mock.assert_called_once()
 
@@ -137,14 +141,16 @@ def test_resumable_upload_command_failed_with_file_not_exists(mocker, cli_runner
     assert result.output == customized_error_msg(ECustomizedError.INVALID_RESUMABLE) + '\n'
 
 
-def test_file_list_with_pagination_with_folder_success(requests_mock, mocker, cli_runner):
+def test_file_list_with_pagination_with_folder_success(httpx_mock, mocker, cli_runner):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
         return_value=decoded_token(),
     )
 
-    requests_mock.get(
-        'http://bff_cli' + '/v1/testproject/files/query',
+    httpx_mock.add_response(
+        method='GET',
+        url='http://bff_cli/v1/testproject/files/query?project_code=testproject&folder=users%2F'
+        'admin&source_type=project&zone=greenroom&page=0&page_size=10',
         json={
             'code': 200,
             'error_msg': '',
@@ -161,7 +167,7 @@ def test_file_list_with_pagination_with_folder_success(requests_mock, mocker, cl
     assert outputs[0] == 'file1  file2   '
 
 
-def test_file_list_with_pagination_with_root_folder(requests_mock, mocker, cli_runner):
+def test_file_list_with_pagination_with_root_folder(httpx_mock, mocker, cli_runner):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
         return_value=decoded_token(),
@@ -171,8 +177,10 @@ def test_file_list_with_pagination_with_root_folder(requests_mock, mocker, cli_r
     folder_with_underline = 'folder_1'
     folder_with_space = 'folder 1'
     root_folder = 'root_folder'
-    requests_mock.get(
-        'http://bff_cli' + '/v1/testproject/files/query',
+    httpx_mock.add_response(
+        method='GET',
+        url='http://bff_cli/v1/testproject/files/query?project_code=testproject&folder=users%2F'
+        'admin&source_type=project&zone=greenroom&page=0&page_size=10',
         json={
             'code': 200,
             'error_msg': '',
@@ -194,14 +202,16 @@ def test_file_list_with_pagination_with_root_folder(requests_mock, mocker, cli_r
     assert outputs[1] == f'"{folder_with_space}"  {root_folder}   '
 
 
-def test_empty_file_list_with_pagination(requests_mock, mocker, cli_runner):
+def test_empty_file_list_with_pagination(httpx_mock, mocker, cli_runner):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
         return_value=decoded_token(),
     )
 
-    requests_mock.get(
-        'http://bff_cli' + '/v1/testproject/files/query',
+    httpx_mock.add_response(
+        method='GET',
+        url='http://bff_cli/v1/testproject/files/query?project_code=testproject&'
+        'folder=&source_type=project&zone=greenroom&page=0&page_size=10',
         json={'code': 200, 'error_msg': '', 'result': []},
     )
     mocker.patch.object(questionary, 'select')
@@ -212,7 +222,7 @@ def test_empty_file_list_with_pagination(requests_mock, mocker, cli_runner):
 
 
 @pytest.mark.parametrize('parent_folder_type', [ItemType.NAMEFOLDER, ItemType.SHAREDFOLDER])
-def test_file_download_success(requests_mock, mocker, cli_runner, parent_folder_type):
+def test_file_download_success(mocker, cli_runner, parent_folder_type):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
         return_value=decoded_token(),

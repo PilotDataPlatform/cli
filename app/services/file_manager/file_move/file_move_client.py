@@ -7,20 +7,20 @@ from sys import exit
 
 import click
 from click import Abort
+from httpx import HTTPStatusError
 
 import app.services.output_manager.message_handler as message_handler
 from app.configs.app_config import AppConfig
-from app.configs.user_config import UserConfig
+from app.services.clients.base_auth_client import BaseAuthClient
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.output_manager.error_handler import customized_error_msg
 from app.services.user_authentication.decorator import require_valid_token
 from app.utils.aggregated import check_item_duplication
-from app.utils.aggregated import resilient_session
 from app.utils.aggregated import search_item
 
 
-class FileMoveClient:
+class FileMoveClient(BaseAuthClient):
     """
     Summary:
         A client for interacting with file metadata. currently support to download
@@ -44,6 +44,7 @@ class FileMoveClient:
             src_item_path (str): source item path.
             dest_item_path (str): destination item path.
         """
+        super().__init__(AppConfig.Connections.url_bff)
 
         self.zone = {'greenroom': 0, 'core': 1}.get(zone)
         self.project_code = project_code
@@ -51,7 +52,7 @@ class FileMoveClient:
         self.dest_item_path = dest_item_path
         self.skip_confirm = skip_confirm
 
-        self.user = UserConfig()
+        self.endpoint = AppConfig.Connections.url_bff + '/v1'
 
     def create_object_path_if_not_exist(self, folder_path: str) -> dict:
         """Create object path is not on platfrom.
@@ -104,11 +105,12 @@ class FileMoveClient:
             )
             exist_parent_id = current_item_id
 
-        url = AppConfig.Connections.url_bff + '/v1/folders/batch'
-        headers = {'Authorization': 'Bearer ' + UserConfig().access_token}
-        response = resilient_session().post(url, json=to_create, headers=headers)
-        if response.status_code != 200:
+        try:
+            response = self._post('folders/batch', json=to_create)
+        except HTTPStatusError as e:
+            response = e.response
             SrvErrorHandler.default_handle(response.text, True)
+
         return response.json().get('result')
 
     @require_valid_token()
@@ -121,19 +123,16 @@ class FileMoveClient:
         self.create_object_path_if_not_exist(self.dest_item_path)
 
         try:
-            url = AppConfig.Connections.url_bff + f'/v1/{self.project_code}/files'
             payload = {
                 'src_item_path': self.src_item_path,
                 'dest_item_path': self.dest_item_path,
                 'zone': self.zone,
             }
-            headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
-
-            response = resilient_session().patch(url, json=payload, headers=headers, timeout=None)
-            response.raise_for_status()
+            response = self._patch(f'{self.project_code}/files', json=payload)
 
             return response.json().get('result')
-        except Exception:
+        except HTTPStatusError as e:
+            response = e.response
             if response.status_code == 422:
                 error_message = ''
                 for x in response.json().get('detail'):
