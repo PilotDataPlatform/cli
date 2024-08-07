@@ -6,6 +6,7 @@ import configparser
 import platform
 import sys
 import time
+from enum import IntEnum
 from pathlib import Path
 from typing import Iterable
 from typing import Union
@@ -22,6 +23,16 @@ from app.services.crypto.crypto import encryption
 from app.services.crypto.crypto import generate_secret
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
+
+
+class FilePermissions(IntEnum):
+    READ_EXECUTE_USER = 0o0500  # User: read and execute
+    READ_WRITE_EXECUTE_USER = 0o0700  # User: read, write, and execute
+    READ_ONLY_USER = 0o0400  # User: read only
+    READ_WRITE_USER = 0o0600  # User: read and write
+
+    def __int__(self) -> int:
+        return super().__int__()
 
 
 class UserConfig(metaclass=Singleton):
@@ -53,23 +64,30 @@ class UserConfig(metaclass=Singleton):
             is_bundled = getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
             is_cloud_mode = is_bundled and (Path(sys._MEIPASS) / 'ENABLE_CLOUD_MODE').is_file()
 
+        # print(int(FilePermissions.READ_WRITE_EXECUTE_USER))
+        # raise
+
         config_path = Path(config_path)
         if not config_path.exists():
             if platform.system() == 'Windows':
                 create_directory_with_permissions_windows(config_path)
             else:
-                config_path.mkdir(mode=0o0700, exist_ok=False)
+                config_path.mkdir(mode=FilePermissions.READ_WRITE_EXECUTE_USER, exist_ok=False)
 
-        error = self._check_user_permissions(config_path, (0o0500, 0o0700))
+        error = self._check_user_permissions(
+            config_path, (FilePermissions.READ_EXECUTE_USER, FilePermissions.READ_WRITE_EXECUTE_USER)
+        )
         if error and not is_cloud_mode:
             SrvErrorHandler.customized_handle(ECustomizedError.CONFIG_INVALID_PERMISSIONS, True, error)
             return
 
         config_file = config_path / config_filename
         if not config_file.exists():
-            config_file.touch(mode=0o0600, exist_ok=False)
+            config_file.touch(mode=FilePermissions.READ_WRITE_USER, exist_ok=False)
 
-        error = self._check_user_permissions(config_file, (0o0400, 0o0600))
+        error = self._check_user_permissions(
+            config_file, (FilePermissions.READ_ONLY_USER, FilePermissions.READ_WRITE_USER)
+        )
         if error and not is_cloud_mode:
             SrvErrorHandler.customized_handle(ECustomizedError.CONFIG_INVALID_PERMISSIONS, True, error)
             return

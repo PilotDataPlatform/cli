@@ -8,6 +8,7 @@ import sys
 
 import pytest
 
+from app.configs.user_config import FilePermissions
 from app.configs.user_config import UserConfig
 
 
@@ -24,10 +25,10 @@ class TestUserConfig:
         UserConfig(config_folder, file_name)
 
         config_folder_mode = stat.S_IMODE(config_folder.stat().st_mode)
-        assert config_folder_mode == 0o0700
+        assert config_folder_mode == FilePermissions.READ_WRITE_EXECUTE_USER
 
         config_file_mode = stat.S_IMODE((config_folder / file_name).stat().st_mode)
-        assert config_file_mode == 0o0600
+        assert config_file_mode == FilePermissions.READ_WRITE_USER
 
     def test__init__exits_with_error_when_config_folder_does_not_belong_to_user(self, error_log):
         with pytest.raises(SystemExit):
