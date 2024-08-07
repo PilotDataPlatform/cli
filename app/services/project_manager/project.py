@@ -37,7 +37,7 @@ class SrvProjectManager(BaseAuthClient, metaclass=MetaService):
                         else:
                             project_name = str(project['name'])
                         SrvOutPutHandler.print_list_parallel(project_name, project_code)
-                    SrvOutPutHandler.count_item(page, 'projects', res_to_dict)
+                    SrvOutPutHandler.count_item(page, 'projects', res_to_dict, response.json().get('total'))
                 return res_to_dict
             elif response.status_code == 404:
                 SrvErrorHandler.customized_handle(ECustomizedError.USER_DISABLED, True)

@@ -33,6 +33,8 @@ def test_list_project(httpx_mock, mocker, capsys):
                     'geid': 'e66000d6-1fd6-4386-805e-5bc8268c65b3-1620669498',
                 },
             ],
+            'total': 3,
+            'page': 0,
         },
     )
     project_mgr = SrvProjectManager()
@@ -45,7 +47,7 @@ def test_list_project(httpx_mock, mocker, capsys):
     assert print_out[3] == '               PROJECT-2                 |               project2              '
     assert print_out[4] == '               PROJECT-3                 |               project3              '
     assert print_out[5] == ''
-    assert print_out[6] == 'Page: 0, Number of projects: 3'
+    assert print_out[6] == 'Page: 0, Number of projects in page: 3, Total number of projects: 3'
 
 
 def test_list_project_no_project(httpx_mock, mocker, capsys):
@@ -53,7 +55,7 @@ def test_list_project_no_project(httpx_mock, mocker, capsys):
     httpx_mock.add_response(
         method='GET',
         url='http://bff_cli/v1/projects?page=0&page_size=10&order=created_at&order_by=desc',
-        json={'code': 200, 'error_msg': '', 'result': []},
+        json={'code': 200, 'error_msg': '', 'result': [], 'total': 0, 'page': 0},
     )
     project_mgr = SrvProjectManager()
     project_mgr.list_projects(page=0, page_size=10, order='created_at', order_by='desc')
@@ -62,7 +64,7 @@ def test_list_project_no_project(httpx_mock, mocker, capsys):
     assert print_out[0] == '              Project Name                            Project Code              '
     assert print_out[1] == '---------------------------------------------------------------------------'
     assert print_out[2] == ''
-    assert print_out[3] == 'Page: 0, Number of projects: 0'
+    assert print_out[3] == 'Page: 0, Number of projects in page: 0, Total number of projects: 0'
 
 
 def test_list_project_desc_by_code(httpx_mock, mocker, capsys):
@@ -85,6 +87,8 @@ def test_list_project_desc_by_code(httpx_mock, mocker, capsys):
                 {'name': 'project9', 'code': 'bproject', 'geid': 'fake-geid9'},
                 {'name': 'project10', 'code': 'aproject', 'geid': 'fake-geid10'},
             ],
+            'total': 10,
+            'page': 0,
         },
     )
     project_mgr = SrvProjectManager()
@@ -104,7 +108,7 @@ def test_list_project_desc_by_code(httpx_mock, mocker, capsys):
     assert print_out[10] == '                project9                 |               bproject              '
     assert print_out[11] == '               project10                 |               aproject              '
     assert print_out[12] == ''
-    assert print_out[13] == 'Page: 0, Number of projects: 10'
+    assert print_out[13] == 'Page: 0, Number of projects in page: 10, Total number of projects: 10'
 
 
 def test_list_project_desc_by_name(httpx_mock, mocker, capsys):
@@ -127,6 +131,8 @@ def test_list_project_desc_by_name(httpx_mock, mocker, capsys):
                 {'name': 'bproject9', 'code': 'project9', 'geid': 'fake-geid9'},
                 {'name': 'aproject10', 'code': 'project10', 'geid': 'fake-geid10'},
             ],
+            'total': 10,
+            'page': 0,
         },
     )
     project_mgr = SrvProjectManager()
@@ -146,7 +152,7 @@ def test_list_project_desc_by_name(httpx_mock, mocker, capsys):
     assert print_out[10] == '               bproject9                 |               project9              '
     assert print_out[11] == '               aproject10                |              project10              '
     assert print_out[12] == ''
-    assert print_out[13] == 'Page: 0, Number of projects: 10'
+    assert print_out[13] == 'Page: 0, Number of projects in page: 10, Total number of projects: 10'
 
 
 def test_list_project_desc_by_name_with_page_size(httpx_mock, mocker, capsys):
@@ -162,6 +168,8 @@ def test_list_project_desc_by_name_with_page_size(httpx_mock, mocker, capsys):
                 {'name': 'xproject2', 'code': 'project2', 'geid': 'fake-geid2'},
                 {'name': 'wproject3', 'code': 'project3', 'geid': 'fake-geid3'},
             ],
+            'total': 3,
+            'page': 0,
         },
     )
     project_mgr = SrvProjectManager()
@@ -174,7 +182,7 @@ def test_list_project_desc_by_name_with_page_size(httpx_mock, mocker, capsys):
     assert print_out[3] == '               xproject2                 |               project2              '
     assert print_out[4] == '               wproject3                 |               project3              '
     assert print_out[5] == ''
-    assert print_out[6] == 'Page: 0, Number of projects: 3'
+    assert print_out[6] == 'Page: 0, Number of projects in page: 3, Total number of projects: 3'
 
 
 def test_list_project_desc_by_name_with_page_size_and_page(httpx_mock, mocker, capsys):
@@ -190,6 +198,8 @@ def test_list_project_desc_by_name_with_page_size_and_page(httpx_mock, mocker, c
                 {'name': 'cproject2', 'code': 'project5', 'geid': 'fake-geid2'},
                 {'name': 'bproject3', 'code': 'project6', 'geid': 'fake-geid3'},
             ],
+            'total': 3,
+            'page': 1,
         },
     )
     project_mgr = SrvProjectManager()
@@ -202,4 +212,4 @@ def test_list_project_desc_by_name_with_page_size_and_page(httpx_mock, mocker, c
     assert print_out[3] == '               cproject2                 |               project5              '
     assert print_out[4] == '               bproject3                 |               project6              '
     assert print_out[5] == ''
-    assert print_out[6] == 'Page: 1, Number of projects: 3'
+    assert print_out[6] == 'Page: 1, Number of projects in page: 3, Total number of projects: 3'
