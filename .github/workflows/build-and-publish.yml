@@ -37,7 +37,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.9.16
+          python-version: 3.10.12
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
@@ -108,7 +108,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.9.16
+          python-version: 3.10.12
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
@@ -159,7 +159,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.9
+          python-version: 3.10.12
 
       - name: Create virtual environment
         run: python -m venv .venv
