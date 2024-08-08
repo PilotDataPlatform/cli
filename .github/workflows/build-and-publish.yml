@@ -12,6 +12,9 @@ on:
     branches:
       - main
       - patch20240808
+  pull_request:
+    branches:
+      - patch20240808
 
 jobs:
   extract-branch-name:
