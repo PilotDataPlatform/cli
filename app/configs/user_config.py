@@ -64,9 +64,6 @@ class UserConfig(metaclass=Singleton):
             is_bundled = getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
             is_cloud_mode = is_bundled and (Path(sys._MEIPASS) / 'ENABLE_CLOUD_MODE').is_file()
 
-        # print(int(FilePermissions.READ_WRITE_EXECUTE_USER))
-        # raise
-
         config_path = Path(config_path)
         if not config_path.exists():
             if platform.system() == 'Windows':
