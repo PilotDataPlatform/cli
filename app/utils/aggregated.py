@@ -158,7 +158,7 @@ def get_file_in_folder(path):
         if os.path.isdir(_path):
             for path, _, files in os.walk(_path):
                 for name in files:
-                    file = os.path.join(path, name)
+                    file = normalize_join(path, name)
                     files_list.append(file)
         else:
             files_list.append(_path)
@@ -233,3 +233,44 @@ def get_latest_cli_version() -> Version:
         return Version(latest_version)
     except (SystemExit, Exception):
         return Version('0.0.0')
+
+
+def normalize_input_paths(options: list[str]):
+    """the decorator to process windows file path into linux like path in windows all input is seperated by `\\` eg.
+
+    .\\app\\configs\\user_config.py to normalize all path with current backend logic. This function will accept a list
+    of options that will need to be replaced with `/`
+    """
+
+    def decorator(f):
+        def wrapped(*args, **kwargs):
+            for option in options:
+                arg = kwargs.get(option)
+                if arg is None:
+                    new_arg = None
+                elif isinstance(arg, tuple):
+                    new_arg = tuple([x.replace('\\', '/') for x in arg])
+                else:
+                    new_arg = arg.replace('\\', '/')
+                kwargs[option] = new_arg
+            return f(*args, **kwargs)
+
+        return wrapped
+
+    return decorator
+
+
+def normalize_join(*paths: str) -> str:
+    """normalize os.path.join with linux style path. In windows system, the os.path.join will automaticall use \\ to
+    connect two path. In order to align with current backend adding this function to unify the path creation.
+
+    Parameter:
+        - paths(str list): the path need to be joined
+
+    Return:
+        - (str): the joined path with forward slashes.
+    """
+
+    joined_path = os.path.join(*paths)
+    normalized_path = joined_path.replace('\\', '/')
+    return normalized_path

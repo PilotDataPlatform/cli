@@ -3,21 +3,36 @@
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
 import configparser
-import os
-import stat
+import platform
 import sys
 import time
+from enum import IntEnum
 from pathlib import Path
 from typing import Iterable
 from typing import Union
 
 from app.configs.config import ConfigClass
+from app.configs.utils import check_owner_linux
+from app.configs.utils import check_owner_windows
+from app.configs.utils import check_user_permission_linux
+from app.configs.utils import check_user_permission_windows
+from app.configs.utils import create_directory_with_permissions_windows
 from app.models.singleton import Singleton
 from app.services.crypto.crypto import decryption
 from app.services.crypto.crypto import encryption
 from app.services.crypto.crypto import generate_secret
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
+
+
+class FilePermissions(IntEnum):
+    READ_EXECUTE_USER = 0o0500  # User: read and execute
+    READ_WRITE_EXECUTE_USER = 0o0700  # User: read, write, and execute
+    READ_ONLY_USER = 0o0400  # User: read only
+    READ_WRITE_USER = 0o0600  # User: read and write
+
+    def __int__(self) -> int:
+        return super().__int__()
 
 
 class UserConfig(metaclass=Singleton):
@@ -51,20 +66,25 @@ class UserConfig(metaclass=Singleton):
 
         config_path = Path(config_path)
         if not config_path.exists():
-            config_path.mkdir(mode=0o0700, exist_ok=False)
+            if platform.system() == 'Windows':
+                create_directory_with_permissions_windows(config_path)
+            else:
+                config_path.mkdir(mode=FilePermissions.READ_WRITE_EXECUTE_USER, exist_ok=False)
 
-        current_user_id = os.geteuid()
-
-        error = self._check_user_permissions(config_path, current_user_id, (0o0500, 0o0700))
+        error = self._check_user_permissions(
+            config_path, (FilePermissions.READ_EXECUTE_USER, FilePermissions.READ_WRITE_EXECUTE_USER)
+        )
         if error and not is_cloud_mode:
             SrvErrorHandler.customized_handle(ECustomizedError.CONFIG_INVALID_PERMISSIONS, True, error)
             return
 
         config_file = config_path / config_filename
         if not config_file.exists():
-            config_file.touch(mode=0o0600, exist_ok=False)
+            config_file.touch(mode=FilePermissions.READ_WRITE_USER, exist_ok=False)
 
-        error = self._check_user_permissions(config_file, current_user_id, (0o0400, 0o0600))
+        error = self._check_user_permissions(
+            config_file, (FilePermissions.READ_ONLY_USER, FilePermissions.READ_WRITE_USER)
+        )
         if error and not is_cloud_mode:
             SrvErrorHandler.customized_handle(ECustomizedError.CONFIG_INVALID_PERMISSIONS, True, error)
             return
@@ -86,23 +106,19 @@ class UserConfig(metaclass=Singleton):
             }
             self.save()
 
-    def _check_user_permissions(self, path: Path, expected_uid: int, expected_bits: Iterable[int]) -> Union[str, None]:
+    def _check_user_permissions(self, path: Path, expected_bits: Iterable[int]) -> Union[str, None]:
         """Check if file or folder is owned by the user and has proper access mode."""
 
-        path_stat = path.stat()
+        check_owner_error = check_owner_windows(path) if platform.system() == 'Windows' else check_owner_linux(path)
+        if check_owner_error:
+            return check_owner_error
 
-        path_uid = path_stat.st_uid
-        if path_uid != expected_uid:
-            return f'"{path}" is owned by the user id {path_uid}. Expected user id is {expected_uid}.'
-
-        path_protection_bits = stat.S_IMODE(path_stat.st_mode)
-        if path_protection_bits not in expected_bits:
-            existing_permissions = oct(path_protection_bits).replace('0o', '')
-            expected_permissions = ', '.join(map(oct, expected_bits)).replace('0o', '')
-            return (
-                f'Permissions {existing_permissions} for "{path}" are too open. '
-                f'Expected permissions are {expected_permissions}.'
-            )
+        if platform.system() == 'Windows':
+            check_permission_error = check_user_permission_windows(path)
+        else:
+            check_permission_error = check_user_permission_linux(path, expected_bits)
+        if check_permission_error:
+            return check_permission_error
 
         return None
 
