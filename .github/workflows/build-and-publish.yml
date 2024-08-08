@@ -5,6 +5,7 @@ on:
     workflows: [ "Run Tests" ]
     branches:
       - develop
+      - patch20240808
     types:
       - completed
   push:
