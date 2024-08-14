@@ -27,132 +27,132 @@ jobs:
         shell: bash
         run: echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
 
-  push-binary-linux:
-    needs: [ extract-branch-name ]
-    # if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop'}}
-    runs-on: ubuntu-20.04
-    outputs:
-      upload_url: ${{steps.create_release.outputs.upload_url}}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ needs.extract-branch-name.outputs.branch }}
+  # push-binary-linux:
+  #   needs: [ extract-branch-name ]
+  #   # if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop'}}
+  #   runs-on: ubuntu-20.04
+  #   outputs:
+  #     upload_url: ${{steps.create_release.outputs.upload_url}}
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{ needs.extract-branch-name.outputs.branch }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.10.12
+  #     - name: Set up Python
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: 3.10.12
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: 1.3.2
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          installer-parallel: true
+  #     - name: Install Poetry
+  #       uses: snok/install-poetry@v1
+  #       with:
+  #         version: 1.3.2
+  #         virtualenvs-create: true
+  #         virtualenvs-in-project: true
+  #         installer-parallel: true
 
-      - name: Set up cache
-        id: cached-poetry-dependencies
-        uses: actions/cache@v3
-        with:
-          path: .venv
-          key: venv-${{ hashFiles('**/poetry.lock') }}
+  #     - name: Set up cache
+  #       id: cached-poetry-dependencies
+  #       uses: actions/cache@v3
+  #       with:
+  #         path: .venv
+  #         key: venv-${{ hashFiles('**/poetry.lock') }}
 
-      - name: Ensure cache is healthy
-        if: steps.cached-poetry-dependencies.outputs.cache-hit == 'true'
-        run: timeout 10s poetry run pip --version || rm -rf .venv
+  #     - name: Ensure cache is healthy
+  #       if: steps.cached-poetry-dependencies.outputs.cache-hit == 'true'
+  #       run: timeout 10s poetry run pip --version || rm -rf .venv
 
-      - name: Install dependencies
-        run: poetry install --no-interaction
+  #     - name: Install dependencies
+  #       run: poetry install --no-interaction
 
-      - name: Build default binary
-        run: poetry run pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --paths=./.venv/lib/python3.9/site-packages ./app/pilotcli.py -n ${{ github.sha }}
+  #     - name: Build default binary
+  #       run: poetry run pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --paths=./.venv/lib/python3.9/site-packages ./app/pilotcli.py -n ${{ github.sha }}
 
-      - name: Rename default output file
-        run: mv "./app/bundled_app/linux/${{ github.sha }}" "./app/bundled_app/linux/pilotcli_linux"
+  #     - name: Rename default output file
+  #       run: mv "./app/bundled_app/linux/${{ github.sha }}" "./app/bundled_app/linux/pilotcli_linux"
 
-      - name: Enable cloud mode
-        run: touch ./app/ENABLE_CLOUD_MODE
+  #     - name: Enable cloud mode
+  #       run: touch ./app/ENABLE_CLOUD_MODE
 
-      - name: Build cloud binary
-        run: poetry run pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --paths=./.venv/lib/python3.9/site-packages --add-binary=$(pwd)/app/ENABLE_CLOUD_MODE:. ./app/pilotcli.py -n ${{ github.sha }}
+  #     - name: Build cloud binary
+  #       run: poetry run pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --paths=./.venv/lib/python3.9/site-packages --add-binary=$(pwd)/app/ENABLE_CLOUD_MODE:. ./app/pilotcli.py -n ${{ github.sha }}
 
-      - name: Rename cloud output file
-        run: mv "./app/bundled_app/linux/${{ github.sha }}" "./app/bundled_app/linux/pilotcli_cloud"
+  #     - name: Rename cloud output file
+  #       run: mv "./app/bundled_app/linux/${{ github.sha }}" "./app/bundled_app/linux/pilotcli_cloud"
 
-      - name: Set version in env
-        run: poetry run echo "TAG_VERSION=`poetry version --short`" >> $GITHUB_ENV
+  #     - name: Set version in env
+  #       run: poetry run echo "TAG_VERSION=`poetry version --short`" >> $GITHUB_ENV
 
-      - name: Create Release
-        id: create_release
-        uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
-        with:
-          tag_name: ${{ env.TAG_VERSION }}
-          name: Release ${{ needs.extract-branch-name.outputs.branch }} ${{ env.TAG_VERSION }}
-          body: ${{ github.event.head_commit.message }}
-          draft: false
-          prerelease: false
-          target_commitish: ${{ needs.extract-branch-name.outputs.branch }}
-          files: |
-            ./app/bundled_app/linux/pilotcli_linux
-            ./app/bundled_app/linux/pilotcli_cloud
+  #     - name: Create Release
+  #       id: create_release
+  #       uses: softprops/action-gh-release@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+  #       with:
+  #         tag_name: ${{ env.TAG_VERSION }}
+  #         name: Release ${{ needs.extract-branch-name.outputs.branch }} ${{ env.TAG_VERSION }}
+  #         body: ${{ github.event.head_commit.message }}
+  #         draft: false
+  #         prerelease: false
+  #         target_commitish: ${{ needs.extract-branch-name.outputs.branch }}
+  #         files: |
+  #           ./app/bundled_app/linux/pilotcli_linux
+  #           ./app/bundled_app/linux/pilotcli_cloud
 
-  push-binary-macos:
-    needs: [ push-binary-linux ]
-    # if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop'}}
-    runs-on: macos-12
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ needs.extract-branch-name.outputs.branch }}
+  # push-binary-macos:
+  #   needs: [ push-binary-linux ]
+  #   # if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop'}}
+  #   runs-on: macos-12
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{ needs.extract-branch-name.outputs.branch }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.10.12
+  #     - name: Set up Python
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: 3.10.12
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: 1.3.2
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          installer-parallel: true
+  #     - name: Install Poetry
+  #       uses: snok/install-poetry@v1
+  #       with:
+  #         version: 1.3.2
+  #         virtualenvs-create: true
+  #         virtualenvs-in-project: true
+  #         installer-parallel: true
 
-      - name: Set up cache
-        id: cached-poetry-dependencies
-        uses: actions/cache@v3
-        with:
-          path: .venv
-          key: venv-${{ hashFiles('**/poetry.lock') }}
+  #     - name: Set up cache
+  #       id: cached-poetry-dependencies
+  #       uses: actions/cache@v3
+  #       with:
+  #         path: .venv
+  #         key: venv-${{ hashFiles('**/poetry.lock') }}
 
-      - name: Ensure cache is healthy
-        if: steps.cached-poetry-dependencies.outputs.cache-hit == 'true'
-        run: timeout 10s poetry run pip --version || rm -rf .venv
+  #     - name: Ensure cache is healthy
+  #       if: steps.cached-poetry-dependencies.outputs.cache-hit == 'true'
+  #       run: timeout 10s poetry run pip --version || rm -rf .venv
 
-      - name: Install dependencies
-        run: poetry install --no-interaction
+  #     - name: Install dependencies
+  #       run: poetry install --no-interaction
 
-      - name: Build binary
-        run: poetry run pyinstaller -F --distpath ./app/bundled_app/macos --specpath ./app/build/macos --workpath ./app/build/macos --paths=./.venv/lib/python3.9/site-packages ./app/pilotcli.py -n ${{ github.sha }}
+  #     - name: Build binary
+  #       run: poetry run pyinstaller -F --distpath ./app/bundled_app/macos --specpath ./app/build/macos --workpath ./app/build/macos --paths=./.venv/lib/python3.9/site-packages ./app/pilotcli.py -n ${{ github.sha }}
 
-      - name: Upload Release Binary
-        id: upload-release-binary
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.push-binary-linux.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: ./app/bundled_app/macos/${{ github.sha }}
-          asset_name: pilotcli_macos
-          asset_content_type: application/octet-stream
+  #     - name: Upload Release Binary
+  #       id: upload-release-binary
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.push-binary-linux.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+  #         asset_path: ./app/bundled_app/macos/${{ github.sha }}
+  #         asset_name: pilotcli_macos
+  #         asset_content_type: application/octet-stream
 
   push-binary-windows:
-    needs: [ push-binary-linux ]
+    needs: [ extract-branch-name ]
     # if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop'}}
     runs-on: windows-latest
     steps:
@@ -193,13 +193,13 @@ jobs:
           poetry run pyinstaller -F --distpath ./app/bundled_app/windows --specpath ./app/build/windows --workpath ./app/build/windows --paths=./.venv/lib/python3.9/site-packages ./app/pilotcli.py -n ${{ github.sha }}
         shell: pwsh
 
-      - name: Upload Release Binary
-        id: upload-release-binary
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.push-binary-linux.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: ./app/bundled_app/windows/${{ github.sha }}.exe
-          asset_name: pilotcli_windows
-          asset_content_type: application/octet-stream
+      # - name: Upload Release Binary
+      #   id: upload-release-binary
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ needs.push-binary-linux.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+      #     asset_path: ./app/bundled_app/windows/${{ github.sha }}.exe
+      #     asset_name: pilotcli_windows
+      #     asset_content_type: application/octet-stream
