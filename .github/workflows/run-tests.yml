@@ -8,6 +8,7 @@ on:
     branches:
       - main
       - develop
+      - patch20240808
 
 jobs:
   tests:
