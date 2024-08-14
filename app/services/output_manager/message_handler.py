@@ -235,17 +235,20 @@ class SrvOutPutHandler(metaclass=MetaService):
         logger.info(str(item_name).center(40, ' ') + ' |' + str(item_code).center(37, ' '))  # noqa: G003
 
     @staticmethod
-    def count_item(current_page, category, project_api_response_dict):
+    def count_item(current_page: int, category: str, item_list: list, total: int):
         """e.g. NUMBER OF PROJECTS 21."""
-        logger.info(f'\nPage: {current_page}, Number of {category}: {len(project_api_response_dict)}')
+        logger.info(
+            f'\nPage: {current_page}, Number of {category} in page: {len(item_list)}, '
+            f'Total number of {category}: {total}'
+        )
 
     @staticmethod
     def download_success(file_name):
         logger.succeed(f'File has been downloaded successfully and saved to: {file_name}')
 
     @staticmethod
-    def dataset_current_version(version):
-        logger.succeed(f'Current dataset version: {version}')
+    def dataset_targe_version(version):
+        logger.succeed(f'Target dataset version: {version}')
 
     @staticmethod
     def download_status(status):

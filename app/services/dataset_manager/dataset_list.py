@@ -37,7 +37,8 @@ class SrvDatasetListManager(BaseAuthClient, metaclass=MetaService):
             else:
                 SrvErrorHandler.default_handle(response.content, True)
 
-        res_to_dict = response.json().get('result')
+        res = response.json()
+        res_to_dict = res.get('result')
         if self.interactive:
             SrvOutPutHandler.print_list_header('Dataset Title', 'Dataset Code')
             for dataset in res_to_dict:
@@ -47,5 +48,5 @@ class SrvDatasetListManager(BaseAuthClient, metaclass=MetaService):
                 else:
                     dataset_name = str(dataset['title'])
                 SrvOutPutHandler.print_list_parallel(dataset_name, dataset_code)
-            SrvOutPutHandler.count_item(page, 'datasets', res_to_dict)
+            SrvOutPutHandler.count_item(page, 'datasets', res_to_dict, res.get('total'))
         return res_to_dict

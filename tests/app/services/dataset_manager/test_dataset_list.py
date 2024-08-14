@@ -18,6 +18,8 @@ def test_list_datasets(httpx_mock, mocker, capsys):
                 {'id': 'fake-id2', 'code': 'testdataset2', 'title': 'testdatasetB', 'creator': 'test-user'},
                 {'id': 'fake-id3', 'code': 'testdataset3', 'title': 'testdatasetC', 'creator': 'test-user'},
             ],
+            'total': 3,
+            'page': 1,
         },
     )
     dataset_mgr = SrvDatasetListManager()
@@ -30,4 +32,4 @@ def test_list_datasets(httpx_mock, mocker, capsys):
     assert print_out[3] == '              testdatasetB               |             testdataset2            '
     assert print_out[4] == '              testdatasetC               |             testdataset3            '
     assert print_out[5] == ''
-    assert print_out[6] == 'Page: 1, Number of datasets: 3'
+    assert print_out[6] == 'Page: 1, Number of datasets in page: 3, Total number of datasets: 3'

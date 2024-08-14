@@ -47,7 +47,7 @@ class SrvDatasetDownloadManager(BaseAuthClient, metaclass=MetaService):
             response = self._post(f'{self.dataset_geid}/download/pre/version/{self.version}')
         except HTTPStatusError as e:
             response = e.response
-            if response.status_code == 404:
+            if response.status_code == 500:
                 SrvErrorHandler.customized_handle(ECustomizedError.VERSION_NOT_EXIST, True, self.version)
             else:
                 SrvErrorHandler.default_handle(response.content, True)
