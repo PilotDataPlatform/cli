@@ -191,7 +191,7 @@ class SrvFileDownload(BaseAuthClient, metaclass=MetaService):
                             bar.update(size)
                             downloaded_size += len(data)
 
-                    # caompare the downloaded size with total size
+                    # integrity check for downloaded file
                     if downloaded_size != self.total_size:
                         SrvErrorHandler.customized_handle(
                             ECustomizedError.DOWNLOAD_SIZE_MISMATCH,
