@@ -54,6 +54,16 @@ class FileMoveClient(BaseAuthClient):
 
         self.endpoint = AppConfig.Connections.url_bff + '/v1'
 
+    def _get_root_folder_id(self, root_folder: str) -> str:
+        # get the current exist parent folder for reference
+        exist_parent = root_folder
+        exist_parent_item = search_item(self.project_code, self.zone, exist_parent).get('result')
+        exist_parent_id = exist_parent_item.get('id')
+        if not exist_parent_id:
+            SrvErrorHandler.default_handle(f'Parent folder: {exist_parent} not exist', True)
+
+        return exist_parent_id
+
     def create_object_path_if_not_exist(self, folder_path: str) -> dict:
         """Create object path is not on platfrom.
 
@@ -66,7 +76,7 @@ class FileMoveClient(BaseAuthClient):
         # the loop start with index 1 since we assume cli will not
         # create any name folder or project folder
         check_list = []
-        for index in range(2, len(path_list) - 1):
+        for index in range(2, len(path_list)):
             check_list.append('/'.join(path_list[: index + 1]))
         if len(check_list) == 0:
             return
@@ -84,10 +94,7 @@ class FileMoveClient(BaseAuthClient):
         else:
             return
 
-        # get the current exist parent folder for reference
-        exist_parent = not_exist_path[0].rsplit('/', 1)[0]
-        exist_parent_item = search_item(self.project_code, self.zone, exist_parent).get('result')
-        exist_parent_id = exist_parent_item.get('id')
+        exist_parent_id = self._get_root_folder_id(not_exist_path[0].rsplit('/', 1)[0])
         to_create = {'folders': [], 'parent_id': exist_parent_id}
         for path in not_exist_path:
             parent_path, folder_name = path.rsplit('/', 1)
