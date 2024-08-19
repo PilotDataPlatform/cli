@@ -177,6 +177,7 @@ class SrvFileDownload(BaseAuthClient, metaclass=MetaService):
                     size = r.headers.get('Content-length')
                     self.total_size = int(size) if size else self.total_size
                 if self.total_size:
+                    downloaded_size = 0
                     with open(local_filename, 'wb') as file, tqdm(
                         desc='Downloading {}'.format(filename),
                         total=self.total_size,
@@ -188,6 +189,15 @@ class SrvFileDownload(BaseAuthClient, metaclass=MetaService):
                         for data in r.iter_bytes(chunk_size=1024):
                             size = file.write(data)
                             bar.update(size)
+                            downloaded_size += len(data)
+
+                    # caompare the downloaded size with total size
+                    if downloaded_size != self.total_size:
+                        SrvErrorHandler.customized_handle(
+                            ECustomizedError.DOWNLOAD_SIZE_MISMATCH,
+                            if_exit=self.interactive,
+                            value=(self.total_size, downloaded_size),
+                        )
                 else:
                     with open(local_filename, 'wb') as file:
                         part = 0

@@ -78,6 +78,7 @@ class Error:
         'MISSING_PROJECT_CODE': 'Please provide Project Code and folder directory.',
         'INVALID_PATH': 'Provided file/folder does not exist.',
         'DOWNLOAD_FAIL': 'Download task failed. File cannot be saved to local drive.',
+        'DOWNLOAD_SIZE_MISMATCH': 'Download task failed. File size mismatch: original size %s, downloaded size %s',
         'FILE_LOCKED': (
             'File/Folder action cannot be proceed at this moment due to other processes. Please try again later.'
         ),
