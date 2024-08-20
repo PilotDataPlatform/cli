@@ -141,3 +141,38 @@ def test_file_stream_download(mocker, httpx_mock, total_size_presented):
 
         with open('test_file', 'r') as f:
             assert f.read() == '123'
+
+
+@pytest.mark.parametrize(
+    'total_size',
+    [1, 5],
+)
+def test_file_stream_download_failed_with_invalid_size(mocker, httpx_mock, capsys, total_size):
+    file_url = 'http://test.com'
+    file_content = b'123'
+
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+
+    httpx_mock.add_response(
+        url=file_url,
+        method='GET',
+        status_code=200,
+        content=IteratorStream([file_content]),
+    )
+
+    runner = click.testing.CliRunner()
+    with runner.isolated_filesystem():
+        download_client = SrvFileDownload(0, True)
+        download_client.file_geid = ['test']
+        download_client.project_code = 'test_project'
+        download_client.total_size = total_size
+
+        with pytest.raises(SystemExit):
+            download_client.download_file(file_url, 'test_file')
+
+        out, _ = capsys.readouterr()
+        out = out.split('\n')
+        assert out[1] == customized_error_msg(ECustomizedError.DOWNLOAD_SIZE_MISMATCH) % (total_size, len(file_content))

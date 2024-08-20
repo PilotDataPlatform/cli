@@ -145,3 +145,44 @@ def test_move_file_dest_parent_not_exist_success(mocker, httpx_mock, skip_confir
         click_mocker.assert_called_once()
     else:
         click_mocker.assert_not_called()
+
+
+@pytest.mark.parametrize('skip_confirmation', [True, False])
+@pytest.mark.parametrize('root_folder', ['users', 'shared'])
+def test_move_file_dest_parent_lv2_not_exist_fail(mocker, httpx_mock, capfd, skip_confirmation, root_folder):
+    project_code = 'test_code'
+
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+
+    # mock duplicated item
+    mocker.patch(
+        'app.services.file_manager.file_move.file_move_client.check_item_duplication',
+        return_value=[],
+    )
+    click_mocker = mocker.patch('app.services.file_manager.file_move.file_move_client.click.confirm', return_value=None)
+
+    mocker.patch(
+        'app.services.file_manager.file_move.file_move_client.search_item',
+        return_value={'result': {}},
+    )
+
+    file_move_client = FileMoveClient(
+        'zone',
+        project_code,
+        f'{root_folder}/src_item_path',
+        f'{root_folder}/not_exist/test_folder',
+        skip_confirm=skip_confirmation,
+    )
+    try:
+        file_move_client.move_file()
+    except SystemExit:
+        out, _ = capfd.readouterr()
+        assert out == f'Parent folder: {root_folder}/not_exist not exist\n'
+
+    if not skip_confirmation:
+        click_mocker.assert_called_once()
+    else:
+        click_mocker.assert_not_called()
