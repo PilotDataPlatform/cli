@@ -173,7 +173,7 @@ def test_move_file_dest_parent_lv2_not_exist_fail(mocker, httpx_mock, capfd, ski
         'zone',
         project_code,
         f'{root_folder}/src_item_path',
-        f'{root_folder}/not_exist/test_folder',
+        f'{root_folder}/not_exist/test_folder/test_file',
         skip_confirm=skip_confirmation,
     )
     try:
