@@ -37,11 +37,14 @@ class SrvFileDownload(BaseAuthClient, metaclass=MetaService):
         self.hash_code = ''
         self.total_size = ''
         self.interactive = interactive
-        self.url = ''
         self.check_point = False
         self.core = self.appconfig.Env.core_zone
         self.green = self.appconfig.Env.green_zone
         self.zone = zone
+        self.url = {
+            ItemZone.GREENROOM.value: self.appconfig.Connections.url_download_greenroom,
+            ItemZone.CORE.value: self.appconfig.Connections.url_download_core,
+        }.get(zone)
 
         self.endpoint = self.appconfig.Connections.url_download_greenroom + '/v1'
 
@@ -127,7 +130,7 @@ class SrvFileDownload(BaseAuthClient, metaclass=MetaService):
         return status
 
     def generate_download_url(self):
-        download_url = self.url + f'v1/download/{self.hash_code}'
+        download_url = self.url + f'/v1/download/{self.hash_code}'
         return download_url
 
     def avoid_duplicate_file_name(self, filename):

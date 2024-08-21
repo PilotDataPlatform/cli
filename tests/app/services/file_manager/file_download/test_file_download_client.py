@@ -176,3 +176,102 @@ def test_file_stream_download_failed_with_invalid_size(mocker, httpx_mock, capsy
         out, _ = capsys.readouterr()
         out = out.split('\n')
         assert out[1] == customized_error_msg(ECustomizedError.DOWNLOAD_SIZE_MISMATCH) % (total_size, len(file_content))
+
+
+@pytest.mark.parametrize(
+    'zone',
+    [
+        ItemZone.GREENROOM.value,
+        ItemZone.CORE.value,
+    ],
+)
+def test_download_url(zone):
+    test_client = SrvFileDownload(zone, True)
+
+    except_url = {
+        ItemZone.GREENROOM.value: AppConfig.Connections.url_download_greenroom,
+        ItemZone.CORE.value: AppConfig.Connections.url_download_core,
+    }.get(zone)
+
+    assert test_client.get_download_url(zone) == except_url
+
+
+@pytest.mark.parametrize(
+    'zone',
+    [
+        ItemZone.GREENROOM.value,
+        ItemZone.CORE.value,
+    ],
+)
+def test_simple_download_with_file(mocker, zone):
+    test_client = SrvFileDownload(zone, True)
+
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+    handle_geid_downloading_mock = mocker.patch(
+        'app.services.file_manager.file_download.download_client.SrvFileDownload.handle_geid_downloading',
+        return_value=(True, 'test_file'),
+    )
+    predownload_mock = mocker.patch(
+        'app.services.file_manager.file_download.download_client.SrvFileDownload.pre_download',
+        return_value=(EFileStatus.SUCCEED, 'http://presigned_url'),
+    )
+
+    download_mock = mocker.patch(
+        'app.services.file_manager.file_download.download_client.SrvFileDownload.download_file',
+    )
+
+    with click.testing.CliRunner().isolated_filesystem():
+        test_client.simple_download_file('./', [{'id': 'test_id'}])
+
+    handle_geid_downloading_mock.assert_called_once()
+    predownload_mock.assert_called_once()
+    download_mock.assert_called_once_with('http://presigned_url', './test_file')
+
+
+@pytest.mark.parametrize(
+    'zone',
+    [
+        ItemZone.GREENROOM.value,
+        ItemZone.CORE.value,
+    ],
+)
+def test_simple_download_with_folder(mocker, zone):
+    test_client = SrvFileDownload(zone, True)
+    test_client.hash_code = 'test_hash_code'
+
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+    handle_geid_downloading_mock = mocker.patch(
+        'app.services.file_manager.file_download.download_client.SrvFileDownload.handle_geid_downloading',
+        return_value=(False, 'test_file'),
+    )
+    predownload_mock = mocker.patch(
+        'app.services.file_manager.file_download.download_client.SrvFileDownload.pre_download',
+        return_value=(EFileStatus.SUCCEED, 'download_url'),
+    )
+
+    status_check_mock = mocker.patch(
+        'app.services.file_manager.file_download.download_client.SrvFileDownload.check_download_preparing_status',
+        return_value=EFileStatus.SUCCEED,
+    )
+
+    download_mock = mocker.patch(
+        'app.services.file_manager.file_download.download_client.SrvFileDownload.download_file',
+    )
+
+    download_service_url = {
+        ItemZone.GREENROOM.value: AppConfig.Connections.url_download_greenroom,
+        ItemZone.CORE.value: AppConfig.Connections.url_download_core,
+    }.get(zone)
+    with click.testing.CliRunner().isolated_filesystem():
+        test_client.simple_download_file('./', [{'id': 'test_id'}])
+
+    handle_geid_downloading_mock.assert_called_once()
+    predownload_mock.assert_called_once()
+    status_check_mock.assert_called_once()
+    download_mock.assert_called_once_with(f'{download_service_url}/v1/download/{test_client.hash_code}', './test_file')
