@@ -20,7 +20,7 @@ logger = logging.getLogger('pilot.cli.base_client')
 class BaseClient:
     """Client for any inherited service clients."""
 
-    def __init__(self, endpoint: str, timeout: int = 10) -> None:
+    def __init__(self, endpoint: str, timeout: int = 30) -> None:
         self.endpoint = endpoint
         self.client = Client(timeout=timeout)
         self.headers = {'VM-Info': ConfigClass.vm_info}
