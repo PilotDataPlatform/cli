@@ -7,6 +7,7 @@ import questionary
 
 import app.services.output_manager.help_page as project_help
 import app.services.output_manager.message_handler as mhandler
+from app.configs.app_config import AppConfig
 from app.services.project_manager.project import SrvProjectManager
 from app.utils.aggregated import doc
 
@@ -54,10 +55,8 @@ def project_list_all(page, page_size, order, order_by, detached):
     else:
         while True:
             projects = project_mgr.list_projects(page, page_size, order, order_by)
-            if len(projects) < page_size and page == 0:
+            if len(projects) < AppConfig.Env.interative_threshold:
                 break
-            elif len(projects) < page_size and page != 0:
-                choice = ['previous page', 'exit']
             elif page == 0:
                 choice = ['next page', 'exit']
             else:
