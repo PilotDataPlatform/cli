@@ -54,5 +54,5 @@ Command line tool that allows the user to execute data operations on the platfor
     Or Windows example:
 
         # remember to remove the poetry.lock file before building for windows
-        rm -f poetry.lock
+        rm poetry.lock
         pyinstaller -F --distpath ./app/bundled_app/windows --specpath ./app/build/windows --workpath ./app/build/windows --paths=./.venv/Lib/site-packages ./app/pilotcli.py -n <app-name>
