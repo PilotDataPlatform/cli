@@ -7,6 +7,7 @@ import questionary
 
 import app.services.output_manager.help_page as dataset_help
 import app.services.output_manager.message_handler as message_handler
+from app.configs.app_config import AppConfig
 from app.services.dataset_manager.dataset_detail import SrvDatasetDetailManager
 from app.services.dataset_manager.dataset_download import SrvDatasetDownloadManager
 from app.services.dataset_manager.dataset_list import SrvDatasetListManager
@@ -40,9 +41,9 @@ def dataset_list(page, page_size, detached):
         while True:
             dataset_mgr = SrvDatasetListManager()
             datasets = dataset_mgr.list_datasets(page, page_size)
-            if len(datasets) < page_size and page == 0:
+            if len(datasets) < AppConfig.Env.interative_threshold:
                 break
-            elif len(datasets) < page_size and page != 0:
+            elif page != 0:
                 choice = ['previous page', 'exit']
             elif page == 0:
                 choice = ['next page', 'exit']
