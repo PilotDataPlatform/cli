@@ -148,7 +148,7 @@ jobs:
   #         asset_content_type: application/octet-stream
 
   push-binary-windows:
-    # needs: [ push-binary-linux ]
+    needs: [ push-binary-linux ]
     # if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop'}}
     runs-on: windows-latest
     steps:
