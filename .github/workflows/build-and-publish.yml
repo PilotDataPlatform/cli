@@ -165,12 +165,12 @@ jobs:
       - name: Create virtual environment
         run: python -m venv .venv
 
-      - name: Set up cache
-        id: cached-poetry-dependencies
-        uses: actions/cache@v3
-        with:
-          path: .venv
-          key: venv-${{ hashFiles('**/poetry.lock') }}
+      # - name: Set up cache
+      #   id: cached-poetry-dependencies
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: .venv
+      #     key: venv-${{ hashFiles('**/poetry.lock') }}
 
       - name: Install dependencies
         run: |
@@ -184,7 +184,7 @@ jobs:
       - name: Build binary
         run: |
           .\.venv\Scripts\Activate
-          poetry run pyinstaller -F --distpath ./app/bundled_app/windows --specpath ./app/build/windows --workpath ./app/build/windows --paths=./.venv/lib/python3.10/site-packages ./app/pilotcli.py -n ${{ github.sha }}
+          poetry run pyinstaller -F --distpath ./app/bundled_app/windows --specpath ./app/build/windows --workpath ./app/build/windows ./app/pilotcli.py -n ${{ github.sha }}
         shell: pwsh
 
       - name: Upload Release Binary
