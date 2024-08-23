@@ -220,8 +220,8 @@ def remove_the_output_file(filepath: str) -> None:
 
 
 def get_latest_cli_version() -> Version:
-    httpx_client = BaseAuthClient(AppConfig.Connections.url_download_greenroom)
     try:
+        httpx_client = BaseAuthClient(AppConfig.Connections.url_download_greenroom)
         user_config = UserConfig()
         if not user_config.is_access_token_exists():
             return Version('0.0.0')
