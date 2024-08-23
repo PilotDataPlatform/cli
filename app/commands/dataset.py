@@ -40,10 +40,10 @@ def dataset_list(page, page_size, detached):
     else:
         while True:
             dataset_mgr = SrvDatasetListManager()
-            datasets = dataset_mgr.list_datasets(page, page_size)
-            if len(datasets) < AppConfig.Env.interative_threshold:
+            datasets, num_of_dataset = dataset_mgr.list_datasets(page, page_size)
+            if num_of_dataset < AppConfig.Env.interative_threshold:
                 break
-            elif page != 0:
+            elif len(datasets) < page_size and page != 0:
                 choice = ['previous page', 'exit']
             elif page == 0:
                 choice = ['next page', 'exit']
@@ -86,7 +86,7 @@ def dataset_show_detail(dataset_code, page, page_size, detached):
             detail_mgr = SrvDatasetDetailManager()
             detail_info = detail_mgr.dataset_detail(dataset_code, page, page_size)
             versions = detail_info.get('version_detail')
-            if len(versions) < page_size and page == 0:
+            if detail_info.get('version_no') < AppConfig.Env.interative_threshold:
                 break
             if len(versions) < page_size and page != 0:
                 choice = ['previous page', 'exit']
