@@ -2,6 +2,9 @@
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
+from typing import Dict
+from typing import Tuple
+
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.models.service_meta_class import MetaService
@@ -22,12 +25,13 @@ class SrvProjectManager(BaseAuthClient, metaclass=MetaService):
         self.endpoint = AppConfig.Connections.url_bff + '/v1'
 
     @require_valid_token()
-    def list_projects(self, page, page_size, order, order_by):
+    def list_projects(self, page, page_size, order, order_by) -> Tuple[Dict, int]:
         params = {'page': page, 'page_size': page_size, 'order': order, 'order_by': order_by}
         try:
             response = self._get('projects', params=params)
             if response.status_code == 200:
                 res_to_dict = response.json().get('result')
+                total = response.json().get('total')
                 if self.interactive:
                     SrvOutPutHandler.print_list_header('Project Name', 'Project Code')
                     for project in res_to_dict:
@@ -37,8 +41,8 @@ class SrvProjectManager(BaseAuthClient, metaclass=MetaService):
                         else:
                             project_name = str(project['name'])
                         SrvOutPutHandler.print_list_parallel(project_name, project_code)
-                    SrvOutPutHandler.count_item(page, 'projects', res_to_dict, response.json().get('total'))
-                return res_to_dict
+                    SrvOutPutHandler.count_item(page, 'projects', res_to_dict, total)
+                return res_to_dict, total
             elif response.status_code == 404:
                 SrvErrorHandler.customized_handle(ECustomizedError.USER_DISABLED, True)
             else:

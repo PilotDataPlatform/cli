@@ -51,12 +51,14 @@ def project_list_all(page, page_size, order, order_by, detached):
     project_mgr = SrvProjectManager()
 
     if detached:
-        projects = project_mgr.list_projects(page, page_size, order, order_by)
+        projects, num_of_project = project_mgr.list_projects(page, page_size, order, order_by)
     else:
         while True:
-            projects = project_mgr.list_projects(page, page_size, order, order_by)
-            if len(projects) < AppConfig.Env.interative_threshold:
+            projects, num_of_project = project_mgr.list_projects(page, page_size, order, order_by)
+            if num_of_project < AppConfig.Env.interative_threshold:
                 break
+            elif len(projects) < page_size and page != 0:
+                choice = ['previous page', 'exit']
             elif page == 0:
                 choice = ['next page', 'exit']
             else:

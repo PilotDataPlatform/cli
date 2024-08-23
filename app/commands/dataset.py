@@ -36,7 +36,7 @@ def cli():
 def dataset_list(page, page_size, detached):
     if detached:
         dataset_mgr = SrvDatasetListManager()
-        datasets = dataset_mgr.list_datasets(page, page_size)
+        datasets, num_of_dataset = dataset_mgr.list_datasets(page, page_size)
     else:
         while True:
             dataset_mgr = SrvDatasetListManager()
