@@ -2,8 +2,49 @@
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
+from unittest.mock import Mock
+
+import questionary
+
 from app.commands.dataset import dataset_download
+from app.commands.dataset import dataset_list
 from app.configs.app_config import AppConfig
+
+
+def list_fake_dataset(number: int):
+    return [f'dataset-{i}' for i in range(number)]
+
+
+def test_dataset_list_total_less_than_10(httpx_mock, mocker, cli_runner, capsys):
+    page_size = 10
+    project_list = list_fake_dataset(5)
+    mocker.patch(
+        'app.services.dataset_manager.dataset_list.SrvDatasetListManager.list_datasets', return_value=project_list
+    )
+
+    result = cli_runner.invoke(dataset_list, ['--page', 0, '--page-size', page_size])
+
+    assert result.exit_code == 0
+    assert '' == result.output
+
+
+def test_dataset_list_total_more_than_10_page_0(httpx_mock, mocker, cli_runner, capsys):
+    page_size = 10
+    project_list = list_fake_dataset(20)
+    mocker.patch(
+        'app.services.dataset_manager.dataset_list.SrvDatasetListManager.list_datasets', return_value=project_list
+    )
+    clear_mock = mocker.patch('click.clear', return_value=None)
+
+    question_mock = mocker.patch.object(questionary, 'select', return_value=questionary.select)
+    questionary.select.return_value.ask = Mock()
+    questionary.select.return_value.ask.side_effect = ['next page', 'previous page', 'exit']
+
+    result = cli_runner.invoke(dataset_list, ['--page', 0, '--page-size', page_size])
+
+    assert result.exit_code == 0
+    assert question_mock.call_count == 3
+    assert clear_mock.call_count == 2
 
 
 def test_download_not_exited_dataset_version(httpx_mock, mocker, cli_runner, capsys):
