@@ -4,13 +4,17 @@
 
 import click
 
+import app.services.output_manager.message_handler as message_handler
 from app.configs.app_config import AppConfig
 from app.services.file_manager.file_metadata.folder_client import FolderClient
+from app.services.output_manager.error_handler import ECustomizedError
+from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.output_manager.help_page import FileHELP
 from app.services.output_manager.help_page import FolderHelp
 from app.services.output_manager.help_page import file_help_page
 from app.services.output_manager.help_page import folder_help_page
 from app.utils.aggregated import doc
+from app.utils.aggregated import validate_folder_name
 
 
 @click.command()
@@ -35,11 +39,15 @@ def cli():
 def folder_create(project_code, object_path, zone):
     """"""
 
-    if len(object_path.split('/')) <= 2:
-        click.echo('Please provide a valid path')
-        exit(1)
+    # user cannot create root/name/shared folder in cli
+    # and folder name must NOT contain special characters[/:?.\\*<>|”\']
+    path_list = object_path.split('/')
+    if len(path_list) <= 2:
+        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_FOLDER_PATH, True)
+    for p in path_list:
+        if not validate_folder_name(p):
+            SrvErrorHandler.customized_handle(ECustomizedError.INVALID_FOLDERNAME, True)
 
     folder_client = FolderClient(project_code, zone)
     folder_client.create_folder(object_path)
-    click.echo(f'Folder created: {object_path}')
-    click.echo('Done')
+    message_handler.SrvOutPutHandler.folder_create(project_code, object_path)

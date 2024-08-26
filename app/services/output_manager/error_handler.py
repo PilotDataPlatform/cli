@@ -84,6 +84,8 @@ class ECustomizedError(enum.Enum):
     CONTAINER_REGISTRY_NO_URL = 'CONTAINER_REGISTRY_NO_URL'
     CONFIG_INVALID_PERMISSIONS = 'CONFIG_INVALID_PERMISSIONS'
 
+    INVALID_FOLDER_PATH = 'INVALID_FOLDER_PATH'
+
 
 def customized_error_msg(customized_error: ECustomizedError):
     if customized_error.name == 'TOU_CONTENT':
@@ -112,4 +114,4 @@ class SrvErrorHandler(metaclass=MetaService):
         else:
             logger.error(customized_error_msg(customized_error))
         if if_exit:
-            sys.exit(0)
+            sys.exit(1)

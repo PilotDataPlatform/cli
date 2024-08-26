@@ -349,3 +349,7 @@ class SrvOutPutHandler(metaclass=MetaService):
             logger.warning(message)
 
         return message
+
+    @staticmethod
+    def folder_create(project_code, object_path):
+        logger.info(f'Folder created: {object_path} at project: {project_code}')
