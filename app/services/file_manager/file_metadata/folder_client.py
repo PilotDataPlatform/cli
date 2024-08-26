@@ -45,7 +45,7 @@ class FolderClient(BaseAuthClient):
         for index in range(2, len(path_list)):
             check_list.append('/'.join(path_list[: index + 1]))
         if len(check_list) == 0:
-            return
+            return {}
 
         # confirm if user want to create folder or not
         exist_path = check_item_duplication(check_list, self.zone, self.project_code)
