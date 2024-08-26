@@ -105,3 +105,12 @@ class ContainerRegistryHELP(enum.Enum):
 def cr_help_page(ContainerRegistryHELP: ContainerRegistryHELP):
     helps = help_msg.get('container_registry', 'default container_registry help')
     return helps.get(ContainerRegistryHELP.name)
+
+
+class FolderHelp(enum.Enum):
+    FOLDER_CREATE = 'FOLDER_CREATE'
+
+
+def folder_help_page(FolderHELP: FolderHelp):
+    helps = help_msg.get('folder', 'default folder help')
+    return helps.get(FolderHELP.name)

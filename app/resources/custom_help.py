@@ -75,4 +75,7 @@ class HelpPage:
             'GET_SECRET': 'Get your user CLI secret',
             'SHARE_PROJECT': 'Share a project with another user',
         },
+        'folder': {
+            'FOLDER_CREATE': 'Create folders/subfolders in project.',
+        },
     }
