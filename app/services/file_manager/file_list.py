@@ -2,6 +2,8 @@
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
+from typing import Tuple
+
 import click
 import questionary
 
@@ -23,7 +25,7 @@ class SrvFileList(BaseAuthClient, metaclass=MetaService):
         self.endpoint = AppConfig.Connections.url_bff + '/v1'
 
     @require_valid_token()
-    def list_files(self, paths, zone, page, page_size):
+    def list_files(self, paths, zone, page, page_size) -> Tuple[str, int]:
         # path is formatted as <project_code>/<root_folder>/<folder1>
         # split the path in to project_code, root_folder, and folder1
         project_path = paths.strip('/').split('/')
@@ -64,18 +66,23 @@ class SrvFileList(BaseAuthClient, metaclass=MetaService):
                 folders = folders + f"\033[34m{f.get('name')}\033[0m ..."
 
         f_string = folders + files
-        return f_string
+        return f_string, res_json.get('total')
 
     def list_files_without_pagination(self, paths, zone, page, page_size):
-        files = self.list_files(paths, zone, page, page_size)
+        files, _ = self.list_files(paths, zone, page, page_size)
         query_result = fit_terminal_width(files)
         logger.info(query_result)
 
     def list_files_with_pagination(self, paths, zone, page, page_size):
         while True:
-            files = self.list_files(paths, zone, page, page_size)
+            files, total = self.list_files(paths, zone, page, page_size)
             file_list = files.split('...')[:-1] if files != '' else []
-            if len(file_list) < page_size and page == 0:
+            query_result = fit_terminal_width(files)
+            logger.info(query_result)
+
+            if total < AppConfig.Env.interative_threshold:
+                break
+            elif len(file_list) < page_size and page == 0:
                 choice = ['exit']
             elif len(file_list) < page_size and page != 0:
                 choice = ['previous page', 'exit']
@@ -83,8 +90,6 @@ class SrvFileList(BaseAuthClient, metaclass=MetaService):
                 choice = ['next page', 'exit']
             else:
                 choice = ['previous page', 'next page', 'exit']
-            query_result = fit_terminal_width(files)
-            logger.info(query_result)
             val = questionary.select('\nWhat do you want?', qmark='', choices=choice).ask()
             if val == 'exit':
                 break
