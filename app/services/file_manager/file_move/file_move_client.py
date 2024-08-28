@@ -138,7 +138,7 @@ class FileMoveClient(BaseAuthClient):
             if dest_item.get('type') == ItemType.FILE.value:
                 item_name = dest_item.get('name')
                 message_handler.SrvOutPutHandler.move_action_failed(
-                    self.src_item_path, self.dest_item_path, f'Item {item_name} already exists'
+                    self.src_item_path, f'{self.dest_item_path}/{item_name}', f'Item {item_name} already exists'
                 )
                 exit(1)
             else:
@@ -151,6 +151,7 @@ class FileMoveClient(BaseAuthClient):
                 message_handler.SrvOutPutHandler.move_action_failed(
                     self.src_item_path, self.dest_item_path, f'Parent folder {parent_path} not exist'
                 )
+                exit(1)
 
         try:
             payload = {
