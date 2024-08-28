@@ -528,26 +528,28 @@ def file_metadata_download(**kwargs):
     help=file_help.file_help_page(file_help.FileHELP.FILE_MOVE_Z),
     show_default=False,
 )
-@click.option(
-    '-y',
-    '--yes',
-    default=False,
-    required=False,
-    is_flag=True,
-    help=file_help.file_help_page(file_help.FileHELP.FILE_MOVE_Y),
-    show_default=True,
-)
+# @click.option(
+#     '-y',
+#     '--yes',
+#     default=False,
+#     required=False,
+#     is_flag=True,
+#     help=file_help.file_help_page(file_help.FileHELP.FILE_MOVE_Y),
+#     show_default=True,
+# )
 @require_valid_token()
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_MOVE))
 def file_move(**kwargs):
     project_code = kwargs.get('project_code')
-    src_item_path = kwargs.get('src_item_path')
-    dest_item_path = kwargs.get('dest_item_path')
+    src_item_path = kwargs.get('src_item_path').strip('/')
+    dest_item_path = kwargs.get('dest_item_path').strip('/')
     zone = kwargs.get('zone')
-    skip_confirm = kwargs.get('yes')
 
-    if len(src_item_path.split('/')) == 1 and len(dest_item_path.split('/')) == 1:
-        raise Exception('Invalid path')
+    if len(src_item_path.split('/')) <= 2 or len(dest_item_path.split('/')) <= 1:
+        message_handler.SrvOutPutHandler.move_action_failed(
+            src_item_path, dest_item_path, 'Cannot move root/name/shared folders'
+        )
+        exit(1)
 
     # tranlate keyword to correct object path
     src_keyword, src_path = src_item_path.split('/', 1)
@@ -560,7 +562,7 @@ def file_move(**kwargs):
     dest_path = dest_type.get_prefix_by_type() + dest_path
 
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
-    file_meta_client = FileMoveClient(zone, project_code, src_path, dest_path, skip_confirm=skip_confirm)
+    file_meta_client = FileMoveClient(zone, project_code, src_path, dest_path)
     file_meta_client.move_file()
 
     message_handler.SrvOutPutHandler.move_action_success(src_item_path, dest_item_path)
