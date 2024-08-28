@@ -7,6 +7,7 @@ import questionary
 
 import app.services.output_manager.help_page as project_help
 import app.services.output_manager.message_handler as mhandler
+from app.configs.app_config import AppConfig
 from app.services.project_manager.project import SrvProjectManager
 from app.utils.aggregated import doc
 
@@ -50,11 +51,11 @@ def project_list_all(page, page_size, order, order_by, detached):
     project_mgr = SrvProjectManager()
 
     if detached:
-        projects = project_mgr.list_projects(page, page_size, order, order_by)
+        projects, num_of_project = project_mgr.list_projects(page, page_size, order, order_by)
     else:
         while True:
-            projects = project_mgr.list_projects(page, page_size, order, order_by)
-            if len(projects) < page_size and page == 0:
+            projects, num_of_project = project_mgr.list_projects(page, page_size, order, order_by)
+            if num_of_project < AppConfig.Env.interative_threshold:
                 break
             elif len(projects) < page_size and page != 0:
                 choice = ['previous page', 'exit']

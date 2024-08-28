@@ -5,6 +5,7 @@
 import json
 from os import makedirs
 from os.path import dirname
+from unittest.mock import Mock
 
 import click
 import pytest
@@ -141,30 +142,52 @@ def test_resumable_upload_command_failed_with_file_not_exists(mocker, cli_runner
     assert result.output == customized_error_msg(ECustomizedError.INVALID_RESUMABLE) + '\n'
 
 
-def test_file_list_with_pagination_with_folder_success(httpx_mock, mocker, cli_runner):
+@pytest.mark.parametrize(
+    'page, options',
+    [(0, ['next page', 'exit']), (1, ['next page', 'previous page', 'exit']), (2, ['previous page', 'exit'])],
+)
+def test_file_list_with_pagination_with_folder_success(httpx_mock, mocker, cli_runner, page, options):
+    page_size, total = 9, 20
+
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
         return_value=decoded_token(),
     )
 
-    httpx_mock.add_response(
-        method='GET',
-        url='http://bff_cli/v1/testproject/files/query?project_code=testproject&folder=users%2F'
-        'admin&source_type=project&zone=greenroom&page=0&page_size=10',
-        json={
-            'code': 200,
-            'error_msg': '',
-            'result': [
-                {'type': ItemType.FILE.value, 'name': 'file1'},
-                {'type': ItemType.FILE.value, 'name': 'file2'},
-            ],
-        },
+    mock_page = {
+        0: [0, 1],
+        1: [1, 2],
+        2: [2, 1],
+    }
+    for i in mock_page.get(page):
+        httpx_mock.add_response(
+            method='GET',
+            url='http://bff_cli/v1/testproject/files/query?project_code=testproject&folder=users%2F'
+            f'admin&source_type=project&zone=greenroom&page={i}&page_size={page_size}',
+            json={
+                'code': 200,
+                'error_msg': '',
+                'total': total,
+                # generate 20 items
+                'result': [{'type': ItemType.FILE.value, 'name': f'f{i}'} for i in range(page_size)],
+            },
+        )
+    clear_mock = mocker.patch('click.clear', return_value=None)
+
+    question_mock = mocker.patch.object(questionary, 'select', return_value=questionary.select)
+    questionary.select.return_value.ask = Mock()
+    questionary.select.return_value.ask.side_effect = options
+
+    result = cli_runner.invoke(
+        file_list, ['testproject/users/admin', '-z', 'greenroom', '--page', page, '--page-size', page_size]
     )
-    mocker.patch.object(questionary, 'select')
-    questionary.select.return_value.ask.return_value = 'exit'
-    result = cli_runner.invoke(file_list, ['testproject/users/admin', '-z', 'greenroom'])
+    assert result.exit_code == 0
+    assert question_mock.call_count == len(options)
+    assert clear_mock.call_count == len(options) - 1
+
     outputs = result.output.split('\n')
-    assert outputs[0] == 'file1  file2   '
+    assert outputs[0] == ''.join([f'f{i}  ' for i in range(page_size)]) + ' '
+    assert outputs[1] == ''.join([f'f{i}  ' for i in range(page_size)]) + ' '
 
 
 def test_file_list_with_pagination_with_root_folder(httpx_mock, mocker, cli_runner):
@@ -184,6 +207,7 @@ def test_file_list_with_pagination_with_root_folder(httpx_mock, mocker, cli_runn
         json={
             'code': 200,
             'error_msg': '',
+            'total': 6,
             'result': [
                 {'type': ItemType.FOLDER.value, 'name': folder},
                 {'type': ItemType.NAMEFOLDER.value, 'name': folder_with_underline},
@@ -194,9 +218,12 @@ def test_file_list_with_pagination_with_root_folder(httpx_mock, mocker, cli_runn
             ],
         },
     )
-    mocker.patch.object(questionary, 'select')
+    select_mock = mocker.patch.object(questionary, 'select')
     questionary.select.return_value.ask.return_value = 'exit'
     result = cli_runner.invoke(file_list, ['testproject/users/admin', '-z', 'greenroom'])
+    assert result.exit_code == 0
+    assert select_mock.call_count == 0
+
     outputs = result.output.split('\n')
     assert outputs[0] == f'{folder}  {folder_with_underline}  {folder_with_underline}  "{folder_with_space}"  '
     assert outputs[1] == f'"{folder_with_space}"  {root_folder}   '
@@ -212,11 +239,12 @@ def test_empty_file_list_with_pagination(httpx_mock, mocker, cli_runner):
         method='GET',
         url='http://bff_cli/v1/testproject/files/query?project_code=testproject&'
         'folder=&source_type=project&zone=greenroom&page=0&page_size=10',
-        json={'code': 200, 'error_msg': '', 'result': []},
+        json={'code': 200, 'error_msg': '', 'result': [], 'total': 0},
     )
     mocker.patch.object(questionary, 'select')
     questionary.select.return_value.ask.return_value = 'exit'
     result = cli_runner.invoke(file_list, ['testproject/admin', '-z', 'greenroom'])
+    assert result.exit_code == 0
     outputs = result.output.split('\n')
     assert outputs[0] == ' '
 

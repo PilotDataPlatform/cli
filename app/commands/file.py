@@ -378,6 +378,7 @@ def file_list(paths, zone, page, page_size, detached):
         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_ZONE, True)
     if len(paths) == 0:
         SrvErrorHandler.customized_handle(ECustomizedError.MISSING_PROJECT_CODE, True)
+
     srv_list = SrvFileList()
     if detached:
         srv_list.list_files_without_pagination(paths, zone, page, page_size)
