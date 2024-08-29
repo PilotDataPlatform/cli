@@ -2,6 +2,11 @@
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Tuple
+
 from httpx import HTTPStatusError
 
 from app.configs.app_config import AppConfig
@@ -24,7 +29,7 @@ class SrvDatasetListManager(BaseAuthClient, metaclass=MetaService):
         self.endpoint = AppConfig.Connections.url_bff + '/v1'
 
     @require_valid_token()
-    def list_datasets(self, page, page_size):
+    def list_datasets(self, page, page_size) -> Tuple[List[Dict[str, Any]], int]:
         params = {'page': page, 'page_size': page_size}
         try:
             response = self._get('datasets', params=params)
@@ -49,4 +54,4 @@ class SrvDatasetListManager(BaseAuthClient, metaclass=MetaService):
                     dataset_name = str(dataset['title'])
                 SrvOutPutHandler.print_list_parallel(dataset_name, dataset_code)
             SrvOutPutHandler.count_item(page, 'datasets', res_to_dict, res.get('total'))
-        return res_to_dict
+        return res_to_dict, res.get('total')

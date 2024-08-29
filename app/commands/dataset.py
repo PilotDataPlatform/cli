@@ -7,6 +7,7 @@ import questionary
 
 import app.services.output_manager.help_page as dataset_help
 import app.services.output_manager.message_handler as message_handler
+from app.configs.app_config import AppConfig
 from app.services.dataset_manager.dataset_detail import SrvDatasetDetailManager
 from app.services.dataset_manager.dataset_download import SrvDatasetDownloadManager
 from app.services.dataset_manager.dataset_list import SrvDatasetListManager
@@ -35,12 +36,12 @@ def cli():
 def dataset_list(page, page_size, detached):
     if detached:
         dataset_mgr = SrvDatasetListManager()
-        datasets = dataset_mgr.list_datasets(page, page_size)
+        datasets, num_of_dataset = dataset_mgr.list_datasets(page, page_size)
     else:
         while True:
             dataset_mgr = SrvDatasetListManager()
-            datasets = dataset_mgr.list_datasets(page, page_size)
-            if len(datasets) < page_size and page == 0:
+            datasets, num_of_dataset = dataset_mgr.list_datasets(page, page_size)
+            if num_of_dataset < AppConfig.Env.interative_threshold:
                 break
             elif len(datasets) < page_size and page != 0:
                 choice = ['previous page', 'exit']
@@ -85,7 +86,7 @@ def dataset_show_detail(dataset_code, page, page_size, detached):
             detail_mgr = SrvDatasetDetailManager()
             detail_info = detail_mgr.dataset_detail(dataset_code, page, page_size)
             versions = detail_info.get('version_detail')
-            if len(versions) < page_size and page == 0:
+            if detail_info.get('version_no') < AppConfig.Env.interative_threshold:
                 break
             if len(versions) < page_size and page != 0:
                 choice = ['previous page', 'exit']

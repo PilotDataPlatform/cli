@@ -26,6 +26,8 @@ class AppConfig:
         green_zone = 'greenroom'
         core_bucket_prefix = 'core'
         greenroom_bucket_prefix = 'gr'
+        # the number of items to active interative mode
+        interative_threshold = 10
 
         github_url = 'PilotDataPlatform/cli'
 
