@@ -21,7 +21,7 @@ def test_get_root_folder_id_success(mocker):
     search_item_mock.assert_called_once_with(project_code, 0, root_folder)
 
 
-def test_get_root_folder_id_fail(mocker):
+def test_get_root_folder_id_fail(mocker, capfd):
     project_code = 'project_code'
     zone = 'greenroom'
     root_folder = 'root_folder'
@@ -34,8 +34,11 @@ def test_get_root_folder_id_fail(mocker):
         folder_client._get_root_folder_id(root_folder)
     search_item_mock.assert_called_once_with(project_code, 0, root_folder)
 
+    out, _ = capfd.readouterr()
+    assert f'Parent folder: {root_folder} not exist' in out
 
-def test_create_folder(mocker, httpx_mock):
+
+def test_create_folder_success(mocker, httpx_mock):
     project_code = 'project_code'
     zone = 'greenroom'
     folder_path = 'users/user/test'
@@ -58,3 +61,22 @@ def test_create_folder(mocker, httpx_mock):
 
     duplication_mock.assert_called_once_with(['users/user/test'], 0, 'project_code')
     folder_client._get_root_folder_id.assert_called_once_with('users/user')
+
+
+def test_create_folder_fail_with_duplication(mocker, capfd):
+    project_code = 'project_code'
+    zone = 'greenroom'
+    folder_path = 'users/user/test'
+
+    duplication_mock = mocker.patch(
+        'app.services.file_manager.file_metadata.folder_client.check_item_duplication',
+        return_value=['users', 'users/user', 'users/user/test'],
+    )
+    folder_client = FolderClient(project_code, zone)
+
+    with pytest.raises(SystemExit):
+        folder_client.create_folder(folder_path)
+    duplication_mock.assert_called_once_with(['users/user/test'], 0, 'project_code')
+
+    out, _ = capfd.readouterr()
+    assert f'Folder: {folder_path} already exists in project: {project_code} at zone: {zone}' in out
