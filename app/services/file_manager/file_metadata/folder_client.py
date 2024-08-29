@@ -8,6 +8,7 @@ from httpx import HTTPStatusError
 
 from app.configs.app_config import AppConfig
 from app.services.clients.base_auth_client import BaseAuthClient
+from app.services.output_manager import message_handler
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.utils.aggregated import check_item_duplication
 from app.utils.aggregated import search_item
@@ -50,6 +51,9 @@ class FolderClient(BaseAuthClient):
         # confirm if user want to create folder or not
         exist_path = check_item_duplication(check_list, self.zone, self.project_code)
         not_exist_path = sorted(set(check_list) - set(exist_path))
+        if not not_exist_path:
+            message_handler.SrvOutPutHandler.folder_duplicate_error(self.project_code, folder_path)
+            exit(1)
 
         exist_parent_id = self._get_root_folder_id(not_exist_path[0].rsplit('/', 1)[0])
         to_create = {'folders': [], 'parent_id': exist_parent_id}

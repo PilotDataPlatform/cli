@@ -24,7 +24,6 @@ def cli():
 
 
 @click.command(name='create')
-@click.argument('project_code', type=str)
 @click.argument('object_path', type=str)
 @click.option(
     '-z',
@@ -36,8 +35,10 @@ def cli():
     show_default=True,
 )
 @doc(folder_help_page(FolderHelp.FOLDER_CREATE))
-def folder_create(project_code, object_path, zone):
+def folder_create(object_path, zone):
     """"""
+    # object_path is composed of project_code and folder_name
+    project_code, object_path = object_path.split('/', 1)
 
     # user cannot create root/name/shared folder in cli
     # and folder name must NOT contain special characters[/:?.\\*<>|”\']
