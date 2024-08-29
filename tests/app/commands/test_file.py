@@ -74,7 +74,7 @@ def test_file_upload_failed_with_invalid_tag_file(cli_runner):
         result = cli_runner.invoke(
             file_put, ['--project-path', 'test', '--thread', 1, '--tag', 'wrong_tag.json', 'wrong_tag.json']
         )
-    assert result.exit_code == 0
+    assert result.exit_code == 1
     assert result.output == customized_error_msg(ECustomizedError.INVALID_TAG_FILE) + '\n'
 
 
@@ -89,7 +89,7 @@ def test_file_upload_failed_with_invalid_attribute_file(cli_runner):
             file_put,
             ['--project-path', 'test', '--thread', 1, '--attribute', 'wrong_attribute.json', 'wrong_attribute.json'],
         )
-    assert result.exit_code == 0
+    assert result.exit_code == 1
     assert result.output == customized_error_msg(ECustomizedError.INVALID_TEMPLATE) + '\n'
 
 
@@ -138,7 +138,7 @@ def test_resumable_upload_command_failed_with_file_not_exists(mocker, cli_runner
     mocker.patch('os.path.exists', return_value=False)
 
     result = cli_runner.invoke(file_resume, ['--resumable-manifest', 'test.json', '--thread', 1])
-    assert result.exit_code == 0
+    assert result.exit_code == 1
     assert result.output == customized_error_msg(ECustomizedError.INVALID_RESUMABLE) + '\n'
 
 
