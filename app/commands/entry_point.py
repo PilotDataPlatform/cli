@@ -24,6 +24,7 @@ from .file import file_metadata_download
 from .file import file_move
 from .file import file_put
 from .file import file_resume
+from .folder import folder_create
 
 # Import custom commands
 from .project import project_list_all
@@ -34,7 +35,7 @@ container_registry_enabled = os.environ.get('PILOT_CLI_CONTAINER_REGISTRY_ENABLE
 
 
 def command_groups():
-    commands = ['file', 'user', 'project', 'dataset']
+    commands = ['file', 'user', 'project', 'dataset', 'folder']
     if container_registry_enabled:
         commands.append('container_registry')
     return commands
@@ -68,6 +69,11 @@ def user_group():
     pass
 
 
+@entry_point.group(name='folder')
+def folder_group():
+    pass
+
+
 file_group.add_command(file_put)
 file_group.add_command(file_check_manifest)
 file_group.add_command(file_export_manifest)
@@ -82,6 +88,7 @@ user_group.add_command(logout)
 dataset_group.add_command(dataset_list)
 dataset_group.add_command(dataset_show_detail)
 dataset_group.add_command(dataset_download)
+folder_group.add_command(folder_create)
 
 # Custom commands
 if container_registry_enabled:
