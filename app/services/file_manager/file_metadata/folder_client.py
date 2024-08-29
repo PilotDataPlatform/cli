@@ -20,6 +20,7 @@ class FolderClient(BaseAuthClient):
 
         self.project_code = project_code
         self.zone = {'greenroom': 0, 'core': 1}.get(zone)
+        self.zone_str = zone
 
     def _get_root_folder_id(self, root_folder: str) -> str:
         # get the current exist name folder or shared folder for reference
@@ -52,7 +53,7 @@ class FolderClient(BaseAuthClient):
         exist_path = check_item_duplication(check_list, self.zone, self.project_code)
         not_exist_path = sorted(set(check_list) - set(exist_path))
         if not not_exist_path:
-            message_handler.SrvOutPutHandler.folder_duplicate_error(self.project_code, folder_path)
+            message_handler.SrvOutPutHandler.folder_duplicate_error(self.project_code, folder_path, self.zone_str)
             exit(1)
 
         exist_parent_id = self._get_root_folder_id(not_exist_path[0].rsplit('/', 1)[0])

@@ -51,4 +51,4 @@ def folder_create(object_path, zone):
 
     folder_client = FolderClient(project_code, zone)
     folder_client.create_folder(object_path)
-    message_handler.SrvOutPutHandler.folder_create(project_code, object_path)
+    message_handler.SrvOutPutHandler.folder_create(project_code, object_path, zone)
