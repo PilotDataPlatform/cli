@@ -44,14 +44,8 @@ def cli():
 
 
 @click.command(name='upload')
+@click.argument('object_path', type=str)
 @click.argument('files', type=click.Path(exists=True), nargs=-1)
-@click.option(
-    '-p',
-    '--project-path',
-    required=True,
-    type=click.Path(),
-    help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_P),
-)
 @click.option(
     '-a',
     '--attribute',
@@ -124,8 +118,9 @@ def cli():
 def file_put(**kwargs):  # noqa: C901
     """"""
 
+    project_path = kwargs.get('object_path').strip('/')
     files = kwargs.get('files')
-    project_path = kwargs.get('project_path').strip('/')
+
     tag_files = kwargs.get('tag')
     zone = kwargs.get('zone')
     upload_message = kwargs.get('upload_message')

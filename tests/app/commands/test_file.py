@@ -49,7 +49,6 @@ def test_file_upload_command_success_with_attribute(mocker, cli_runner, ending_s
         result = cli_runner.invoke(
             file_put,
             [
-                '--project-path',
                 f'test_project/{ItemType.NAMEFOLDER.get_prefix_by_type()}admin' + ending_slash,
                 '--thread',
                 1,
@@ -71,9 +70,7 @@ def test_file_upload_failed_with_invalid_tag_file(cli_runner):
         with open('wrong_tag.json', 'w') as f:
             f.write('wrong_tag.json')
 
-        result = cli_runner.invoke(
-            file_put, ['--project-path', 'test', '--thread', 1, '--tag', 'wrong_tag.json', 'wrong_tag.json']
-        )
+        result = cli_runner.invoke(file_put, ['test', '--thread', 1, '--tag', 'wrong_tag.json', 'wrong_tag.json'])
     assert result.exit_code == 1
     assert result.output == customized_error_msg(ECustomizedError.INVALID_TAG_FILE) + '\n'
 
@@ -87,7 +84,7 @@ def test_file_upload_failed_with_invalid_attribute_file(cli_runner):
 
         result = cli_runner.invoke(
             file_put,
-            ['--project-path', 'test', '--thread', 1, '--attribute', 'wrong_attribute.json', 'wrong_attribute.json'],
+            ['test', '--thread', 1, '--attribute', 'wrong_attribute.json', 'wrong_attribute.json'],
         )
     assert result.exit_code == 1
     assert result.output == customized_error_msg(ECustomizedError.INVALID_TEMPLATE) + '\n'
