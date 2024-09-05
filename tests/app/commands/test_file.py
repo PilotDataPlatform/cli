@@ -399,10 +399,61 @@ def test_file_move_success(mocker, cli_runner):
         return_value=None,
     )
 
-    src_path = 'src_item_path/test'
-    dest_path = 'dest_item_path/test'
-    result = cli_runner.invoke(file_move, ['test_project', src_path, dest_path])
+    project_code = 'test_project'
+    src_path = f'{project_code}/src_item_path/test/file.txt'
+    dest_path = f'{project_code}/dest_item_path/test/file1.txt'
+    result = cli_runner.invoke(file_move, [src_path, dest_path])
 
     outputs = result.output.split('\n')
     assert outputs[0] == f'Successfully moved {src_path} to {dest_path}'
     file_move_mock.assert_called_once()
+
+
+@pytest.mark.parametrize('src_path', ['src_item_path', 'src_item_path/test'])
+def test_file_move_failed_with_invalid_src(mocker, cli_runner, src_path):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+
+    project_code = 'test_project'
+    src_path = f'{project_code}/{src_path}'
+    dest_path = f'{project_code}/dest_item_path/test/file1.txt'
+    result = cli_runner.invoke(file_move, [src_path, dest_path])
+    assert result.exit_code == 1
+
+    outputs = result.output.split('\n')
+    assert outputs[0] == f'Failed to move {src_path} to {dest_path}: Cannot move root/name/shared folders'
+
+
+@pytest.mark.parametrize('dest_path', ['dest_item_path'])
+def test_file_move_failed_with_invalid_dest(mocker, cli_runner, dest_path):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+
+    project_code = 'test_project'
+    src_path = f'{project_code}/src_item_path/test/file.txt'
+    dest_path = f'{project_code}/{dest_path}'
+    result = cli_runner.invoke(file_move, [src_path, dest_path])
+    assert result.exit_code == 1
+
+    outputs = result.output.split('\n')
+    assert outputs[0] == f'Failed to move {src_path} to {dest_path}: Cannot move root/name/shared folders'
+
+
+def test_file_move_failed_with_mismatched_project_code(mocker, cli_runner):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+
+    project_code = 'test_project'
+    src_path = f'{project_code}/src_item_path/test/file.txt'
+    dest_path = 'wrong_project/dest_item_path/test/file1.txt'
+    result = cli_runner.invoke(file_move, [src_path, dest_path])
+    assert result.exit_code == 1
+
+    outputs = result.output.split('\n')
+    assert outputs[0] == f'Failed to move {src_path} to {dest_path}: Cannot move files between different projects'
