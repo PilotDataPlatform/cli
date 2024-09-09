@@ -26,7 +26,7 @@ jobs:
 
   push-binary-linux:
     needs: [ extract-branch-name ]
-    if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop'}}
+    if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop' || needs.extract-branch-name.outputs.branch == 'PILOT-5920'}}
     runs-on: ubuntu-20.04
     outputs:
       upload_url: ${{steps.create_release.outputs.upload_url}}
@@ -99,7 +99,7 @@ jobs:
 
   push-binary-macos:
     needs: [ push-binary-linux ]
-    if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop'}}
+    if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop' || needs.extract-branch-name.outputs.branch == 'PILOT-5920'}}
     runs-on: macos-12
     steps:
       - name: Checkout repository
@@ -150,7 +150,7 @@ jobs:
 
   push-binary-windows:
     needs: [ push-binary-linux ]
-    if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop'}}
+    if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop' || needs.extract-branch-name.outputs.branch == 'PILOT-5920'}}
     runs-on: windows-latest
     steps:
       - name: Checkout repository
