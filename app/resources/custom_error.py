@@ -124,4 +124,6 @@ class Error:
         'CONTAINER_REGISTRY_NO_URL': (
             'Container registry has not yet been configured. Related commands cannot be used at this time.'
         ),
+        # folder related error
+        'INVALID_FOLDER_PATH': 'Invalid folder path: cannot create name folder or shared folder in cli',
     }

@@ -11,6 +11,7 @@ from httpx import HTTPStatusError
 
 import app.services.output_manager.message_handler as message_handler
 from app.configs.app_config import AppConfig
+from app.models.item import ItemType
 from app.services.clients.base_auth_client import BaseAuthClient
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
@@ -127,7 +128,30 @@ class FileMoveClient(BaseAuthClient):
             Move file.
         """
 
-        self.create_object_path_if_not_exist(self.dest_item_path)
+        # self.create_object_path_if_not_exist(self.dest_item_path)
+        # similar to linux mv command, cli will check if destination is a folder or file
+        # if file, it will raise error with duplicate
+        # if folder, it will move the file into the folder
+        # if detination is not exist, it will rename the item
+        dest_item = search_item(self.project_code, self.zone, self.dest_item_path).get('result')
+        if dest_item:
+            if dest_item.get('type') == ItemType.FILE.value:
+                item_name = dest_item.get('name')
+                message_handler.SrvOutPutHandler.move_action_failed(
+                    self.src_item_path, f'{self.dest_item_path}/{item_name}', f'Item {item_name} already exists'
+                )
+                exit(1)
+            else:
+                self.dest_item_path = f'{self.dest_item_path}/{self.src_item_path.split("/")[-1]}'
+        else:
+            # dest folder not exist, check if parent folder exist
+            parent_path = self.dest_item_path.rsplit('/', 1)[0]
+            parent_item = search_item(self.project_code, self.zone, parent_path).get('result')
+            if not parent_item:
+                message_handler.SrvOutPutHandler.move_action_failed(
+                    self.src_item_path, self.dest_item_path, f'Parent folder {parent_path} not exist'
+                )
+                exit(1)
 
         try:
             payload = {
@@ -144,6 +168,9 @@ class FileMoveClient(BaseAuthClient):
                 error_message = ''
                 for x in response.json().get('detail'):
                     error_message += '\n' + x.get('msg')
+            elif response.status_code == 500:
+                item_name = self.src_item_path.split('/')[-1]
+                error_message = f'Item {item_name} already exists'
             else:
                 error_message = response.json().get('error_msg')
             message_handler.SrvOutPutHandler.move_action_failed(self.src_item_path, self.dest_item_path, error_message)

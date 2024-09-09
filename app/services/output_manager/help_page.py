@@ -69,7 +69,6 @@ class FileHELP(enum.Enum):
     FILE_SYNC_ZIP = 'FILE_SYNC_ZIP'
     FILE_SYNC_I = 'FILE_SYNC_I'
     FILE_SYNC_Z = 'FILE_SYNC_Z'
-    FILE_UPLOAD_P = 'FILE_UPLOAD_P'
     FILE_UPLOAD_G = 'FILE_UPLOAD_G'
     FILE_UPLOAD_A = 'FILE_UPLOAD_A'
     FILE_UPLOAD_T = 'FILE_UPLOAD_T'
@@ -105,3 +104,12 @@ class ContainerRegistryHELP(enum.Enum):
 def cr_help_page(ContainerRegistryHELP: ContainerRegistryHELP):
     helps = help_msg.get('container_registry', 'default container_registry help')
     return helps.get(ContainerRegistryHELP.name)
+
+
+class FolderHelp(enum.Enum):
+    FOLDER_CREATE = 'FOLDER_CREATE'
+
+
+def folder_help_page(FolderHELP: FolderHelp):
+    helps = help_msg.get('folder', 'default folder help')
+    return helps.get(FolderHELP.name)

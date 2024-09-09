@@ -5,6 +5,7 @@
 import pytest
 
 from app.configs.app_config import AppConfig
+from app.models.item import ItemType
 from app.services.file_manager.file_move.file_move_client import FileMoveClient
 from tests.conftest import decoded_token
 
@@ -20,8 +21,8 @@ def test_file_move_success(mocker, httpx_mock, root_folder):
     )
 
     mocker.patch(
-        'app.services.file_manager.file_move.file_move_client.FileMoveClient.create_object_path_if_not_exist',
-        return_value=[],
+        'app.services.file_manager.file_move.file_move_client.search_item',
+        return_value={'result': {'id': 'test_id', 'name': 'test_name', 'type': ItemType.FOLDER.value}},
     )
 
     httpx_mock.add_response(
@@ -31,7 +32,7 @@ def test_file_move_success(mocker, httpx_mock, root_folder):
     )
 
     file_move_client = FileMoveClient(
-        'zone', project_code, f'{root_folder}/src_item_path', f'{root_folder}/dest_item_path'
+        'zone', project_code, f'{root_folder}/src_item_path/item', f'{root_folder}/dest_item_path'
     )
     res = file_move_client.move_file()
     assert res == item_info
@@ -47,8 +48,8 @@ def test_file_move_error_with_permission_denied_403(mocker, httpx_mock, capfd, r
     )
 
     mocker.patch(
-        'app.services.file_manager.file_move.file_move_client.FileMoveClient.create_object_path_if_not_exist',
-        return_value=[],
+        'app.services.file_manager.file_move.file_move_client.search_item',
+        return_value={'result': {'id': 'test_id', 'name': 'test_name'}},
     )
 
     httpx_mock.add_response(
@@ -59,13 +60,15 @@ def test_file_move_error_with_permission_denied_403(mocker, httpx_mock, capfd, r
     )
 
     file_move_client = FileMoveClient(
-        'zone', project_code, f'{root_folder}/src_item_path', f'{root_folder}/dest_item_path'
+        'zone', project_code, f'{root_folder}/src_item_path/item', f'{root_folder}/dest_item_path'
     )
     try:
         file_move_client.move_file()
     except SystemExit:
         out, _ = capfd.readouterr()
-        assert out == f'Failed to move {root_folder}/src_item_path to {root_folder}/dest_item_path: error_msg\n'
+        assert (
+            out == f'Failed to move {root_folder}/src_item_path/item to {root_folder}/dest_item_path/item: error_msg\n'
+        )
 
 
 @pytest.mark.parametrize('root_folder', ['users', 'shared'])
@@ -78,8 +81,8 @@ def test_file_move_error_with_wrong_input_422(mocker, httpx_mock, capfd, root_fo
     )
 
     mocker.patch(
-        'app.services.file_manager.file_move.file_move_client.FileMoveClient.create_object_path_if_not_exist',
-        return_value=[],
+        'app.services.file_manager.file_move.file_move_client.search_item',
+        return_value={'result': {'id': 'test_id', 'name': 'test_name'}},
     )
 
     httpx_mock.add_response(
@@ -90,66 +93,24 @@ def test_file_move_error_with_wrong_input_422(mocker, httpx_mock, capfd, root_fo
     )
 
     file_move_client = FileMoveClient(
-        'zone', project_code, f'{root_folder}/src_item_path', f'{root_folder}/dest_item_path'
+        'zone', project_code, f'{root_folder}/src_item_path/item', f'{root_folder}/dest_item_path'
     )
     try:
         file_move_client.move_file()
     except SystemExit:
         out, _ = capfd.readouterr()
-        assert out == f'Failed to move {root_folder}/src_item_path to {root_folder}/dest_item_path: \nerror_msg\n'
+        assert (
+            out
+            == f'Failed to move {root_folder}/src_item_path/item to {root_folder}/dest_item_path/item: \nerror_msg\n'
+        )
 
 
-@pytest.mark.parametrize('skip_confirmation', [True, False])
 @pytest.mark.parametrize('root_folder', ['users', 'shared'])
-def test_move_file_dest_parent_not_exist_success(mocker, httpx_mock, skip_confirmation, root_folder):
+def test_file_move_fails_if_destination_is_file(mocker, httpx_mock, capfd, root_folder):
     project_code = 'test_code'
-    item_info = {'result': {'id': 'test_id', 'name': 'test_name'}}
+    root_folder = 'users'
+    item_name = 'test_name'
 
-    mocker.patch(
-        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
-        return_value=decoded_token(),
-    )
-
-    # mock duplicated item
-    mocker.patch(
-        'app.services.file_manager.file_move.file_move_client.check_item_duplication',
-        return_value=[],
-    )
-    mocker.patch(
-        'app.services.file_manager.file_move.file_move_client.search_item',
-        return_value={'result': {'id': 'test_id', 'name': 'test_name'}},
-    )
-    click_mocker = mocker.patch('app.services.file_manager.file_move.file_move_client.click.confirm', return_value=None)
-    httpx_mock.add_response(
-        url=AppConfig.Connections.url_bff + '/v1/folders/batch',
-        method='POST',
-        json={'result': []},
-    )
-
-    httpx_mock.add_response(
-        url=AppConfig.Connections.url_bff + f'/v1/{project_code}/files',
-        method='PATCH',
-        json={'result': item_info},
-    )
-
-    file_move_client = FileMoveClient(
-        'zone',
-        project_code,
-        f'{root_folder}/src_item_path',
-        f'{root_folder}/dest_item_path/test_folder/test_file',
-        skip_confirm=skip_confirmation,
-    )
-    res = file_move_client.move_file()
-    assert res == item_info
-    if not skip_confirmation:
-        click_mocker.assert_called_once()
-    else:
-        click_mocker.assert_not_called()
-
-
-@pytest.mark.parametrize('skip_confirmation', [True, False])
-@pytest.mark.parametrize('root_folder', ['users', 'shared'])
-def test_move_file_dest_parent_lv2_not_exist_fail(mocker, httpx_mock, capfd, skip_confirmation, root_folder):
     project_code = 'test_code'
 
     mocker.patch(
@@ -157,32 +118,48 @@ def test_move_file_dest_parent_lv2_not_exist_fail(mocker, httpx_mock, capfd, ski
         return_value=decoded_token(),
     )
 
-    # mock duplicated item
-    mocker.patch(
-        'app.services.file_manager.file_move.file_move_client.check_item_duplication',
-        return_value=[],
-    )
-    click_mocker = mocker.patch('app.services.file_manager.file_move.file_move_client.click.confirm', return_value=None)
-
     mocker.patch(
         'app.services.file_manager.file_move.file_move_client.search_item',
-        return_value={'result': {}},
+        return_value={'result': {'id': 'test_id', 'name': item_name, 'type': ItemType.FILE.value}},
     )
 
     file_move_client = FileMoveClient(
-        'zone',
-        project_code,
-        f'{root_folder}/src_item_path',
-        f'{root_folder}/not_exist/test_folder/test_file',
-        skip_confirm=skip_confirmation,
+        'zone', project_code, f'{root_folder}/src_item_path/item', f'{root_folder}/dest_item_path'
     )
     try:
         file_move_client.move_file()
     except SystemExit:
         out, _ = capfd.readouterr()
-        assert out == f'Parent folder: {root_folder}/not_exist not exist\n'
+        assert (
+            out == f'Failed to move {root_folder}/src_item_path/item to {root_folder}/dest_item_path/'
+            f'{item_name}: Item test_name already exists\n'
+        )
 
-    if not skip_confirmation:
-        click_mocker.assert_called_once()
-    else:
-        click_mocker.assert_not_called()
+
+@pytest.mark.parametrize('root_folder', ['users', 'shared'])
+def test_file_move_failed_when_parent_not_exist(mocker, httpx_mock, capfd, root_folder):
+    project_code = 'test_code'
+    root_folder = 'users'
+    item_name = 'new_name'
+
+    project_code = 'test_code'
+
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+
+    mocker.patch('app.services.file_manager.file_move.file_move_client.search_item', return_value={'result': None})
+
+    file_move_client = FileMoveClient(
+        'zone', project_code, f'{root_folder}/src_item_path/item', f'{root_folder}/not_exist/{item_name}'
+    )
+
+    try:
+        file_move_client.move_file()
+    except SystemExit:
+        out, _ = capfd.readouterr()
+        assert (
+            out == f'Failed to move {root_folder}/src_item_path/item to {root_folder}/not_exist'
+            f'/{item_name}: Parent folder {root_folder}/not_exist not exist\n'
+        )

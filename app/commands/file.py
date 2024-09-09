@@ -44,14 +44,8 @@ def cli():
 
 
 @click.command(name='upload')
+@click.argument('object_path', type=str)
 @click.argument('files', type=click.Path(exists=True), nargs=-1)
-@click.option(
-    '-p',
-    '--project-path',
-    required=True,
-    type=click.Path(),
-    help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_P),
-)
 @click.option(
     '-a',
     '--attribute',
@@ -124,8 +118,9 @@ def cli():
 def file_put(**kwargs):  # noqa: C901
     """"""
 
+    project_path = kwargs.get('object_path').strip('/')
     files = kwargs.get('files')
-    project_path = kwargs.get('project_path').strip('/')
+
     tag_files = kwargs.get('tag')
     zone = kwargs.get('zone')
     upload_message = kwargs.get('upload_message')
@@ -378,6 +373,7 @@ def file_list(paths, zone, page, page_size, detached):
         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_ZONE, True)
     if len(paths) == 0:
         SrvErrorHandler.customized_handle(ECustomizedError.MISSING_PROJECT_CODE, True)
+
     srv_list = SrvFileList()
     if detached:
         srv_list.list_files_without_pagination(paths, zone, page, page_size)
@@ -517,7 +513,6 @@ def file_metadata_download(**kwargs):
 
 
 @click.command(name='move')
-@click.argument('project_code', type=click.STRING)
 @click.argument('src_item_path', type=click.STRING)
 @click.argument('dest_item_path', type=click.STRING)
 @click.option(
@@ -528,30 +523,30 @@ def file_metadata_download(**kwargs):
     help=file_help.file_help_page(file_help.FileHELP.FILE_MOVE_Z),
     show_default=False,
 )
-@click.option(
-    '-y',
-    '--yes',
-    default=False,
-    required=False,
-    is_flag=True,
-    help=file_help.file_help_page(file_help.FileHELP.FILE_MOVE_Y),
-    show_default=True,
-)
 @require_valid_token()
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_MOVE))
 def file_move(**kwargs):
-    project_code = kwargs.get('project_code')
-    src_item_path = kwargs.get('src_item_path')
-    dest_item_path = kwargs.get('dest_item_path')
+    # src_item_path and dest_item_path are composed of project_code and folder_name
+    src_item_path = kwargs.get('src_item_path').strip('/')
+    dest_item_path = kwargs.get('dest_item_path').strip('/')
     zone = kwargs.get('zone')
-    skip_confirm = kwargs.get('yes')
 
-    if len(src_item_path.split('/')) == 1 and len(dest_item_path.split('/')) == 1:
-        raise Exception('Invalid path')
+    src_project_code, src_item = src_item_path.split('/', 1)
+    dest_project_code, dest_item = dest_item_path.split('/', 1)
+    if src_project_code != dest_project_code:
+        message_handler.SrvOutPutHandler.move_action_failed(
+            src_item_path, dest_item_path, 'Cannot move files between different projects'
+        )
+        exit(1)
+    elif len(src_item.split('/')) <= 2 or len(dest_item.split('/')) <= 1:
+        message_handler.SrvOutPutHandler.move_action_failed(
+            src_item_path, dest_item_path, 'Cannot move root/name/shared folders'
+        )
+        exit(1)
 
     # tranlate keyword to correct object path
-    src_keyword, src_path = src_item_path.split('/', 1)
-    dest_keyword, dest_path = dest_item_path.split('/', 1)
+    src_keyword, src_path = src_item.split('/', 1)
+    dest_keyword, dest_path = dest_item.split('/', 1)
 
     src_type = ItemType.get_type_from_keyword(src_keyword)
     dest_type = ItemType.get_type_from_keyword(dest_keyword)
@@ -560,7 +555,7 @@ def file_move(**kwargs):
     dest_path = dest_type.get_prefix_by_type() + dest_path
 
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
-    file_meta_client = FileMoveClient(zone, project_code, src_path, dest_path, skip_confirm=skip_confirm)
+    file_meta_client = FileMoveClient(zone, src_project_code, src_path, dest_path)
     file_meta_client.move_file()
 
     message_handler.SrvOutPutHandler.move_action_success(src_item_path, dest_item_path)

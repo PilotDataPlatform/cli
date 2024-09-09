@@ -9,9 +9,9 @@ class HelpPage:
     page = {
         'update': {
             'version': pkg_resources.get_distribution('app').version,
-            '1': 'Add a new feature for file metadata downloading.',
-            '2': 'Add a new feature for file moving/renaming.',
-            '3': 'Support shared folder within project.',
+            '1': 'Add integrity check when downloading.',
+            '2': 'Add notification for new version.',
+            '3': 'Support Windows platform.',
         },
         'dataset': {
             'DATASET_DOWNLOAD': 'Download a dataset or a particular version of a dataset.',
@@ -35,7 +35,7 @@ class HelpPage:
             'FILE_ATTRIBUTE_EXPORT': 'Export attribute template from a given Project.',
             'FILE_LIST': 'List files and folders inside a given Project/folder.',
             'FILE_SYNC': 'Download files/folders from a given Project/folder/file in core zone.',
-            'FILE_UPLOAD': 'Upload files/folders to a given Project path.',
+            'FILE_UPLOAD': 'Upload files/folders to a given Project path (eg. <project>/users/<user>/<path>).',
             'FILE_RESUME': 'Resume the upload process with a resumable upload log.',
             'FILE_Z': 'Target Zone (i.e., core/greenroom).',
             'FILE_ATTRIBUTE_P': 'Project Code',
@@ -43,7 +43,6 @@ class HelpPage:
             'FILE_SYNC_ZIP': 'Download files as a zip.',
             'FILE_SYNC_I': 'Enable downloading by geid.',
             'FILE_SYNC_Z': 'Target Zone (i.e., core/greenroom).',
-            'FILE_UPLOAD_P': 'Project folder path starting from Project Code(i.e. <project>/users/admin/folder). ',
             'FILE_UPLOAD_A': 'Add attributes to the file using a File Attribute Template.',
             'FILE_UPLOAD_T': 'Add tags to the file using a Tag file.',
             'FILE_UPLOAD_M': 'The message used to comment on the purpose of uploading your processed file.',
@@ -74,5 +73,8 @@ class HelpPage:
             'CREATE_PROJECT': 'Create a new project',
             'GET_SECRET': 'Get your user CLI secret',
             'SHARE_PROJECT': 'Share a project with another user',
+        },
+        'folder': {
+            'FOLDER_CREATE': 'Create folders/subfolders in project.',
         },
     }

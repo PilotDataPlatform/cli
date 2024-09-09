@@ -132,7 +132,7 @@ def get_zone(zone):
 
 
 def validate_folder_name(folder_name):
-    regex = re.compile('[/:?.\\*<>|”\']')
+    regex = re.compile(r'[/:?.\\*<>|”\']')
     contain_invalid_char = regex.search(folder_name)
     if contain_invalid_char or len(folder_name) > 100 or not folder_name:
         valid = False
@@ -220,8 +220,8 @@ def remove_the_output_file(filepath: str) -> None:
 
 
 def get_latest_cli_version() -> Version:
-    httpx_client = BaseAuthClient(AppConfig.Connections.url_download_greenroom)
     try:
+        httpx_client = BaseAuthClient(AppConfig.Connections.url_download_greenroom)
         user_config = UserConfig()
         if not user_config.is_access_token_exists():
             return Version('0.0.0')

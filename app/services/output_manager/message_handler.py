@@ -349,3 +349,11 @@ class SrvOutPutHandler(metaclass=MetaService):
             logger.warning(message)
 
         return message
+
+    @staticmethod
+    def folder_create(project_code: str, object_path: str, zone: str):
+        logger.info(f'Folder created: {object_path} at project: {project_code} at zone: {zone}')
+
+    @staticmethod
+    def folder_duplicate_error(project_code: str, object_path: str, zone: str):
+        logger.error(f'Folder: {object_path} already exists in project: {project_code} at zone: {zone}')

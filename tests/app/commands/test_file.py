@@ -5,6 +5,7 @@
 import json
 from os import makedirs
 from os.path import dirname
+from unittest.mock import Mock
 
 import click
 import pytest
@@ -48,7 +49,6 @@ def test_file_upload_command_success_with_attribute(mocker, cli_runner, ending_s
         result = cli_runner.invoke(
             file_put,
             [
-                '--project-path',
                 f'test_project/{ItemType.NAMEFOLDER.get_prefix_by_type()}admin' + ending_slash,
                 '--thread',
                 1,
@@ -70,10 +70,8 @@ def test_file_upload_failed_with_invalid_tag_file(cli_runner):
         with open('wrong_tag.json', 'w') as f:
             f.write('wrong_tag.json')
 
-        result = cli_runner.invoke(
-            file_put, ['--project-path', 'test', '--thread', 1, '--tag', 'wrong_tag.json', 'wrong_tag.json']
-        )
-    assert result.exit_code == 0
+        result = cli_runner.invoke(file_put, ['test', '--thread', 1, '--tag', 'wrong_tag.json', 'wrong_tag.json'])
+    assert result.exit_code == 1
     assert result.output == customized_error_msg(ECustomizedError.INVALID_TAG_FILE) + '\n'
 
 
@@ -86,9 +84,9 @@ def test_file_upload_failed_with_invalid_attribute_file(cli_runner):
 
         result = cli_runner.invoke(
             file_put,
-            ['--project-path', 'test', '--thread', 1, '--attribute', 'wrong_attribute.json', 'wrong_attribute.json'],
+            ['test', '--thread', 1, '--attribute', 'wrong_attribute.json', 'wrong_attribute.json'],
         )
-    assert result.exit_code == 0
+    assert result.exit_code == 1
     assert result.output == customized_error_msg(ECustomizedError.INVALID_TEMPLATE) + '\n'
 
 
@@ -137,34 +135,56 @@ def test_resumable_upload_command_failed_with_file_not_exists(mocker, cli_runner
     mocker.patch('os.path.exists', return_value=False)
 
     result = cli_runner.invoke(file_resume, ['--resumable-manifest', 'test.json', '--thread', 1])
-    assert result.exit_code == 0
+    assert result.exit_code == 1
     assert result.output == customized_error_msg(ECustomizedError.INVALID_RESUMABLE) + '\n'
 
 
-def test_file_list_with_pagination_with_folder_success(httpx_mock, mocker, cli_runner):
+@pytest.mark.parametrize(
+    'page, options',
+    [(0, ['next page', 'exit']), (1, ['next page', 'previous page', 'exit']), (2, ['previous page', 'exit'])],
+)
+def test_file_list_with_pagination_with_folder_success(httpx_mock, mocker, cli_runner, page, options):
+    page_size, total = 9, 20
+
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
         return_value=decoded_token(),
     )
 
-    httpx_mock.add_response(
-        method='GET',
-        url='http://bff_cli/v1/testproject/files/query?project_code=testproject&folder=users%2F'
-        'admin&source_type=project&zone=greenroom&page=0&page_size=10',
-        json={
-            'code': 200,
-            'error_msg': '',
-            'result': [
-                {'type': ItemType.FILE.value, 'name': 'file1'},
-                {'type': ItemType.FILE.value, 'name': 'file2'},
-            ],
-        },
+    mock_page = {
+        0: [0, 1],
+        1: [1, 2],
+        2: [2, 1],
+    }
+    for i in mock_page.get(page):
+        httpx_mock.add_response(
+            method='GET',
+            url='http://bff_cli/v1/testproject/files/query?project_code=testproject&folder=users%2F'
+            f'admin&source_type=project&zone=greenroom&page={i}&page_size={page_size}',
+            json={
+                'code': 200,
+                'error_msg': '',
+                'total': total,
+                # generate 20 items
+                'result': [{'type': ItemType.FILE.value, 'name': f'f{i}'} for i in range(page_size)],
+            },
+        )
+    clear_mock = mocker.patch('click.clear', return_value=None)
+
+    question_mock = mocker.patch.object(questionary, 'select', return_value=questionary.select)
+    questionary.select.return_value.ask = Mock()
+    questionary.select.return_value.ask.side_effect = options
+
+    result = cli_runner.invoke(
+        file_list, ['testproject/users/admin', '-z', 'greenroom', '--page', page, '--page-size', page_size]
     )
-    mocker.patch.object(questionary, 'select')
-    questionary.select.return_value.ask.return_value = 'exit'
-    result = cli_runner.invoke(file_list, ['testproject/users/admin', '-z', 'greenroom'])
+    assert result.exit_code == 0
+    assert question_mock.call_count == len(options)
+    assert clear_mock.call_count == len(options) - 1
+
     outputs = result.output.split('\n')
-    assert outputs[0] == 'file1  file2   '
+    assert outputs[0] == ''.join([f'f{i}  ' for i in range(page_size)]) + ' '
+    assert outputs[1] == ''.join([f'f{i}  ' for i in range(page_size)]) + ' '
 
 
 def test_file_list_with_pagination_with_root_folder(httpx_mock, mocker, cli_runner):
@@ -184,6 +204,7 @@ def test_file_list_with_pagination_with_root_folder(httpx_mock, mocker, cli_runn
         json={
             'code': 200,
             'error_msg': '',
+            'total': 6,
             'result': [
                 {'type': ItemType.FOLDER.value, 'name': folder},
                 {'type': ItemType.NAMEFOLDER.value, 'name': folder_with_underline},
@@ -194,9 +215,12 @@ def test_file_list_with_pagination_with_root_folder(httpx_mock, mocker, cli_runn
             ],
         },
     )
-    mocker.patch.object(questionary, 'select')
+    select_mock = mocker.patch.object(questionary, 'select')
     questionary.select.return_value.ask.return_value = 'exit'
     result = cli_runner.invoke(file_list, ['testproject/users/admin', '-z', 'greenroom'])
+    assert result.exit_code == 0
+    assert select_mock.call_count == 0
+
     outputs = result.output.split('\n')
     assert outputs[0] == f'{folder}  {folder_with_underline}  {folder_with_underline}  "{folder_with_space}"  '
     assert outputs[1] == f'"{folder_with_space}"  {root_folder}   '
@@ -212,11 +236,12 @@ def test_empty_file_list_with_pagination(httpx_mock, mocker, cli_runner):
         method='GET',
         url='http://bff_cli/v1/testproject/files/query?project_code=testproject&'
         'folder=&source_type=project&zone=greenroom&page=0&page_size=10',
-        json={'code': 200, 'error_msg': '', 'result': []},
+        json={'code': 200, 'error_msg': '', 'result': [], 'total': 0},
     )
     mocker.patch.object(questionary, 'select')
     questionary.select.return_value.ask.return_value = 'exit'
     result = cli_runner.invoke(file_list, ['testproject/admin', '-z', 'greenroom'])
+    assert result.exit_code == 0
     outputs = result.output.split('\n')
     assert outputs[0] == ' '
 
@@ -374,10 +399,61 @@ def test_file_move_success(mocker, cli_runner):
         return_value=None,
     )
 
-    src_path = 'src_item_path/test'
-    dest_path = 'dest_item_path/test'
-    result = cli_runner.invoke(file_move, ['test_project', src_path, dest_path])
+    project_code = 'test_project'
+    src_path = f'{project_code}/src_item_path/test/file.txt'
+    dest_path = f'{project_code}/dest_item_path/test/file1.txt'
+    result = cli_runner.invoke(file_move, [src_path, dest_path])
 
     outputs = result.output.split('\n')
     assert outputs[0] == f'Successfully moved {src_path} to {dest_path}'
     file_move_mock.assert_called_once()
+
+
+@pytest.mark.parametrize('src_path', ['src_item_path', 'src_item_path/test'])
+def test_file_move_failed_with_invalid_src(mocker, cli_runner, src_path):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+
+    project_code = 'test_project'
+    src_path = f'{project_code}/{src_path}'
+    dest_path = f'{project_code}/dest_item_path/test/file1.txt'
+    result = cli_runner.invoke(file_move, [src_path, dest_path])
+    assert result.exit_code == 1
+
+    outputs = result.output.split('\n')
+    assert outputs[0] == f'Failed to move {src_path} to {dest_path}: Cannot move root/name/shared folders'
+
+
+@pytest.mark.parametrize('dest_path', ['dest_item_path'])
+def test_file_move_failed_with_invalid_dest(mocker, cli_runner, dest_path):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+
+    project_code = 'test_project'
+    src_path = f'{project_code}/src_item_path/test/file.txt'
+    dest_path = f'{project_code}/{dest_path}'
+    result = cli_runner.invoke(file_move, [src_path, dest_path])
+    assert result.exit_code == 1
+
+    outputs = result.output.split('\n')
+    assert outputs[0] == f'Failed to move {src_path} to {dest_path}: Cannot move root/name/shared folders'
+
+
+def test_file_move_failed_with_mismatched_project_code(mocker, cli_runner):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+
+    project_code = 'test_project'
+    src_path = f'{project_code}/src_item_path/test/file.txt'
+    dest_path = 'wrong_project/dest_item_path/test/file1.txt'
+    result = cli_runner.invoke(file_move, [src_path, dest_path])
+    assert result.exit_code == 1
+
+    outputs = result.output.split('\n')
+    assert outputs[0] == f'Failed to move {src_path} to {dest_path}: Cannot move files between different projects'
