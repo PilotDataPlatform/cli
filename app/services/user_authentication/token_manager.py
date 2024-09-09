@@ -109,4 +109,5 @@ class SrvTokenManager(BaseClient, metaclass=MetaService):
             else:
                 SrvErrorHandler.default_handle(response.content)
 
-        self.update_token(response.json()['access_token'], response.json()['refresh_token'])
+        res = response.json()
+        self.update_token(res.get('access_token'), res.get('refresh_token'))

@@ -143,7 +143,7 @@ class UserConfig(metaclass=Singleton):
         return bool(self.api_key or (self.access_token and self.refresh_token))
 
     def is_access_token_exists(self) -> bool:
-        return len(self.config['USER']['access_token']) > 0
+        return len(self.config['USER'].get('access_token', '')) > 0
 
     @property
     def username(self):
@@ -171,7 +171,7 @@ class UserConfig(metaclass=Singleton):
 
     @property
     def access_token(self):
-        return decryption(self.config['USER']['access_token'], self.secret)
+        return decryption(self.config['USER'].get('access_token', ''), self.secret)
 
     @access_token.setter
     def access_token(self, val):
