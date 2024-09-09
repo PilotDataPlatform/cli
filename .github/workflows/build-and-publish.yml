@@ -5,11 +5,13 @@ on:
     workflows: [ "Run Tests" ]
     branches:
       - develop
+      - PILOT-5920
     types:
       - completed
   push:
     branches:
       - main
+      - PILOT-5920
 
 jobs:
   extract-branch-name:
