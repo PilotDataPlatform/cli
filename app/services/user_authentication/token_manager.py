@@ -96,9 +96,10 @@ class SrvTokenManager(BaseClient, metaclass=MetaService):
 
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         self.endpoint, url = AppConfig.Connections.url_keycloak_token.rsplit('/', 1)
-        # response = requests.post(url, data=payload, headers=headers)
         try:
             response = self._post(url, data=payload, headers=headers)
+            res = response.json()
+            self.update_token(res.get('access_token'), res.get('refresh_token'))
         except HTTPStatusError as e:
             response = e.response
             # 401 is invalid token and 400 is session inactive we do refresh
@@ -108,6 +109,3 @@ class SrvTokenManager(BaseClient, metaclass=MetaService):
                     SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TOKEN, if_exit=True)
             else:
                 SrvErrorHandler.default_handle(response.content)
-
-        res = response.json()
-        self.update_token(res.get('access_token'), res.get('refresh_token'))
