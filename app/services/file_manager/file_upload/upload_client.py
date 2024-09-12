@@ -2,6 +2,7 @@
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
+import base64
 import hashlib
 import json
 import math
@@ -318,7 +319,7 @@ class UploadClient(BaseAuthClient):
             chunk_size = chunk.get('chunk_size', self.chunk_size)
 
             chunk = f.read(chunk_size)
-            local_chunk_etag = hashlib.md5(chunk).hexdigest()
+            local_chunk_etag = base64.b64encode(hashlib.md5(chunk).digest()).decode('utf-8')
             if not chunk:
                 break
             # if current chunk has been uploaded to object storage
@@ -376,7 +377,12 @@ class UploadClient(BaseAuthClient):
             }.get(self.zone.lower())
             response = self._get('files/chunks/presigned', params=params, headers=headers)
             presigned_chunk_url = response.json().get('result')
-            res = httpx.put(presigned_chunk_url, data=chunk, timeout=None)
+
+            headers = {
+                'Content-MD5': etag,
+            }
+            res = httpx.put(presigned_chunk_url, data=chunk, timeout=None, headers=headers)
+            res.raise_for_status()
 
         except HTTPStatusError as e:
             response = e.response
