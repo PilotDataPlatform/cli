@@ -9,6 +9,7 @@ from packaging.version import Version
 import app.services.output_manager.message_handler as mhandler
 from app.commands.user import login
 from app.configs.app_config import AppConfig
+from app.configs.config import ConfigClass
 from app.configs.user_config import UserConfig
 
 
@@ -21,7 +22,7 @@ def test_login_command_with_api_key_option_calls_keycloak_and_stores_response_in
     refresh_token = jwt.encode({'type': 'refresh', 'token': fake.pystr(20)}, key='')
     httpx_mock.add_response(
         method='GET',
-        url=f'{AppConfig.Connections.url_keycloak_realm}/api-key/{api_key}',
+        url=f'{AppConfig.Connections.url_keycloak_realm}/{ConfigClass.apikey_endpoint}/{api_key}',
         status_code=200,
         json={'access_token': access_token, 'refresh_token': refresh_token},
     )

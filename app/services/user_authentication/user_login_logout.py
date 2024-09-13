@@ -25,7 +25,7 @@ def exchange_api_key(api_key: str) -> Union[Tuple[str, str], Tuple[None, None]]:
     """Exchange API Key with JWT token using Keycloak."""
     http_client = BaseClient(AppConfig.Connections.url_keycloak_realm)
     try:
-        response = http_client._get(f'api-key/{api_key}')
+        response = http_client._get(f'{ConfigClass.apikey_endpoint}/{api_key}')
     except HTTPStatusError:
         return None, None
 

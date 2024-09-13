@@ -29,6 +29,26 @@ class TestSrvTokenManager:
 
         manager.refresh(fake.pystr())
 
+    def test_refresh_success_with_refresh_token(self, httpx_mock, fake, mocker):
+        manager = SrvTokenManager()
+        mocker.patch(
+            'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+            return_value=decoded_token(),
+        )
+
+        httpx_mock.add_response(
+            method='POST',
+            url=AppConfig.Connections.url_keycloak_token,
+            status_code=401,
+        )
+
+        login_using_api_key_mock = mocker.patch(
+            'app.services.user_authentication.token_manager.login_using_api_key', return_value=True
+        )
+        manager.refresh('test_azp')
+
+        assert login_using_api_key_mock.call_count == 1
+
     def test_refresh_failed_with_invalid_access_refresh_token_apikey(self, httpx_mock, mocker, settings, capsys):
         manager = SrvTokenManager()
         mocker.patch(
