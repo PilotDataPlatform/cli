@@ -32,6 +32,9 @@ class Settings(BaseSettings):
 
     api_url: str = 'https://api.pilot.indocresearch.com/pilot'
     keycloak_realm_url: str = 'https://iam.pilot.indocresearch.com/realms/pilot'
+    # by default, the apikey endpoint is unversion for non-dev environment
+    # for dev testing, please set the version to `api-key/v1`
+    apikey_endpoint: str = 'api-key'
 
     def __init__(self, **data):
         super().__init__(**data)
