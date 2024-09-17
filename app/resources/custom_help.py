@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 Indoc Systems
+# Copyright (C) 2022-2024 Indoc Systems
 #
 # Licensed under the GNU AFFERO GENERAL PUBLIC LICENSE, Version 3.0 (the "License") available at https://www.gnu.org/licenses/agpl-3.0.en.html.
 # You may not use this file except in compliance with the License.
@@ -7,13 +7,12 @@
 class HelpPage:
     page = {
         'update': {
-            'version': '2.2.4',
-            '1': 'CLI supports to perform multi-threading upload for file/folders',
-            '2': 'CLI supports to perform resumable upload for single file',
+            'version': '2.2.5',
+            '1': 'CLI supports listing of all datasets a project administrator has access to.',
         },
         'dataset': {
             'DATASET_DOWNLOAD': 'Download a dataset or a particular version of a dataset.',
-            'DATASET_LIST': 'List datasets belonging to logged in user.',
+            'DATASET_LIST': 'List accessible datasets.',
             'DATASET_SHOW_DETAIL': 'Show details of a dataset.',
             'DATASET_VERSION': 'Download a particular version of a dataset.',
         },

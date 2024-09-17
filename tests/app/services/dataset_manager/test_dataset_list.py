@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 Indoc Systems
+# Copyright (C) 2022-2024 Indoc Systems
 #
 # Licensed under the GNU AFFERO GENERAL PUBLIC LICENSE, Version 3.0 (the "License") available at https://www.gnu.org/licenses/agpl-3.0.en.html.
 # You may not use this file except in compliance with the License.
@@ -10,7 +10,7 @@ def test_list_datasets(httpx_mock, mocker, capsys):
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
     httpx_mock.add_response(
         method='GET',
-        url='http://bff_cli/v1/datasets?page=1&page_size=10',
+        url='http://bff_cli/v1/datasets?page=1&page_size=10&creator=test-user',
         json={
             'code': 200,
             'error_msg': '',
@@ -32,3 +32,23 @@ def test_list_datasets(httpx_mock, mocker, capsys):
     assert print_out[4] == '              testdatasetC               |             testdataset3            '
     assert print_out[5] == ''
     assert print_out[6] == 'Page: 1, Number of datasets: 3'
+
+
+def test_list_datasets_calls_dataset_service_without_creator_parameter_when_filter_by_creator_is_false(
+    httpx_mock, mocker
+):
+    mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
+    httpx_mock.add_response(
+        method='GET',
+        url='http://bff_cli/v1/datasets?page=1&page_size=10',
+        json={
+            'code': 200,
+            'error_msg': '',
+            'result': [{'id': 'fake-id', 'code': 'testdataset', 'title': 'testdataset'}],
+        },
+    )
+
+    dataset_mgr = SrvDatasetListManager()
+    datasets = dataset_mgr.list_datasets(1, 10, False)
+
+    assert len(datasets) == 1

@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 Indoc Systems
+# Copyright (C) 2022-2024 Indoc Systems
 #
 # Licensed under the GNU AFFERO GENERAL PUBLIC LICENSE, Version 3.0 (the "License") available at https://www.gnu.org/licenses/agpl-3.0.en.html.
 # You may not use this file except in compliance with the License.
@@ -20,12 +20,14 @@ class SrvDatasetListManager(metaclass=MetaService):
         self.interactive = interactive
 
     @require_valid_token()
-    def list_datasets(self, page, page_size):
+    def list_datasets(self, page, page_size, filter_by_creator: bool = True):
         url = AppConfig.Connections.url_bff + '/v1/datasets'
         headers = {
             'Authorization': 'Bearer ' + self.user.access_token,
         }
         params = {'page': page, 'page_size': page_size}
+        if filter_by_creator:
+            params['creator'] = self.user.username
         try:
             response = resilient_session().get(url, headers=headers, params=params)
             if response.status_code == 200:

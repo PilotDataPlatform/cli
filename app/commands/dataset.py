@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 Indoc Systems
+# Copyright (C) 2022-2024 Indoc Systems
 #
 # Licensed under the GNU AFFERO GENERAL PUBLIC LICENSE, Version 3.0 (the "License") available at https://www.gnu.org/licenses/agpl-3.0.en.html.
 # You may not use this file except in compliance with the License.
@@ -21,6 +21,14 @@ def cli():
 
 
 @click.command(name='list')
+@click.option(
+    '--all',
+    'all_considering_admin_role',
+    default=False,
+    required=False,
+    is_flag=True,
+    help='Show also datasets that belong to projects where user has admin role',
+)
 @click.option('--page', default=0, required=False, help=' The page to be listed', show_default=True)
 @click.option('--page-size', default=10, required=False, help='number of objects per page', show_default=True)
 @click.option(
@@ -33,14 +41,15 @@ def cli():
     show_default=True,
 )
 @doc(dataset_help.dataset_help_page(dataset_help.DatasetHELP.DATASET_LIST))
-def dataset_list(page, page_size, detached):
+def dataset_list(all_considering_admin_role, page, page_size, detached):
+    filter_by_creator = not all_considering_admin_role
     if detached:
         dataset_mgr = SrvDatasetListManager()
-        datasets = dataset_mgr.list_datasets(page, page_size)
+        datasets = dataset_mgr.list_datasets(page, page_size, filter_by_creator)
     else:
         while True:
             dataset_mgr = SrvDatasetListManager()
-            datasets = dataset_mgr.list_datasets(page, page_size)
+            datasets = dataset_mgr.list_datasets(page, page_size, filter_by_creator)
             if len(datasets) < page_size and page == 0:
                 break
             elif len(datasets) < page_size and page != 0:
