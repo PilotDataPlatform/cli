@@ -314,11 +314,10 @@ class UploadClient(BaseAuthClient):
         # after all the chunks have been uploaded.
         chunk_result = []
         while True:
-            chunk = file_object.uploaded_chunks.get(str(count + 1), {})
-            chunk_etag = chunk.get('etag')
-            chunk_size = chunk.get('chunk_size', self.chunk_size)
+            chunk_info = file_object.uploaded_chunks.get(str(count + 1), {})
+            chunk_etag = chunk_info.get('etag')
 
-            chunk = f.read(chunk_size)
+            chunk = f.read(self.chunk_size)
             local_chunk_etag = base64.b64encode(hashlib.md5(chunk).digest()).decode('utf-8')
             if not chunk:
                 break
@@ -329,11 +328,12 @@ class UploadClient(BaseAuthClient):
                 if chunk_etag != local_chunk_etag:
                     SrvErrorHandler.customized_handle(ECustomizedError.INVALID_CHUNK_UPLOAD, value=count + 1)
                     raise INVALID_CHUNK_ETAG(count + 1)
+                chunk_size = chunk_info.get('chunk_size', self.chunk_size)
                 file_object.update_progress(chunk_size)
             else:
                 res = pool.apply_async(
                     self.upload_chunk,
-                    args=(file_object, count + 1, chunk, local_chunk_etag, chunk_size),
+                    args=(file_object, count + 1, chunk, local_chunk_etag, len(chunk)),
                 )
                 chunk_result.append(res)
 
