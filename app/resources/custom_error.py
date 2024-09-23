@@ -95,6 +95,8 @@ class Error:
         'INVALID_FOLDER': 'Provided folder does not exist',
         'INVALID_PROJECT_PATH': 'root folder is missing or provided name/shared folder does not exist',
         'INVALID_DOWNLOAD': 'Invalid download, file/folder not exist or folder is empty: %s',
+        # delete command related error
+        'INVALID_DELETE_PATH': 'Selected path: %s is invalid.',
         # file metadata related error
         'LOCAL_METADATA_FILE_EXISTS': 'Following metadata file already exists in the local directory: ',
         'VERSION_NOT_EXIST': 'Version not available: %s',

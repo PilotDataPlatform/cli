@@ -65,6 +65,10 @@ class ECustomizedError(enum.Enum):
     INVALID_PROJECT_PATH = 'INVALID_PROJECT_PATH'
     INVALID_DOWNLOAD = 'INVALID_DOWNLOAD'
     DUPLICATE_TAG_ERROR = 'DUPLICATE_TAG_ERROR'
+
+    # file delete related error
+    INVALID_DELETE_PATH = 'INVALID_DELETE_PATH'
+
     # file metadata related error
     LOCAL_METADATA_FILE_EXISTS = 'LOCAL_METADATA_FILE_EXISTS'
 

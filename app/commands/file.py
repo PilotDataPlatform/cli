@@ -559,3 +559,32 @@ def file_move(**kwargs):
     file_meta_client.move_file()
 
     message_handler.SrvOutPutHandler.move_action_success(src_item_path, dest_item_path)
+
+
+@click.command(name='trash')
+@click.argument('paths', type=click.STRING, nargs=-1)
+@click.option(
+    '-z',
+    '--zone',
+    required=True,
+    type=click.STRING,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_Z),
+)
+@click.option(
+    '--permanent',
+    default=False,
+    required=False,
+    is_flag=True,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_TRASH_P),
+)
+@doc(file_help.file_help_page(file_help.FileHELP.FILE_TRASH))
+def file_trash(paths: str, zone: str, permanent: bool):
+    # items = []
+    for path in paths:
+        # assume path is project_code/<root>/<name_or_shared>/file
+        # raise the error if path is not in the correct format
+        if len(path.split('/')) < 4:
+            SrvErrorHandler.customized_handle(ECustomizedError.INVALID_DELETE_PATH, True)
+        project_code, object_path = path.split('/', 1)
+        parent_folder, _ = object_path.rsplit('/', 1)
+        _ = search_item(project_code, zone, parent_folder)
