@@ -226,6 +226,11 @@ class SrvOutPutHandler(metaclass=MetaService):
         return logger.info(f'{status.value} in progress...')
 
     @staticmethod
+    def trash_delete_success(permanent: bool):
+        """e.g. Trash or delete succeed."""
+        return logger.succeed(f'{"Permanently delete" if permanent else "Trash"} complete.')
+
+    @staticmethod
     def start_requests():
         """e.g. start requests."""
         logger.info('Starting request...')

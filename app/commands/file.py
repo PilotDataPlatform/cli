@@ -583,7 +583,7 @@ def file_move(**kwargs):
 def file_trash(paths: str, zone: str, permanent: bool):
     # zone = get_zone(zone) if zone else AppConfig.Env.green_zone
     # group path by parent folder
-    items = {}
+    items, parent_cache = {}, {}
     for path in paths:
         # assume path is project_code/<root>/<name_or_shared>/file
         # raise the error if path is not in the correct format
@@ -592,14 +592,19 @@ def file_trash(paths: str, zone: str, permanent: bool):
         project_code, object_path = path.split('/', 1)
         parent_folder, _ = object_path.rsplit('/', 1)
 
+        # get item and corresponding parent item from cache or search
         item = search_item(project_code, zone, object_path).get('result')
-        parent_item = search_item(project_code, zone, parent_folder).get('result')
+        if parent_folder not in parent_cache:
+            parent_item = search_item(project_code, zone, parent_folder).get('result')
+        else:
+            parent_item = parent_cache[parent_folder]
         if not item or not parent_item:
             SrvErrorHandler.customized_handle(ECustomizedError.DELETE_PATH_NOT_EXIST, True, path)
         parent_id, item_id = parent_item.get('id'), item.get('id')
 
         if parent_id not in items:
             items[parent_id] = [item_id]
+            parent_cache[parent_folder] = parent_item
         else:
             items[parent_id].append(item_id)
 
@@ -608,3 +613,12 @@ def file_trash(paths: str, zone: str, permanent: bool):
     failed_item = trash_client.check_status(ItemStatus.TRASHED)
     if failed_item:
         SrvErrorHandler.customized_handle(ECustomizedError.TRASH_FAIL, True, failed_item)
+
+    # if permanent flag is set, then permanently delete the files
+    if permanent:
+        trash_client.permanently_delete()
+        failed_item = trash_client.check_status(ItemStatus.DELETED)
+        if failed_item:
+            SrvErrorHandler.customized_handle(ECustomizedError.DELETE_FAIL, True, failed_item)
+
+    message_handler.SrvOutPutHandler.trash_delete_success(permanent)

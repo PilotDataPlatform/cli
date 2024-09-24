@@ -80,8 +80,8 @@ class FileTrashClient(BaseAuthClient):
         '''
 
         id_check_list = self.object_ids
+        message_handler.SrvOutPutHandler.trash_delete_in_progress(status)
         for _ in range(self.max_status_check):
-            message_handler.SrvOutPutHandler.trash_delete_in_progress(status)
             time.sleep(self.status_interval)
 
             next_check_list, in_progres = [], []
@@ -93,7 +93,8 @@ class FileTrashClient(BaseAuthClient):
                 item = item.get('result', {})
                 if item.get('status') != status.value:
                     next_check_list.append(item.get('id'))
-                    in_progres.append(item.get('parent_path') + '/' + item.get('name'))
+                    parent_path = item.get('parent_path') if status == ItemStatus.TRASHED else item.get('restore_path')
+                    in_progres.append(parent_path + '/' + item.get('name'))
 
             id_check_list = next_check_list
             if len(id_check_list) == 0:
