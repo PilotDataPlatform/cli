@@ -61,16 +61,16 @@ def get_attribute_template_by_id(template_id: str) -> Dict[str, Any]:
 
 
 @require_valid_token()
-def get_file_info_by_geid(geid: list):
+def get_file_info_by_geid(geid: list) -> List[Dict[str, Any]]:
     payload = {'geid': geid}
-    http_client = BaseAuthClient(AppConfig.Connections.url_bff)
+    http_client = BaseAuthClient('http://0.0.0.0:5080')
     try:
         res = http_client._post('v1/query/geid', json=payload)
     except HTTPStatusError as e:
         res = e.response
         SrvErrorHandler.default_handle(res.text, True)
 
-    return res.json()['result']
+    return res.json().get('result', [])
 
 
 @require_valid_token()

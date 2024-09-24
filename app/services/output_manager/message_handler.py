@@ -9,6 +9,7 @@ import qrcode
 import app.services.logger_services.log_functions as logger
 from app.configs.app_config import AppConfig
 from app.models.enums import LoginMethod
+from app.models.item import ItemStatus
 from app.models.service_meta_class import MetaService
 
 
@@ -218,6 +219,11 @@ class SrvOutPutHandler(metaclass=MetaService):
     def move_action_failed(src, dest, error):
         """e.g. Move action failed."""
         return logger.error(f'Failed to move {src} to {dest}: {error}')
+
+    @staticmethod
+    def trash_delete_in_progress(status: ItemStatus):
+        """e.g. Check file status."""
+        return logger.info(f'{status.value} in progress...')
 
     @staticmethod
     def start_requests():

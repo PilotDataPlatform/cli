@@ -68,6 +68,9 @@ class ECustomizedError(enum.Enum):
 
     # file delete related error
     INVALID_DELETE_PATH = 'INVALID_DELETE_PATH'
+    DELETE_PATH_NOT_EXIST = 'DELETE_PATH_NOT_EXIST'
+    TRASH_FAIL = 'TRASH_FAIL'
+    DELETE_FAIL = 'DELETE_FAIL'
 
     # file metadata related error
     LOCAL_METADATA_FILE_EXISTS = 'LOCAL_METADATA_FILE_EXISTS'

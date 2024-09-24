@@ -102,9 +102,15 @@ class BaseClient:
         """Send PUT request."""
         return self._request('PUT', url, json=json, params=params, headers=headers, data=data)
 
-    def _delete(self, url: str, params: Optional[Mapping[str, Any]] = None, json: Optional[Any] = None) -> Response:
+    def _delete(
+        self,
+        url: str,
+        params: Optional[Mapping[str, Any]] = None,
+        json: Optional[Any] = None,
+        headers: Optional[Mapping[str, Any]] = None,
+    ) -> Response:
         """Send DELETE request."""
-        return self._request('DELETE', url, params=params, json=json)
+        return self._request('DELETE', url, params=params, json=json, headers=headers)
 
     def _patch(
         self,
@@ -114,4 +120,4 @@ class BaseClient:
         headers: Optional[Mapping[str, Any]] = None,
     ) -> Response:
         """Send PATCH request."""
-        return self._request('PATCH', url, json=json, params=params)
+        return self._request('PATCH', url, json=json, params=params, headers=headers)
