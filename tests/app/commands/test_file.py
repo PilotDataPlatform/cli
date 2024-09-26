@@ -17,6 +17,7 @@ from app.commands.file import file_metadata_download
 from app.commands.file import file_move
 from app.commands.file import file_put
 from app.commands.file import file_resume
+from app.commands.file import file_trash
 from app.models.item import ItemType
 from app.services.file_manager.file_metadata.file_metadata_client import FileMetaClient
 from app.services.file_manager.file_upload.models import FileObject
@@ -457,3 +458,255 @@ def test_file_move_failed_with_mismatched_project_code(mocker, cli_runner):
 
     outputs = result.output.split('\n')
     assert outputs[0] == f'Failed to move {src_path} to {dest_path}: Cannot move files between different projects'
+
+
+def test_file_trash_success(mocker, cli_runner):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+    search_mock = mocker.patch(
+        'app.commands.file.search_item',
+        side_effect=[
+            {
+                'code': 200,
+                'result': {
+                    'type': ItemType.FILE.value,
+                    'parent_path': 'users/admin',
+                    'name': 'test.txt',
+                    'id': 'id',
+                },
+            },
+            {
+                'code': 200,
+                'result': {
+                    'type': ItemType.FOLDER.value,
+                    'parent_path': 'users',
+                    'name': 'admin',
+                    'id': 'id',
+                },
+            },
+        ],
+    )
+    file_trash_mock = mocker.patch(
+        'app.services.file_manager.file_trash.file_trash_client.FileTrashClient.move_to_trash',
+        return_value=None,
+    )
+    status_check_mock = mocker.patch(
+        'app.services.file_manager.file_trash.file_trash_client.FileTrashClient.check_status',
+        return_value=[],
+    )
+
+    project_code = 'testproject'
+    file_path = f'{project_code}/users/admin/test.txt'
+    result = cli_runner.invoke(file_trash, [file_path, '-z', 'greenroom'])
+
+    outputs = result.output.split('\n')
+    assert outputs[0] == 'Items: [\'testproject/users/admin/test.txt\'] have been trashed successfully.'
+
+    assert search_mock.call_count == 2
+    file_trash_mock.assert_called_once()
+    status_check_mock.assert_called_once()
+
+
+def test_file_trash_failed_with_invalid_path(mocker, cli_runner):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+
+    project_code = 'testproject'
+    file_path = f'{project_code}/admin/test.txt'
+    result = cli_runner.invoke(file_trash, [file_path, '-z', 'greenroom'])
+    assert result.exit_code == 1
+
+    outputs = result.output.split('\n')
+    assert outputs[0] == 'Selected path: testproject/admin/test.txt is invalid.'
+
+
+def test_file_trash_failed_with_item_not_exist(mocker, cli_runner):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+    search_mock = mocker.patch(
+        'app.commands.file.search_item',
+        side_effect=[
+            {
+                'code': 404,
+                'result': {},
+            },
+            {
+                'code': 404,
+                'result': {},
+            },
+        ],
+    )
+
+    project_code = 'testproject'
+    file_path = f'{project_code}/users/admin/test.txt'
+    result = cli_runner.invoke(file_trash, [file_path, '-z', 'greenroom'])
+    assert result.exit_code == 1
+
+    outputs = result.output.split('\n')
+    assert outputs[0] == 'Selected path: testproject/users/admin/test.txt does not exist.'
+    assert search_mock.call_count == 2
+
+
+def test_file_trash_with_trash_failed(mocker, cli_runner):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+    search_mock = mocker.patch(
+        'app.commands.file.search_item',
+        side_effect=[
+            {
+                'code': 200,
+                'result': {
+                    'type': ItemType.FILE.value,
+                    'parent_path': 'users/admin',
+                    'name': 'test.txt',
+                    'id': 'id',
+                },
+            },
+            {
+                'code': 200,
+                'result': {
+                    'type': ItemType.FOLDER.value,
+                    'parent_path': 'users',
+                    'name': 'admin',
+                    'id': 'id',
+                },
+            },
+        ],
+    )
+    file_trash_mock = mocker.patch(
+        'app.services.file_manager.file_trash.file_trash_client.FileTrashClient.move_to_trash',
+        return_value=None,
+    )
+    status_check_mock = mocker.patch(
+        'app.services.file_manager.file_trash.file_trash_client.FileTrashClient.check_status',
+        return_value=['users/admin/test.txt'],
+    )
+
+    project_code = 'testproject'
+    file_path = f'{project_code}/users/admin/test.txt'
+    result = cli_runner.invoke(file_trash, [file_path, '-z', 'greenroom'])
+    assert result.exit_code == 1
+
+    outputs = result.output.split('\n')
+    assert outputs[0] == 'Failed to trash items: [\'users/admin/test.txt\'].'
+
+    assert search_mock.call_count == 2
+    file_trash_mock.assert_called_once()
+    status_check_mock.assert_called_once()
+
+
+def test_file_permanent_delete_success(mocker, cli_runner):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+    search_mock = mocker.patch(
+        'app.commands.file.search_item',
+        side_effect=[
+            {
+                'code': 200,
+                'result': {
+                    'type': ItemType.FILE.value,
+                    'parent_path': 'users/admin',
+                    'name': 'test.txt',
+                    'id': 'id',
+                },
+            },
+            {
+                'code': 200,
+                'result': {
+                    'type': ItemType.FOLDER.value,
+                    'parent_path': 'users',
+                    'name': 'admin',
+                    'id': 'id',
+                },
+            },
+        ],
+    )
+    file_trash_mock = mocker.patch(
+        'app.services.file_manager.file_trash.file_trash_client.FileTrashClient.move_to_trash',
+        return_value=None,
+    )
+    status_check_mock = mocker.patch(
+        'app.services.file_manager.file_trash.file_trash_client.FileTrashClient.check_status',
+        return_value=[],
+    )
+
+    file_delete_mock = mocker.patch(
+        'app.services.file_manager.file_trash.file_trash_client.FileTrashClient.permanently_delete',
+        return_value=None,
+    )
+
+    project_code = 'testproject'
+    file_path = f'{project_code}/users/admin/test.txt'
+    result = cli_runner.invoke(file_trash, [file_path, '-z', 'greenroom', '--permanent'])
+
+    outputs = result.output.split('\n')
+    assert outputs[0] == 'Items: [\'testproject/users/admin/test.txt\'] have been permanently deleted successfully.'
+
+    assert search_mock.call_count == 2
+    file_trash_mock.assert_called_once()
+    file_delete_mock.assert_called_once()
+    assert status_check_mock.call_count == 2
+
+
+def test_file_permanent_delete_with_delete_failed(mocker, cli_runner):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+    search_mock = mocker.patch(
+        'app.commands.file.search_item',
+        side_effect=[
+            {
+                'code': 200,
+                'result': {
+                    'type': ItemType.FILE.value,
+                    'parent_path': 'users/admin',
+                    'name': 'test.txt',
+                    'id': 'id',
+                },
+            },
+            {
+                'code': 200,
+                'result': {
+                    'type': ItemType.FOLDER.value,
+                    'parent_path': 'users',
+                    'name': 'admin',
+                    'id': 'id',
+                },
+            },
+        ],
+    )
+    file_trash_mock = mocker.patch(
+        'app.services.file_manager.file_trash.file_trash_client.FileTrashClient.move_to_trash',
+        return_value=None,
+    )
+    status_check_mock = mocker.patch(
+        'app.services.file_manager.file_trash.file_trash_client.FileTrashClient.check_status',
+    )
+    status_check_mock.side_effect = [[], ['users/admin/test.txt']]
+    file_delete_mock = mocker.patch(
+        'app.services.file_manager.file_trash.file_trash_client.FileTrashClient.permanently_delete',
+        return_value=None,
+    )
+
+    project_code = 'testproject'
+    file_path = f'{project_code}/users/admin/test.txt'
+    result = cli_runner.invoke(file_trash, [file_path, '-z', 'greenroom', '--permanent'])
+
+    outputs = result.output.split('\n')
+    assert outputs[0] == 'Failed to delete items: [\'users/admin/test.txt\'].'
+
+    assert search_mock.call_count == 2
+    file_trash_mock.assert_called_once()
+    file_delete_mock.assert_called_once()
+    assert status_check_mock.call_count == 2

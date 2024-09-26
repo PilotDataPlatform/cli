@@ -621,4 +621,4 @@ def file_trash(paths: str, zone: str, permanent: bool):
         if failed_item:
             SrvErrorHandler.customized_handle(ECustomizedError.DELETE_FAIL, True, failed_item)
 
-    message_handler.SrvOutPutHandler.trash_delete_success(permanent)
+    message_handler.SrvOutPutHandler.trash_delete_success(list(paths), permanent)

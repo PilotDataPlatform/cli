@@ -35,13 +35,14 @@ class FileTrashClient(BaseAuthClient):
             object_path (str): object path.
             zone (str): zone.
         '''
-        super().__init__('http://0.0.0.0:5080')
+        super().__init__(AppConfig.Connections.url_bff)
         self.project_code = project_code
         self.object_ids = object_ids
         self.parent_id = parent_id
-        self.zone = get_zone(zone) if zone else AppConfig.Env.green_zone
+        self.zone = get_zone(zone)
 
-        self.endpoint = 'http://0.0.0.0:5080' + '/v1'
+        # self.endpoint = 'http://0.0.0.0:5080' + '/v1'
+        self.endpoint = self.endpoint + '/v1'
 
     def move_to_trash(self) -> Dict[str, Any]:
         '''
