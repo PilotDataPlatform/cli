@@ -45,7 +45,6 @@ class UploadClient(BaseAuthClient):
         infomation of particular upload action:
          - project_code: the unique code of project.
          - zone: data zone. can be greenroom or core.
-         - upload_message:
          - job_type: based on the input. can be AS_FILE or AS_FOLDER.
          - current_folder_node: the target folder in object storage.
     """
@@ -55,7 +54,6 @@ class UploadClient(BaseAuthClient):
         project_code: str,
         parent_folder_id: str,
         zone: str = AppConfig.Env.green_zone,
-        upload_message: str = 'cli straight upload',
         job_type: str = UploadType.AS_FILE,
         current_folder_node: str = '',
         regular_file: str = True,
@@ -67,7 +65,6 @@ class UploadClient(BaseAuthClient):
 
         self.user = UserConfig()
         self.operator = self.user.username
-        self.upload_message = upload_message
         self.chunk_size = AppConfig.Env.chunk_size
 
         prefix = {
@@ -281,7 +278,6 @@ class UploadClient(BaseAuthClient):
             'parent_folder_id': self.parent_folder_id,
             'current_folder_node': self.current_folder_node,
             'tags': self.tags,
-            'upload_message': self.upload_message,
             'file_objects': {file_object.item_id: file_object.to_dict() for file_object in file_objects},
             'attributes': self.attributes if self.attributes else {},
         }
@@ -417,7 +413,6 @@ class UploadClient(BaseAuthClient):
             self.operator,
             file_object,
             [],
-            upload_message=self.upload_message,
         )
         try:
             self.endpoint = {

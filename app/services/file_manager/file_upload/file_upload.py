@@ -123,8 +123,6 @@ def simple_upload(  # noqa: C901
     project_code = upload_event.get('project_code')
     tags = upload_event.get('tags')
     zone = upload_event.get('zone')
-    # process_pipeline = upload_event.get('process_pipeline', None)
-    upload_message = upload_event.get('upload_message')
     current_folder_node = upload_event.get('current_folder_node', '')
     parent_folder_id = upload_event.get('parent_folder_id', '')
     create_folder_flag = upload_event.get('create_folder_flag', False)
@@ -162,7 +160,6 @@ def simple_upload(  # noqa: C901
         regular_file=regular_file,
         tags=tags,
         source_id=source_id,
-        upload_message=upload_message,
         attributes=attribute,
     )
 
