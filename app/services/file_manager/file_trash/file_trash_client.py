@@ -41,7 +41,6 @@ class FileTrashClient(BaseAuthClient):
         self.parent_id = parent_id
         self.zone = get_zone(zone)
 
-        # self.endpoint = 'http://0.0.0.0:5080' + '/v1'
         self.endpoint = self.endpoint + '/v1'
 
     def move_to_trash(self) -> Dict[str, Any]:

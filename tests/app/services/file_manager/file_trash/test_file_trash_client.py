@@ -12,7 +12,7 @@ from tests.conftest import decoded_token
 
 
 @pytest.mark.parametrize('status_code', [400, 403, 404, 500])
-def test_trash_api_error_handling(httpx_mock, capfd, status_code):
+def test_trash_api_error_handling(httpx_mock, status_code):
     test_project_code = 'test_code'
     test_parent_id = 'test_parent_id'
     test_object_ids = ['test_object_id']
@@ -39,7 +39,7 @@ def test_trash_api_error_handling(httpx_mock, capfd, status_code):
 
 
 @pytest.mark.parametrize('status_code', [400, 403, 404, 500])
-def test_permanent_delete_error_handling(httpx_mock, capfd, status_code):
+def test_permanent_delete_error_handling(httpx_mock, status_code):
     test_project_code = 'test_code'
     test_parent_id = 'test_parent_id'
     test_object_ids = ['test_object_id']
