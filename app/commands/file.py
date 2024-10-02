@@ -9,6 +9,7 @@ from sys import exit
 import click
 from click.exceptions import Abort
 
+import app.services.logger_services.log_functions as logger
 import app.services.output_manager.help_page as file_help
 import app.services.output_manager.message_handler as message_handler
 from app.configs.app_config import AppConfig
@@ -205,6 +206,9 @@ def file_put(**kwargs):  # noqa: C901
     # the loop will read all input path(folder or files)
     # and process them one by one
     for f in files:
+        import time
+
+        start_time = time.time()
         # so this function will always return the furthest folder node as current_folder_node+parent_folder_id
         current_folder_node, parent_folder, create_folder_flag, target_folder = assemble_path(
             f,
@@ -213,6 +217,7 @@ def file_put(**kwargs):  # noqa: C901
             folder_type,
             zone,
         )
+        logger.info(f'assemble_path: {time.time() - start_time}')
 
         upload_event = {
             'project_code': project_code,
