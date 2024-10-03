@@ -76,14 +76,6 @@ def cli():
     show_default=True,
 )
 @click.option(
-    '-m',
-    '--upload-message',
-    default=None,
-    required=False,
-    help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_M),
-    show_default=True,
-)
-@click.option(
     '-s',
     '--source-file',
     default=None,
@@ -125,7 +117,6 @@ def file_put(**kwargs):  # noqa: C901
 
     tag_files = kwargs.get('tag')
     zone = kwargs.get('zone')
-    upload_message = kwargs.get('upload_message')
     source_file = kwargs.get('source_file')
     zipping = kwargs.get('zip')
     attribute_file = kwargs.get('attribute')
@@ -172,7 +163,6 @@ def file_put(**kwargs):  # noqa: C901
     srv_manifest = SrvFileManifests()
     upload_val_event = {
         'zone': zone,
-        'upload_message': upload_message,
         'source': source_file,
         'project_code': project_code,
         'attribute': attribute,
@@ -181,9 +171,6 @@ def file_put(**kwargs):  # noqa: C901
     validated_fieds = validate_upload_event(upload_val_event)
     src_file_info = validated_fieds['source_file']
     attribute = validated_fieds['attribute']
-    if zone == AppConfig.Env.core_zone.lower():
-        if not upload_message:
-            upload_message = AppConfig.Env.default_upload_message
 
     # for the path formating there will be following cases:
     # - file:
@@ -217,7 +204,6 @@ def file_put(**kwargs):  # noqa: C901
             'file': f.rstrip('/'),  # remove the ending slash
             'tags': tag if tag else [],
             'zone': zone,
-            'upload_message': upload_message,
             'current_folder_node': current_folder_node,
             'parent_folder_id': parent_folder.get('id'),
             'create_folder_flag': create_folder_flag,
@@ -293,12 +279,11 @@ def file_resume(**kwargs):  # noqa: C901
 def validate_upload_event(event):
     """validate upload request, raise error when filed."""
     zone = event.get('zone')
-    upload_message = event.get('upload_message')
     source = event.get('source')
     project_code = event.get('project_code')
     attribute = event.get('attribute')
     tag = event.get('tag')
-    validator = UploadEventValidator(project_code, zone, upload_message, source, attribute, tag)
+    validator = UploadEventValidator(project_code, zone, source, attribute, tag)
     converted_content = validator.validate_upload_event()
     return converted_content
 

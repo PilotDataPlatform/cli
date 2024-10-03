@@ -45,7 +45,6 @@ class HelpPage:
             'FILE_SYNC_Z': 'Target Zone (i.e., core/greenroom).',
             'FILE_UPLOAD_A': 'Add attributes to the file using a File Attribute Template.',
             'FILE_UPLOAD_T': 'Add tags to the file using a Tag file.',
-            'FILE_UPLOAD_M': 'The message used to comment on the purpose of uploading your processed file.',
             'FILE_UPLOAD_S': (
                 'Project file path for identifying a source file when creating an upstream '
                 'file lineage node. Source files must exist in the Core zone.'
