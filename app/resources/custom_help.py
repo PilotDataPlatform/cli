@@ -61,6 +61,8 @@ class HelpPage:
             'FILE_MOVE': 'Move/Rename files/folders to a given Project path.',
             'FILE_MOVE_Z': 'Target Zone (i.e., core/greenroom).',
             'FILE_MOVE_Y': 'Skip the prompt confirmation and create non-existing folders.',
+            'FILE_TRASH': 'Move files/folders to trash bin.',
+            'FILE_TRASH_P': 'Permanent delete files/folders directly.',
         },
         'config': {
             'SET_CONFIG': 'Chose config file and set for cli.',

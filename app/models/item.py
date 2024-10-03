@@ -44,3 +44,20 @@ class ItemType(str, Enum):
 class ItemZone(str, Enum):
     GREENROOM = 'greenroom'
     CORE = 'core'
+
+
+class ItemStatus(str, Enum):
+    # the new enum type for file status
+    # - REGISTERED means file is created by upload service
+    #   but not complete yet. either in progress or fail.
+    # - ACTIVE means file uploading is complete.
+    # - TRASHED means the file has been moved to trash bin.
+    # - DELETED means the file has been permanently deleted.
+
+    REGISTERED = 'REGISTERED'
+    ACTIVE = 'ACTIVE'
+    TRASHED = 'TRASHED'
+    DELETED = 'DELETED'
+
+    def __str__(self) -> str:
+        return str(self.name)

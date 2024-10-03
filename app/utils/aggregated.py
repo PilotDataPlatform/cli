@@ -61,7 +61,7 @@ def get_attribute_template_by_id(template_id: str) -> Dict[str, Any]:
 
 
 @require_valid_token()
-def get_file_info_by_geid(geid: list):
+def get_file_info_by_geid(geid: list) -> List[Dict[str, Any]]:
     payload = {'geid': geid}
     http_client = BaseAuthClient(AppConfig.Connections.url_bff)
     try:
@@ -70,7 +70,7 @@ def get_file_info_by_geid(geid: list):
         res = e.response
         SrvErrorHandler.default_handle(res.text, True)
 
-    return res.json()['result']
+    return res.json().get('result', [])
 
 
 @require_valid_token()

@@ -15,6 +15,7 @@ from app.commands.file import file_metadata_download
 from app.commands.file import file_move
 from app.commands.file import file_put
 from app.commands.file import file_resume
+from app.commands.file import file_trash
 from app.commands.project import project_list_all
 from app.commands.user import login
 from app.commands.user import logout
@@ -66,6 +67,7 @@ def test_file_commands(user_login_true):
         'resume': file_resume,
         'metadata': file_metadata_download,
         'move': file_move,
+        'trash': file_trash,
     }
     file_commands_object = entry_point.commands.get('file')
     file_commands_object.callback()
