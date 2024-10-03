@@ -196,7 +196,7 @@ def simple_upload(  # noqa: C901
     else:
         mhandler.SrvOutPutHandler.file_duplication_check()
         duplicated_file = []
-        debug_logger.debug(f'upload batch size: {AppConfig.Env.upload_batch_siz}')
+        debug_logger.debug(f'upload batch size: {AppConfig.Env.upload_batch_size}')
         for file_batchs in batch_generator(file_objects, batch_size=AppConfig.Env.upload_batch_size):
             start_time = time.time()
             non_duplicates, duplicate_path = upload_client.check_upload_duplication(file_batchs)
