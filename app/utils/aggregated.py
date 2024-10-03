@@ -5,6 +5,7 @@
 import os
 import re
 import shutil
+import time
 from typing import Any
 from typing import Dict
 from typing import List
@@ -18,6 +19,7 @@ from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.models.item import ItemType
 from app.services.clients.base_auth_client import BaseAuthClient
+from app.services.logger_services.debugging_log import debug_logger
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
@@ -65,11 +67,10 @@ def get_file_info_by_geid(geid: list):
     payload = {'geid': geid}
     http_client = BaseAuthClient(AppConfig.Connections.url_bff, timeout=60)
     try:
-        import time
 
         start_time = time.time()
         res = http_client._post('v1/query/geid', json=payload)
-        logger.info(f'Time taken to get file info: {time.time() - start_time}')
+        debug_logger.debug(f'Time taken to get file info: {time.time() - start_time}')
     except HTTPStatusError as e:
         res = e.response
         SrvErrorHandler.default_handle(res.text, True)

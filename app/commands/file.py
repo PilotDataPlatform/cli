@@ -9,7 +9,6 @@ from sys import exit
 import click
 from click.exceptions import Abort
 
-import app.services.logger_services.log_functions as logger
 import app.services.output_manager.help_page as file_help
 import app.services.output_manager.message_handler as message_handler
 from app.configs.app_config import AppConfig
@@ -23,6 +22,7 @@ from app.services.file_manager.file_upload.file_upload import assemble_path
 from app.services.file_manager.file_upload.file_upload import resume_upload
 from app.services.file_manager.file_upload.file_upload import simple_upload
 from app.services.file_manager.file_upload.upload_validator import UploadEventValidator
+from app.services.logger_services.debugging_log import debug_logger
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.output_manager.error_handler import customized_error_msg
@@ -217,7 +217,7 @@ def file_put(**kwargs):  # noqa: C901
             folder_type,
             zone,
         )
-        logger.info(f'assemble_path: {time.time() - start_time}')
+        debug_logger.debug(f'assemble_path: {time.time() - start_time}')
 
         upload_event = {
             'project_code': project_code,
