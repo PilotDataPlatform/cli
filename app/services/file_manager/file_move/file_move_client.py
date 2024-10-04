@@ -77,7 +77,7 @@ class FileMoveClient(BaseAuthClient):
         # the loop start with index 1 since we assume cli will not
         # create any name folder or project folder
         check_list = []
-        for index in range(2, len(path_list)):
+        for index in range(2, len(path_list) - 1):
             check_list.append('/'.join(path_list[: index + 1]))
         if len(check_list) == 0:
             return

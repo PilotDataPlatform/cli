@@ -23,6 +23,7 @@ from app.services.file_manager.file_upload.models import FileObject
 from app.services.file_manager.file_upload.models import ItemStatus
 from app.services.file_manager.file_upload.models import UploadType
 from app.services.file_manager.file_upload.upload_client import UploadClient
+from app.services.logger_services.debugging_log import debug_logger
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.output_manager.error_handler import customized_error_msg
@@ -73,7 +74,9 @@ def assemble_path(
     current_file_path = target_folder + '/' + f.rstrip('/').split('/')[-1]
     # set name folder as first parent folder
     root_folder = folder_type.get_prefix_by_type() + target_folder.split('/')[0]
+    start_time = time.time()
     parent_folder = search_item(project_code, zone, root_folder).get('result', {})
+    debug_logger.debug(f'Elapsed time: {time.time() - start_time:.2f}s')
 
     # if f input is a file then current_folder_node is target_folder
     # otherwise it is target_folder + f input name
@@ -85,9 +88,12 @@ def assemble_path(
 
     if len(current_file_path.split('/')) > 2:
         sub_path = target_folder.split('/')
-        for index in range(len(sub_path) - 1):
+        # always assume <root>/<name/shared folder> exists
+        for index in range(1, len(sub_path) - 1):
             folder_path = '/'.join(sub_path[0 : 2 + index])
+            start_time = time.time()
             res = search_item(project_code, zone, folder_path)
+            debug_logger.debug(f'Elapsed time: {time.time() - start_time:.2f}s')
 
             # find the longest existing folder as parent folder
             # if user input a path that need to create some folders
@@ -190,8 +196,11 @@ def simple_upload(  # noqa: C901
     else:
         mhandler.SrvOutPutHandler.file_duplication_check()
         duplicated_file = []
+        debug_logger.debug(f'upload batch size: {AppConfig.Env.upload_batch_size}')
         for file_batchs in batch_generator(file_objects, batch_size=AppConfig.Env.upload_batch_size):
+            start_time = time.time()
             non_duplicates, duplicate_path = upload_client.check_upload_duplication(file_batchs)
+            debug_logger.debug(f'Check duplication time: {time.time() - start_time:.2f}s')
             non_duplicate_file_objects.extend(non_duplicates)
             duplicated_file.extend(duplicate_path)
 
@@ -209,6 +218,8 @@ def simple_upload(  # noqa: C901
             except Abort:
                 mhandler.SrvOutPutHandler.cancel_upload()
                 exit(1)
+
+    # raise Exception('This function is not implemented yet')
 
     # here is list of pre upload result. We decided to call pre upload api by batch
     pre_upload_infos = []

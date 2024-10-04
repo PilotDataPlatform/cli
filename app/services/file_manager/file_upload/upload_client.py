@@ -63,7 +63,7 @@ class UploadClient(BaseAuthClient):
         source_id: str = '',
         attributes: dict = None,
     ):
-        super().__init__('')
+        super().__init__('', timeout=60)
 
         self.user = UserConfig()
         self.operator = self.user.username

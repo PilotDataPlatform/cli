@@ -22,6 +22,7 @@ from app.services.file_manager.file_upload.file_upload import assemble_path
 from app.services.file_manager.file_upload.file_upload import resume_upload
 from app.services.file_manager.file_upload.file_upload import simple_upload
 from app.services.file_manager.file_upload.upload_validator import UploadEventValidator
+from app.services.logger_services.debugging_log import debug_logger
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.output_manager.error_handler import customized_error_msg
@@ -200,6 +201,9 @@ def file_put(**kwargs):  # noqa: C901
     # the loop will read all input path(folder or files)
     # and process them one by one
     for f in files:
+        import time
+
+        start_time = time.time()
         # so this function will always return the furthest folder node as current_folder_node+parent_folder_id
         current_folder_node, parent_folder, create_folder_flag, target_folder = assemble_path(
             f,
@@ -208,6 +212,7 @@ def file_put(**kwargs):  # noqa: C901
             folder_type,
             zone,
         )
+        debug_logger.debug(f'assemble_path: {time.time() - start_time}')
 
         upload_event = {
             'project_code': project_code,
