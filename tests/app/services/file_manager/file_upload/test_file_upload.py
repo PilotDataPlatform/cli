@@ -85,7 +85,7 @@ def test_assemble_path_at_exsting_folder(mocker):
         local_file_path, target_folder, project_code, ItemType.NAMEFOLDER, zone
     )
     assert current_file_path == f'{ItemType.NAMEFOLDER.get_prefix_by_type()}admin/test_folder_exist/file.txt'
-    assert parent_folder.get('name') == 'test_folder_exist'
+    assert parent_folder.get('name') == 'admin'
     assert create_folder_flag is False
 
 
@@ -96,16 +96,6 @@ def test_assemble_path_at_non_existing_folder(mocker):
     zone = 0
 
     node_list = [
-        {
-            'result': {
-                'id': 'test',
-                'parent_id': 'test_parent',
-                'parent_path': '',
-                'name': ItemType.NAMEFOLDER.get_prefix_by_type().strip('/'),
-                'zone': 0,
-                'type': 'folder',
-            }
-        },
         {
             'result': {
                 'id': 'test',
