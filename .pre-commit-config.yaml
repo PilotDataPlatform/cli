@@ -58,7 +58,7 @@ repos:
           '--max-line-length=120',
         ]
 
-  - repo: https://github.com/myint/docformatter
+  - repo: https://github.com/PyCQA/docformatter
     rev: v1.5.0
     hooks:
       - id: docformatter
