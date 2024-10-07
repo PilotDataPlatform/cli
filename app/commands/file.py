@@ -244,7 +244,7 @@ def file_resume(**kwargs):  # noqa: C901
 
 
 def validate_upload_event(event):
-    """validate upload request, raise error when filed."""
+    """Validate upload request, raise error when filed."""
     zone = event.get('zone')
     upload_message = event.get('upload_message')
     source = event.get('source')
