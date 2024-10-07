@@ -1,6 +1,7 @@
-# Copyright (C) 2022-2023 Indoc Systems
+# Copyright (C) 2022-Present Indoc Systems
 #
-# Licensed under the GNU AFFERO GENERAL PUBLIC LICENSE, Version 3.0 (the "License") available at https://www.gnu.org/licenses/agpl-3.0.en.html.
+# Licensed under the GNU AFFERO GENERAL PUBLIC LICENSE,
+# Version 3.0 (the "License") available at https://www.gnu.org/licenses/agpl-3.0.en.html.
 # You may not use this file except in compliance with the License.
 
 import click
@@ -8,7 +9,6 @@ import click
 import app.services.output_manager.help_page as user_help
 import app.services.output_manager.message_handler as mhandler
 from app.services.user_authentication.decorator import require_login_session
-
 from app.services.user_authentication.user_login_logout import user_device_id_login
 from app.services.user_authentication.user_login_logout import user_logout
 from app.services.user_authentication.user_login_logout import validate_user_device_login

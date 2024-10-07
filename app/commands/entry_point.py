@@ -1,9 +1,8 @@
-# Copyright (C) 2022-2023 Indoc Systems
+# Copyright (C) 2022-Present Indoc Systems
 #
-# Licensed under the GNU AFFERO GENERAL PUBLIC LICENSE, Version 3.0 (the "License") available at https://www.gnu.org/licenses/agpl-3.0.en.html.
+# Licensed under the GNU AFFERO GENERAL PUBLIC LICENSE,
+# Version 3.0 (the "License") available at https://www.gnu.org/licenses/agpl-3.0.en.html.
 # You may not use this file except in compliance with the License.
-
-import os
 
 import click
 
@@ -24,7 +23,6 @@ from .file import file_export_manifest
 from .file import file_list
 from .file import file_put
 from .file import file_resume
-
 from .project import project_list_all
 from .use_config import set_env
 from .user import login

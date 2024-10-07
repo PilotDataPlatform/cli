@@ -1,6 +1,7 @@
-# Copyright (C) 2022-2023 Indoc Systems
+# Copyright (C) 2022-Present Indoc Systems
 #
-# Licensed under the GNU AFFERO GENERAL PUBLIC LICENSE, Version 3.0 (the "License") available at https://www.gnu.org/licenses/agpl-3.0.en.html.
+# Licensed under the GNU AFFERO GENERAL PUBLIC LICENSE,
+# Version 3.0 (the "License") available at https://www.gnu.org/licenses/agpl-3.0.en.html.
 # You may not use this file except in compliance with the License.
 
 import json
@@ -243,7 +244,7 @@ def file_resume(**kwargs):  # noqa: C901
 
 
 def validate_upload_event(event):
-    """validate upload request, raise error when filed."""
+    """Validate upload request, raise error when filed."""
     zone = event.get('zone')
     upload_message = event.get('upload_message')
     source = event.get('source')
