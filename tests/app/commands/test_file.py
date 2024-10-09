@@ -494,7 +494,7 @@ def test_file_trash_success(mocker, cli_runner):
         return_value=decoded_token(),
     )
     search_mock = mocker.patch(
-        'app.commands.file.search_item',
+        'app.services.file_manager.file_trash.utils.search_item',
         side_effect=[
             {
                 'code': 200,
@@ -558,12 +558,8 @@ def test_file_trash_failed_with_item_not_exist(mocker, cli_runner):
         return_value=decoded_token(),
     )
     search_mock = mocker.patch(
-        'app.commands.file.search_item',
+        'app.services.file_manager.file_trash.utils.search_item',
         side_effect=[
-            {
-                'code': 404,
-                'result': {},
-            },
             {
                 'code': 404,
                 'result': {},
@@ -578,7 +574,7 @@ def test_file_trash_failed_with_item_not_exist(mocker, cli_runner):
 
     outputs = result.output.split('\n')
     assert outputs[0] == 'Selected path: testproject/users/admin/test.txt does not exist.'
-    assert search_mock.call_count == 2
+    assert search_mock.call_count == 1
 
 
 def test_file_trash_with_trash_failed(mocker, cli_runner):
@@ -587,7 +583,7 @@ def test_file_trash_with_trash_failed(mocker, cli_runner):
         return_value=decoded_token(),
     )
     search_mock = mocker.patch(
-        'app.commands.file.search_item',
+        'app.services.file_manager.file_trash.utils.search_item',
         side_effect=[
             {
                 'code': 200,
@@ -637,7 +633,7 @@ def test_file_permanent_delete_success(mocker, cli_runner):
         return_value=decoded_token(),
     )
     search_mock = mocker.patch(
-        'app.commands.file.search_item',
+        'app.services.file_manager.file_trash.utils.search_item',
         side_effect=[
             {
                 'code': 200,
@@ -692,7 +688,7 @@ def test_file_permanent_delete_with_delete_failed(mocker, cli_runner):
         return_value=decoded_token(),
     )
     search_mock = mocker.patch(
-        'app.commands.file.search_item',
+        'app.services.file_manager.file_trash.utils.search_item',
         side_effect=[
             {
                 'code': 200,
