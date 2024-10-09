@@ -31,7 +31,8 @@ def test_trash_api_error_handling(httpx_mock, status_code):
     )
 
     try:
-        file_trash_client.move_to_trash()
+        result = file_trash_client.move_to_trash()
+        assert result == {}
     except HTTPStatusError as e:
         assert e.response.status_code == status_code
     else:
@@ -58,14 +59,15 @@ def test_permanent_delete_error_handling(httpx_mock, status_code):
     )
 
     try:
-        file_trash_client.permanently_delete()
+        result = file_trash_client.permanently_delete()
+        assert result == {}
     except HTTPStatusError as e:
         assert e.response.status_code == status_code
     else:
         assert AssertionError()
 
 
-@pytest.mark.parametrize('file_status', [ItemStatus.TRASHED, ItemStatus.DELETED])
+@pytest.mark.parametrize('file_status', [ItemStatus.TRASHED, ItemStatus.DELETED, ItemStatus.ACTIVE])
 def test_check_file_status(mocker, httpx_mock, file_status):
     test_project_code = 'test_code'
     test_parent_id = 'test_parent_id'
@@ -105,7 +107,45 @@ def test_check_file_status(mocker, httpx_mock, file_status):
     file_trash_client.max_status_check = 1
 
     res = file_trash_client.check_status(file_status)
-    if file_status == ItemStatus.ACTIVE:
-        assert res == ['test_parent_path/test_name']
-    else:
-        assert res == []
+    assert res == []
+
+
+def test_check_file_status_not_matched(mocker, httpx_mock):
+    test_project_code = 'test_code'
+    test_parent_id = 'test_parent_id'
+    test_object_ids = ['test_object_id']
+    test_zone = 'greenroom'
+
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+
+    httpx_mock.add_response(
+        url=AppConfig.Connections.url_bff + '/v1/query/geid',
+        method='POST',
+        status_code=200,
+        json={
+            'result': [
+                {
+                    'result': {
+                        'id': 'test_object_id',
+                        'status': ItemStatus.ACTIVE,
+                        'name': 'test_name',
+                        'parent_id': 'test_parent_id',
+                        'parent_path': 'test_parent_path',
+                        'restore_path': 'test_restore_path',
+                    },
+                    'status': ItemStatus.ACTIVE,
+                }
+            ]
+        },
+    )
+
+    file_trash_client = FileTrashClient(
+        project_code=test_project_code, parent_id=test_parent_id, object_ids=test_object_ids, zone=test_zone
+    )
+    file_trash_client.retry_interval = 1
+    file_trash_client.max_status_check = 1
+    res = file_trash_client.check_status(ItemStatus.TRASHED)
+    assert res == ['test_parent_path/test_name']
