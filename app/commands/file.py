@@ -20,6 +20,7 @@ from app.services.file_manager.file_manifests import SrvFileManifests
 from app.services.file_manager.file_metadata.file_metadata_client import FileMetaClient
 from app.services.file_manager.file_move.file_move_client import FileMoveClient
 from app.services.file_manager.file_trash.file_trash_client import FileTrashClient
+from app.services.file_manager.file_trash.utils import parse_trash_paths
 from app.services.file_manager.file_upload.file_upload import assemble_path
 from app.services.file_manager.file_upload.file_upload import resume_upload
 from app.services.file_manager.file_upload.file_upload import simple_upload
@@ -566,44 +567,25 @@ def file_move(**kwargs):
 )
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_TRASH))
 def file_trash(paths: str, zone: str, permanent: bool):
-    # zone = get_zone(zone) if zone else AppConfig.Env.green_zone
     # group path by parent folder
-    items, parent_cache = {}, {}
-    for path in paths:
-        # assume path is project_code/<root>/<name_or_shared>/file
-        # raise the error if path is not in the correct format
-        if len(path.split('/')) < 4:
-            SrvErrorHandler.customized_handle(ECustomizedError.INVALID_DELETE_PATH, True, path)
-        project_code, object_path = path.split('/', 1)
-        parent_folder, _ = object_path.rsplit('/', 1)
+    project_code, items = parse_trash_paths(paths, zone, permanent)
 
-        # get item and corresponding parent item from cache or search
-        item = search_item(project_code, zone, object_path).get('result')
-        if parent_folder not in parent_cache:
-            parent_item = search_item(project_code, zone, parent_folder).get('result')
-        else:
-            parent_item = parent_cache[parent_folder]
-        if not item or not parent_item:
-            SrvErrorHandler.customized_handle(ECustomizedError.DELETE_PATH_NOT_EXIST, True, path)
-        parent_id, item_id = parent_item.get('id'), item.get('id')
+    for parent_id, item_ids in items.items():
+        root_folder, item_ids = item_ids['root_folder'], item_ids['items']
+        trash_client = FileTrashClient(project_code, parent_id, item_ids, zone)
 
-        if parent_id not in items:
-            items[parent_id] = [item_id]
-            parent_cache[parent_folder] = parent_item
-        else:
-            items[parent_id].append(item_id)
+        # only when item status is active or root is not trash bin
+        if root_folder != ItemType.TRASH:
+            trash_client.move_to_trash()
+            failed_item = trash_client.check_status(ItemStatus.TRASHED)
+            if failed_item:
+                SrvErrorHandler.customized_handle(ECustomizedError.TRASH_FAIL, True, failed_item)
 
-    trash_client = FileTrashClient(project_code, parent_id, items[parent_id], zone)
-    trash_client.move_to_trash()
-    failed_item = trash_client.check_status(ItemStatus.TRASHED)
-    if failed_item:
-        SrvErrorHandler.customized_handle(ECustomizedError.TRASH_FAIL, True, failed_item)
-
-    # if permanent flag is set, then permanently delete the files
-    if permanent:
-        trash_client.permanently_delete()
-        failed_item = trash_client.check_status(ItemStatus.DELETED)
-        if failed_item:
-            SrvErrorHandler.customized_handle(ECustomizedError.DELETE_FAIL, True, failed_item)
+        # if permanent flag is set, then permanently delete the files
+        if permanent:
+            trash_client.permanently_delete()
+            failed_item = trash_client.check_status(ItemStatus.DELETED)
+            if failed_item:
+                SrvErrorHandler.customized_handle(ECustomizedError.DELETE_FAIL, True, failed_item)
 
     message_handler.SrvOutPutHandler.trash_delete_success(list(paths), permanent)

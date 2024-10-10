@@ -100,6 +100,7 @@ class Error:
         'DELETE_PATH_NOT_EXIST': 'Selected path: %s does not exist.',
         'TRASH_FAIL': 'Failed to trash items: %s.',
         'DELETE_FAIL': 'Failed to delete items: %s.',
+        'ALREADY_TRASHED': 'Selected path: %s is already in the trash. Please use permanent delete to remove it.',
         # file metadata related error
         'LOCAL_METADATA_FILE_EXISTS': 'Following metadata file already exists in the local directory: ',
         'VERSION_NOT_EXIST': 'Version not available: %s',
