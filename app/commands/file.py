@@ -353,14 +353,6 @@ def file_export_manifest(project_code, attribute_name):
     help='whether run in detached mode',
     show_default=True,
 )
-# @click.option(
-#     '--trashed',
-#     default=False,
-#     required=False,
-#     is_flag=True,
-#     help='whether list trashed files',
-#     show_default=True,
-# )
 @require_valid_token()
 @doc(file_help.file_help_page(file_help.FileHELP.FILE_LIST))
 def file_list(paths, zone, page, page_size, detached):
