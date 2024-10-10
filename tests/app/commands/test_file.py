@@ -161,7 +161,7 @@ def test_file_list_with_pagination_with_folder_success(httpx_mock, mocker, cli_r
         httpx_mock.add_response(
             method='GET',
             url='http://bff_cli/v1/testproject/files/query?project_code=testproject&folder=users%2F'
-            f'admin&source_type=project&zone=greenroom&page={i}&page_size={page_size}',
+            f'admin&source_type=project&zone=greenroom&page={i}&page_size={page_size}&status=ACTIVE',
             json={
                 'code': 200,
                 'error_msg': '',
@@ -188,6 +188,34 @@ def test_file_list_with_pagination_with_folder_success(httpx_mock, mocker, cli_r
     assert outputs[1] == ''.join([f'f{i}  ' for i in range(page_size)]) + ' '
 
 
+def test_file_list_in_trashbin(httpx_mock, mocker, cli_runner):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+
+    httpx_mock.add_response(
+        method='GET',
+        url='http://bff_cli/v1/testproject/files/query?project_code=testproject&folder=&'
+        'source_type=project&zone=&page=0&page_size=10&status=TRASHED',
+        json={
+            'code': 200,
+            'error_msg': '',
+            'total': 1,
+            'result': [
+                {'type': ItemType.FILE.value, 'name': 'test.txt', 'zone': 0, 'status': 'TRASHED'},
+                {'type': ItemType.FILE.value, 'name': 'test1.txt', 'zone': 1, 'status': 'TRASHED'},
+            ],
+        },
+    )
+    # mocker.patch.object(questionary, 'select')
+    # questionary.select.return_value.ask.return_value = 'exit'
+    result = cli_runner.invoke(file_list, ['testproject/trash'])
+    assert result.exit_code == 0
+    outputs = result.output.split('\n')
+    assert outputs[0] == 'test.txt(greenroom)  test1.txt(core)   '
+
+
 def test_file_list_with_pagination_with_root_folder(httpx_mock, mocker, cli_runner):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
@@ -201,7 +229,7 @@ def test_file_list_with_pagination_with_root_folder(httpx_mock, mocker, cli_runn
     httpx_mock.add_response(
         method='GET',
         url='http://bff_cli/v1/testproject/files/query?project_code=testproject&folder=users%2F'
-        'admin&source_type=project&zone=greenroom&page=0&page_size=10',
+        'admin&source_type=project&zone=greenroom&page=0&page_size=10&status=ACTIVE',
         json={
             'code': 200,
             'error_msg': '',
@@ -236,7 +264,7 @@ def test_empty_file_list_with_pagination(httpx_mock, mocker, cli_runner):
     httpx_mock.add_response(
         method='GET',
         url='http://bff_cli/v1/testproject/files/query?project_code=testproject&'
-        'folder=&source_type=project&zone=greenroom&page=0&page_size=10',
+        'folder=&source_type=project&zone=greenroom&page=0&page_size=10&status=ACTIVE',
         json={'code': 200, 'error_msg': '', 'result': [], 'total': 0},
     )
     mocker.patch.object(questionary, 'select')
