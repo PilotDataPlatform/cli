@@ -11,7 +11,6 @@ questionary = "^1.10.0"
 tqdm = "4.56.0"
 cryptography = "3.4.8"
 urllib3 = "^1.26.14"
-requests = "^2.28.2"
 pydantic-settings = "2.0.1"
 cffi = "^1.15.1"
 pre-commit = "^2.19.0"
@@ -21,6 +20,7 @@ pytest-click = "^1.1.0"
 pyinstaller = "^5.13.0"
 pygithub = "2.2.0"
 pywin32 = { version = "^306", optional = true }
+pillow = "^10.4.0"
 
 
 [tool.poetry.extras]
