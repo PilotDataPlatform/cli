@@ -22,7 +22,8 @@ def test_search_file_should_return_200(httpx_mock, mocker):
     httpx_mock.add_response(
         method='GET',
         url=f'http://bff_cli/v1/project/{test_project_code}/search?zone=zone&'
-        f'project_code={test_project_code}&path=folder_relative_path&container_type=project',
+        f'project_code={test_project_code}&path=folder_relative_path&container_type=project'
+        '&status=ACTIVE',
         json={
             'code': 200,
             'error_msg': '',
@@ -76,7 +77,8 @@ def test_search_item_returns_response_when_status_code_is_404(httpx_mock, mocker
     httpx_mock.add_response(
         method='GET',
         url=f'http://bff_cli/v1/project/{test_project_code}/search?zone=zone&'
-        f'project_code={test_project_code}&path=folder_relative_path&container_type=project',
+        f'project_code={test_project_code}&path=folder_relative_path&container_type=project'
+        '&status=ACTIVE',
         json=expected_response,
         status_code=404,
     )
@@ -91,7 +93,8 @@ def test_search_file_error_handling_with_403(httpx_mock, mocker, capsys):
     httpx_mock.add_response(
         method='GET',
         url=f'http://bff_cli/v1/project/{test_project_code}/search?zone=zone&'
-        f'project_code={test_project_code}&path=folder_relative_path&container_type=project',
+        f'project_code={test_project_code}&path=folder_relative_path&container_type=project'
+        '&status=ACTIVE',
         json={},
         status_code=403,
     )
@@ -110,7 +113,8 @@ def test_search_file_error_handling_with_401(httpx_mock, mocker, capsys):
     httpx_mock.add_response(
         method='GET',
         url=f'http://bff_cli/v1/project/{test_project_code}/search?zone=zone&'
-        f'project_code={test_project_code}&path=folder_relative_path&container_type=project',
+        f'project_code={test_project_code}&path=folder_relative_path&container_type=project'
+        '&status=ACTIVE',
         text='Authentication failed.',
         status_code=401,
     )

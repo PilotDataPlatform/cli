@@ -25,6 +25,10 @@ class SrvFileList(BaseAuthClient, metaclass=MetaService):
         super().__init__(AppConfig.Connections.url_bff)
 
         self.endpoint = AppConfig.Connections.url_bff + '/v1'
+        self.zone_map = {
+            0: AppConfig.Env.green_zone,
+            1: AppConfig.Env.core_zone,
+        }
 
     @require_valid_token()
     def list_files(self, paths: str, zone: str, page: int, page_size: int) -> Tuple[str, int]:
