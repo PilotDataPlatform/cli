@@ -77,7 +77,7 @@ class SrvFileList(BaseAuthClient, metaclass=MetaService):
 
             # formating zone info for trashed items
             if f.get('status') == ItemStatus.TRASHED:
-                zone = self.zone_map.get(f.get('zone'))
+                zone = AppConfig.Env.zone_int2string.get(f.get('zone'))
                 f['name'] = f'{f.get("name")}({zone})'
 
             if item_type == ItemType.FILE:
