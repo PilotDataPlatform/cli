@@ -25,10 +25,6 @@ class SrvFileList(BaseAuthClient, metaclass=MetaService):
         super().__init__(AppConfig.Connections.url_bff)
 
         self.endpoint = AppConfig.Connections.url_bff + '/v1'
-        self.zone_map = {
-            0: AppConfig.Env.green_zone,
-            1: AppConfig.Env.core_zone,
-        }
 
     @require_valid_token()
     def list_files(self, paths: str, zone: str, page: int, page_size: int) -> Tuple[str, int]:
@@ -77,7 +73,7 @@ class SrvFileList(BaseAuthClient, metaclass=MetaService):
 
             # formating zone info for trashed items
             if f.get('status') == ItemStatus.TRASHED:
-                zone = self.zone_map.get(f.get('zone'))
+                zone = AppConfig.Env.zone_int2string.get(f.get('zone'))
                 f['name'] = f'{f.get("name")}({zone})'
 
             if item_type == ItemType.FILE:
