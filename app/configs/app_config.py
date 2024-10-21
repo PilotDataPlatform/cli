@@ -31,6 +31,11 @@ class AppConfig:
 
         github_url = 'PilotDataPlatform/cli'
 
+        zone_int2string = {
+            0: green_zone,
+            1: core_zone,
+        }
+
     class Connections:
         url_harbor = ConfigClass.url_harbor
         url_authn = ConfigClass.url_authn
