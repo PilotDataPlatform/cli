@@ -1518,4 +1518,4 @@ windows = ["pywin32"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.11"
-content-hash = "2c13051c5dc1242de6192b845972f289491c8b0ee37e7182afdb45bb9a7764f6"
+content-hash = "498fd72a4c46a1c4aed4b5c6fd2bd0f38a4cb8da60ec3561ddd7a2d92e4fabce"
