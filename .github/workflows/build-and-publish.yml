@@ -179,8 +179,7 @@ jobs:
           .\.venv\Scripts\Activate
           pip install poetry==1.8.3
           poetry shell
-          python -m pip install charset-normalizer==3.3.2 --upgrade --no-deps
-          poetry install --no-interaction --extras "windows"
+          poetry install --no-interaction --extras "windows" --only-main
         shell: pwsh
 
       - name: Build binary
