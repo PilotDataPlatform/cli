@@ -179,7 +179,7 @@ jobs:
           .\.venv\Scripts\Activate
           pip install poetry==1.8.3
           poetry shell
-          poetry install --no-interaction --extras "windows" --only-main
+          poetry install --no-interaction --extras "windows" --only main
         shell: pwsh
 
       - name: Build binary
