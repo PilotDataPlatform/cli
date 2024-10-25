@@ -5,6 +5,7 @@ on:
     workflows: [ "Run Tests" ]
     branches:
       - develop
+      - patch20241025
     types:
       - completed
   push:
@@ -164,6 +165,7 @@ jobs:
 
       - name: Create virtual environment
         run: |
+          test111
           rm -rf .venv
           python -m venv .venv
           python -m pip install charset-normalizer==3.3.2 --upgrade --no-deps
