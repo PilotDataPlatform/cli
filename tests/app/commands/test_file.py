@@ -189,10 +189,10 @@ def test_file_list_with_pagination_with_folder_success(httpx_mock, mocker, cli_r
 
 
 @pytest.mark.parametrize(
-    'zone',
-    ['greenroom', 'core'],
+    'zone, zone_int',
+    [('greenroom', 0), ('core', 1)],
 )
-def test_file_list_in_trashbin(httpx_mock, mocker, cli_runner, zone):
+def test_file_list_in_trashbin(httpx_mock, mocker, cli_runner, zone, zone_int):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
         return_value=decoded_token(),
@@ -207,8 +207,7 @@ def test_file_list_in_trashbin(httpx_mock, mocker, cli_runner, zone):
             'error_msg': '',
             'total': 1,
             'result': [
-                {'type': ItemType.FILE.value, 'name': 'test.txt', 'zone': 0, 'status': 'TRASHED'},
-                {'type': ItemType.FILE.value, 'name': 'test1.txt', 'zone': 1, 'status': 'TRASHED'},
+                {'type': ItemType.FILE.value, 'name': f'test_{zone}.txt', 'zone': zone_int, 'status': 'TRASHED'},
             ],
         },
     )
@@ -217,7 +216,7 @@ def test_file_list_in_trashbin(httpx_mock, mocker, cli_runner, zone):
     result = cli_runner.invoke(file_list, ['testproject/trash', '-z', zone])
     assert result.exit_code == 0
     outputs = result.output.split('\n')
-    assert outputs[0] == 'test.txt(greenroom)  test1.txt(core)   '
+    assert outputs[0] == f'test_{zone}.txt   '
 
 
 def test_file_list_with_pagination_with_root_folder(httpx_mock, mocker, cli_runner):

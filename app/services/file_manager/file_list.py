@@ -74,11 +74,6 @@ class SrvFileList(BaseAuthClient, metaclass=MetaService):
             if ' ' in f.get('name'):
                 f['name'] = f'"{f.get("name")}"'
 
-            # formating zone info for trashed items
-            if f.get('status') == ItemStatus.TRASHED:
-                zone = AppConfig.Env.zone_int2string.get(f.get('zone'))
-                f['name'] = f'{f.get("name")}({zone})'
-
             if item_type == ItemType.FILE:
                 files = files + f.get('name') + ' ...'
             else:
