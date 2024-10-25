@@ -45,7 +45,6 @@ class SrvFileList(BaseAuthClient, metaclass=MetaService):
 
         # now query the backend to get the file list
         status = ItemStatus.TRASHED if root_folder == ItemType.TRASH else ItemStatus.ACTIVE
-        zone = '' if root_folder == ItemType.TRASH else zone
         params = {
             'project_code': project_code,
             'source_type': source_type,

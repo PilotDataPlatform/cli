@@ -188,7 +188,11 @@ def test_file_list_with_pagination_with_folder_success(httpx_mock, mocker, cli_r
     assert outputs[1] == ''.join([f'f{i}  ' for i in range(page_size)]) + ' '
 
 
-def test_file_list_in_trashbin(httpx_mock, mocker, cli_runner):
+@pytest.mark.parametrize(
+    'zone',
+    ['greenroom', 'core'],
+)
+def test_file_list_in_trashbin(httpx_mock, mocker, cli_runner, zone):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
         return_value=decoded_token(),
@@ -197,7 +201,7 @@ def test_file_list_in_trashbin(httpx_mock, mocker, cli_runner):
     httpx_mock.add_response(
         method='GET',
         url='http://bff_cli/v1/testproject/files/query?project_code=testproject&folder=&'
-        'source_type=project&zone=&page=0&page_size=10&status=TRASHED',
+        f'source_type=project&zone={zone}&page=0&page_size=10&status=TRASHED',
         json={
             'code': 200,
             'error_msg': '',
@@ -210,7 +214,7 @@ def test_file_list_in_trashbin(httpx_mock, mocker, cli_runner):
     )
     # mocker.patch.object(questionary, 'select')
     # questionary.select.return_value.ask.return_value = 'exit'
-    result = cli_runner.invoke(file_list, ['testproject/trash'])
+    result = cli_runner.invoke(file_list, ['testproject/trash', '-z', zone])
     assert result.exit_code == 0
     outputs = result.output.split('\n')
     assert outputs[0] == 'test.txt(greenroom)  test1.txt(core)   '
