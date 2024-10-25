@@ -165,7 +165,6 @@ jobs:
 
       - name: Create virtual environment
         run: |
-          rmdir /S /Q .venv
           python -m venv .venv
           python -m pip install charset-normalizer==3.3.2 --upgrade --no-deps
 
