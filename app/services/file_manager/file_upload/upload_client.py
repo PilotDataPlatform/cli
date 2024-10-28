@@ -45,7 +45,6 @@ class UploadClient(BaseAuthClient):
         infomation of particular upload action:
          - project_code: the unique code of project.
          - zone: data zone. can be greenroom or core.
-         - upload_message:
          - job_type: based on the input. can be AS_FILE or AS_FOLDER.
          - current_folder_node: the target folder in object storage.
     """
@@ -55,7 +54,6 @@ class UploadClient(BaseAuthClient):
         project_code: str,
         parent_folder_id: str,
         zone: str = AppConfig.Env.green_zone,
-        upload_message: str = 'cli straight upload',
         job_type: str = UploadType.AS_FILE,
         current_folder_node: str = '',
         regular_file: str = True,
@@ -67,7 +65,6 @@ class UploadClient(BaseAuthClient):
 
         self.user = UserConfig()
         self.operator = self.user.username
-        self.upload_message = upload_message
         self.chunk_size = AppConfig.Env.chunk_size
 
         prefix = {
@@ -281,7 +278,6 @@ class UploadClient(BaseAuthClient):
             'parent_folder_id': self.parent_folder_id,
             'current_folder_node': self.current_folder_node,
             'tags': self.tags,
-            'upload_message': self.upload_message,
             'file_objects': {file_object.item_id: file_object.to_dict() for file_object in file_objects},
             'attributes': self.attributes if self.attributes else {},
         }
@@ -314,11 +310,10 @@ class UploadClient(BaseAuthClient):
         # after all the chunks have been uploaded.
         chunk_result = []
         while True:
-            chunk = file_object.uploaded_chunks.get(str(count + 1), {})
-            chunk_etag = chunk.get('etag')
-            chunk_size = chunk.get('chunk_size', self.chunk_size)
+            chunk_info = file_object.uploaded_chunks.get(str(count + 1), {})
+            chunk_etag = chunk_info.get('etag')
 
-            chunk = f.read(chunk_size)
+            chunk = f.read(self.chunk_size)
             local_chunk_etag = base64.b64encode(hashlib.md5(chunk).digest()).decode('utf-8')
             if not chunk:
                 break
@@ -329,11 +324,12 @@ class UploadClient(BaseAuthClient):
                 if chunk_etag != local_chunk_etag:
                     SrvErrorHandler.customized_handle(ECustomizedError.INVALID_CHUNK_UPLOAD, value=count + 1)
                     raise INVALID_CHUNK_ETAG(count + 1)
+                chunk_size = chunk_info.get('chunk_size', self.chunk_size)
                 file_object.update_progress(chunk_size)
             else:
                 res = pool.apply_async(
                     self.upload_chunk,
-                    args=(file_object, count + 1, chunk, local_chunk_etag, chunk_size),
+                    args=(file_object, count + 1, chunk, local_chunk_etag, len(chunk)),
                 )
                 chunk_result.append(res)
 
@@ -417,7 +413,6 @@ class UploadClient(BaseAuthClient):
             self.operator,
             file_object,
             [],
-            upload_message=self.upload_message,
         )
         try:
             self.endpoint = {

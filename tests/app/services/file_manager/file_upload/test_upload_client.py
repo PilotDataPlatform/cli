@@ -2,15 +2,20 @@
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
+import base64
+import hashlib
+import math
 import re
 from functools import wraps
 from multiprocessing import TimeoutError
 from multiprocessing.pool import ThreadPool
 from time import sleep
 
+import click
 import pytest
 
 from app.configs.app_config import AppConfig
+from app.services.file_manager.file_upload.exception import INVALID_CHUNK_ETAG
 from app.services.file_manager.file_upload.models import FileObject
 from app.services.file_manager.file_upload.upload_client import UploadClient
 from tests.conftest import decoded_token
@@ -93,6 +98,119 @@ def test_chunk_upload_failed_with_401(httpx_mock, mocker):
     test_obj = FileObject('test', 'test', 'test', 'test', 'test')
     with pytest.raises(SystemExit):
         upload_client.upload_chunk(test_obj, 0, b'1', 'test_etag', 10)
+
+
+@pytest.mark.parametrize('total_size, chunk_size', [(101, 1), (101, 5), (101, 101)])
+def test_stream_upload_success_with_new_upload(mocker, total_size, chunk_size):
+    upload_client = UploadClient('project_code', 'parent_folder_id')
+    upload_client.chunk_size = chunk_size
+    test_data = '1' * total_size
+    file_size = len(test_data)
+    file_chunks = math.ceil(file_size / upload_client.chunk_size)
+    file_local_path = 'test.txt'
+
+    mocker.patch(
+        'app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(file_size, file_chunks)
+    )
+    test_obj = FileObject('object_path', file_local_path)
+    upload_chunk_mock = mocker.patch(
+        'app.services.file_manager.file_upload.upload_client.UploadClient.upload_chunk', return_value=None
+    )
+
+    runner = click.testing.CliRunner()
+    with runner.isolated_filesystem():
+        with open(file_local_path, 'w') as f:
+            f.write(test_data)
+        pool = ThreadPool(2)
+        res = upload_client.stream_upload(test_obj, pool)
+
+        pool.close()
+        pool.join()
+
+    assert len(res) == file_chunks
+    # assert call with all chunks and params
+    for i in range(file_chunks):
+        chunk = test_data[i * upload_client.chunk_size : (i + 1) * upload_client.chunk_size].encode()
+
+        etag = base64.b64encode(hashlib.md5(chunk).digest()).decode('utf-8')
+        chunk_size = len(chunk)
+        upload_chunk_mock.assert_any_call(test_obj, i + 1, chunk, etag, chunk_size)
+
+
+@pytest.mark.parametrize('total_size, chunk_size, uploaded_offest', [(101, 1, 1), (101, 5, 1), (101, 101, 1)])
+def test_stream_upload_success_with_resume_upload(mocker, total_size, chunk_size, uploaded_offest):
+    upload_client = UploadClient('project_code', 'parent_folder_id')
+    upload_client.chunk_size = chunk_size
+    test_data = '1' * total_size
+    file_size = len(test_data)
+    file_chunks = math.ceil(file_size / upload_client.chunk_size)
+    file_local_path = 'test.txt'
+    uploaded_chunk, uploaded_offest = {}, uploaded_offest
+    for i in range(uploaded_offest):
+        chunk = test_data[i * upload_client.chunk_size : (i + 1) * upload_client.chunk_size].encode()
+        etag = base64.b64encode(hashlib.md5(chunk).digest()).decode('utf-8')
+        uploaded_chunk.update({str(i + 1): {'etag': etag, 'chunk_size': len(chunk)}})
+
+    mocker.patch(
+        'app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(file_size, file_chunks)
+    )
+    test_obj = FileObject('object_path', file_local_path)
+    test_obj.uploaded_chunks = uploaded_chunk
+    upload_chunk_mock = mocker.patch(
+        'app.services.file_manager.file_upload.upload_client.UploadClient.upload_chunk', return_value=None
+    )
+
+    runner = click.testing.CliRunner()
+    with runner.isolated_filesystem():
+        with open(file_local_path, 'w') as f:
+            f.write(test_data)
+        pool = ThreadPool(2)
+        res = upload_client.stream_upload(test_obj, pool)
+
+        pool.close()
+        pool.join()
+
+    assert len(res) == file_chunks - uploaded_offest
+    # assert call with all chunks and params
+    for i in range(file_chunks - uploaded_offest):
+        offset = uploaded_offest + i
+        chunk = test_data[offset * upload_client.chunk_size : (offset + 1) * upload_client.chunk_size].encode()
+
+        etag = base64.b64encode(hashlib.md5(chunk).digest()).decode('utf-8')
+        chunk_size = len(chunk)
+        upload_chunk_mock.assert_any_call(test_obj, offset + 1, chunk, etag, chunk_size)
+
+
+def test_stream_upload_failed_with_etag_mismatch(mocker):
+    upload_client = UploadClient('project_code', 'parent_folder_id')
+    upload_client.chunk_size = 2
+    test_data = '1' * 10
+    file_size = len(test_data)
+    file_chunks = math.ceil(file_size / upload_client.chunk_size)
+    file_local_path = 'test.txt'
+
+    mocker.patch(
+        'app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(file_size, file_chunks)
+    )
+    test_obj = FileObject('object_path', file_local_path)
+    # wrong etag
+    test_obj.uploaded_chunks = {'1': {'etag': 'test_etag', 'chunk_size': 2}}
+
+    runner = click.testing.CliRunner()
+    with runner.isolated_filesystem():
+        with open(file_local_path, 'w') as f:
+            f.write(test_data)
+        pool = ThreadPool(2)
+        try:
+            upload_client.stream_upload(test_obj, pool)
+        except INVALID_CHUNK_ETAG as e:
+            assert e.chunk_number == 1
+        except Exception as e:
+            raise AssertionError(f'Expect INVALID_CHUNK_ETAG but got {e}')
+
+        finally:
+            pool.close()
+            pool.join()
 
 
 def test_token_refresh_auto(mocker):

@@ -24,6 +24,7 @@ from .file import file_metadata_download
 from .file import file_move
 from .file import file_put
 from .file import file_resume
+from .file import file_trash
 from .folder import folder_create
 
 # Import custom commands
@@ -82,6 +83,7 @@ file_group.add_command(file_download)
 file_group.add_command(file_resume)
 file_group.add_command(file_metadata_download)
 file_group.add_command(file_move)
+file_group.add_command(file_trash)
 project_group.add_command(project_list_all)
 user_group.add_command(login)
 user_group.add_command(logout)

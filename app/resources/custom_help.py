@@ -45,7 +45,6 @@ class HelpPage:
             'FILE_SYNC_Z': 'Target Zone (i.e., core/greenroom).',
             'FILE_UPLOAD_A': 'Add attributes to the file using a File Attribute Template.',
             'FILE_UPLOAD_T': 'Add tags to the file using a Tag file.',
-            'FILE_UPLOAD_M': 'The message used to comment on the purpose of uploading your processed file.',
             'FILE_UPLOAD_S': (
                 'Project file path for identifying a source file when creating an upstream '
                 'file lineage node. Source files must exist in the Core zone.'
@@ -62,6 +61,8 @@ class HelpPage:
             'FILE_MOVE': 'Move/Rename files/folders to a given Project path.',
             'FILE_MOVE_Z': 'Target Zone (i.e., core/greenroom).',
             'FILE_MOVE_Y': 'Skip the prompt confirmation and create non-existing folders.',
+            'FILE_TRASH': 'Move files/folders to trash bin.',
+            'FILE_TRASH_P': 'Permanent delete files/folders directly.',
         },
         'config': {
             'SET_CONFIG': 'Chose config file and set for cli.',

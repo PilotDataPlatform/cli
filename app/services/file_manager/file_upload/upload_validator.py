@@ -15,22 +15,15 @@ from app.utils.aggregated import search_item
 
 
 class UploadEventValidator:
-    def __init__(
-        self, project_code: str, zone: str, upload_message: str, source: str, attribute: Dict[str, Any], tag: List[str]
-    ):
+    def __init__(self, project_code: str, zone: str, source: str, attribute: Dict[str, Any], tag: List[str]):
         self.project_code = project_code
         self.zone = zone
-        self.upload_message = upload_message
         self.source = source
         self.attribute = attribute
         self.tag = tag
 
     def validate_zone(self):
         source_file_info = {}
-        if not self.upload_message:
-            SrvErrorHandler.customized_handle(
-                ECustomizedError.INVALID_UPLOAD_REQUEST, True, value='upload-message is required'
-            )
         if self.source:
             source_file_info = search_item(self.project_code, AppConfig.Env.core_zone.lower(), self.source)
             source_file_info = source_file_info['result']

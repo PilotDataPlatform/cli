@@ -12,12 +12,15 @@ from click.exceptions import Abort
 import app.services.output_manager.help_page as file_help
 import app.services.output_manager.message_handler as message_handler
 from app.configs.app_config import AppConfig
+from app.models.item import ItemStatus
 from app.models.item import ItemType
 from app.services.file_manager.file_download.download_client import SrvFileDownload
 from app.services.file_manager.file_list import SrvFileList
 from app.services.file_manager.file_manifests import SrvFileManifests
 from app.services.file_manager.file_metadata.file_metadata_client import FileMetaClient
 from app.services.file_manager.file_move.file_move_client import FileMoveClient
+from app.services.file_manager.file_trash.file_trash_client import FileTrashClient
+from app.services.file_manager.file_trash.utils import parse_trash_paths
 from app.services.file_manager.file_upload.file_upload import assemble_path
 from app.services.file_manager.file_upload.file_upload import resume_upload
 from app.services.file_manager.file_upload.file_upload import simple_upload
@@ -75,14 +78,6 @@ def cli():
     show_default=True,
 )
 @click.option(
-    '-m',
-    '--upload-message',
-    default=None,
-    required=False,
-    help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_M),
-    show_default=True,
-)
-@click.option(
     '-s',
     '--source-file',
     default=None,
@@ -124,7 +119,6 @@ def file_put(**kwargs):  # noqa: C901
 
     tag_files = kwargs.get('tag')
     zone = kwargs.get('zone')
-    upload_message = kwargs.get('upload_message')
     source_file = kwargs.get('source_file')
     zipping = kwargs.get('zip')
     attribute_file = kwargs.get('attribute')
@@ -171,7 +165,6 @@ def file_put(**kwargs):  # noqa: C901
     srv_manifest = SrvFileManifests()
     upload_val_event = {
         'zone': zone,
-        'upload_message': upload_message,
         'source': source_file,
         'project_code': project_code,
         'attribute': attribute,
@@ -180,9 +173,6 @@ def file_put(**kwargs):  # noqa: C901
     validated_fieds = validate_upload_event(upload_val_event)
     src_file_info = validated_fieds['source_file']
     attribute = validated_fieds['attribute']
-    if zone == AppConfig.Env.core_zone.lower():
-        if not upload_message:
-            upload_message = AppConfig.Env.default_upload_message
 
     # for the path formating there will be following cases:
     # - file:
@@ -220,7 +210,6 @@ def file_put(**kwargs):  # noqa: C901
             'file': f.rstrip('/'),  # remove the ending slash
             'tags': tag if tag else [],
             'zone': zone,
-            'upload_message': upload_message,
             'current_folder_node': current_folder_node,
             'parent_folder_id': parent_folder.get('id'),
             'create_folder_flag': create_folder_flag,
@@ -296,12 +285,11 @@ def file_resume(**kwargs):  # noqa: C901
 def validate_upload_event(event):
     """validate upload request, raise error when filed."""
     zone = event.get('zone')
-    upload_message = event.get('upload_message')
     source = event.get('source')
     project_code = event.get('project_code')
     attribute = event.get('attribute')
     tag = event.get('tag')
-    validator = UploadEventValidator(project_code, zone, upload_message, source, attribute, tag)
+    validator = UploadEventValidator(project_code, zone, source, attribute, tag)
     converted_content = validator.validate_upload_event()
     return converted_content
 
@@ -564,3 +552,45 @@ def file_move(**kwargs):
     file_meta_client.move_file()
 
     message_handler.SrvOutPutHandler.move_action_success(src_item_path, dest_item_path)
+
+
+@click.command(name='trash')
+@click.argument('paths', type=click.STRING, nargs=-1)
+@click.option(
+    '-z',
+    '--zone',
+    required=True,
+    type=click.STRING,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_Z),
+)
+@click.option(
+    '--permanent',
+    default=False,
+    required=False,
+    is_flag=True,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_TRASH_P),
+)
+@doc(file_help.file_help_page(file_help.FileHELP.FILE_TRASH))
+def file_trash(paths: str, zone: str, permanent: bool):
+    # group path by parent folder
+    project_code, items = parse_trash_paths(paths, zone, permanent)
+
+    for parent_id, item_ids in items.items():
+        root_folder, item_ids = item_ids['root_folder'], item_ids['items']
+        trash_client = FileTrashClient(project_code, parent_id, item_ids, zone)
+
+        # only when item status is active or root is not trash bin
+        if root_folder != ItemType.TRASH:
+            trash_client.move_to_trash()
+            failed_item = trash_client.check_status(ItemStatus.TRASHED)
+            if failed_item:
+                SrvErrorHandler.customized_handle(ECustomizedError.TRASH_FAIL, True, failed_item)
+
+        # if permanent flag is set, then permanently delete the files
+        if permanent:
+            trash_client.permanently_delete()
+            failed_item = trash_client.check_status(ItemStatus.DELETED)
+            if failed_item:
+                SrvErrorHandler.customized_handle(ECustomizedError.DELETE_FAIL, True, failed_item)
+
+    message_handler.SrvOutPutHandler.trash_delete_success(list(paths), permanent)

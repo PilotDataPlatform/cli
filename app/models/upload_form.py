@@ -10,7 +10,6 @@ def generate_on_success_form(
     operator: str,
     file_object: FileObject,
     from_parents: str = None,
-    upload_message: str = None,
 ):
     """
     Summary:
@@ -22,7 +21,6 @@ def generate_on_success_form(
         - file_object(FileObject): The object that contains the file information.
         - tags(list[str]): The tags that will be attached with file.
         - from_parents(str): indicate it is parent node.
-        - upload_message(str): the message for uploading.
     return:
         - request_payload(dict): the payload for preupload api.
     """
@@ -41,6 +39,4 @@ def generate_on_success_form(
     }
     if from_parents:
         request_payload['from_parents'] = from_parents
-    if upload_message:
-        request_payload['upload_message'] = upload_message
     return request_payload

@@ -17,6 +17,7 @@ from packaging.version import Version
 import app.services.logger_services.log_functions as logger
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
+from app.models.item import ItemStatus
 from app.models.item import ItemType
 from app.services.clients.base_auth_client import BaseAuthClient
 from app.services.logger_services.debugging_log import debug_logger
@@ -26,13 +27,20 @@ from app.services.user_authentication.decorator import require_valid_token
 
 
 @require_valid_token()
-def search_item(project_code, zone, folder_relative_path, container_type='project'):
+def search_item(
+    project_code: str,
+    zone: int,
+    item_path: str,
+    container_type: str = 'project',
+    status: ItemStatus = ItemStatus.ACTIVE,
+) -> Dict[str, Any]:
     http_client = BaseAuthClient(AppConfig.Connections.url_bff)
     params = {
         'zone': zone,
         'project_code': project_code,
-        'path': folder_relative_path,
+        'path': item_path,
         'container_type': container_type,
+        'status': status.value,
     }
     try:
         res = http_client._get(f'v1/project/{project_code}/search', params=params)
@@ -63,7 +71,7 @@ def get_attribute_template_by_id(template_id: str) -> Dict[str, Any]:
 
 
 @require_valid_token()
-def get_file_info_by_geid(geid: list):
+def get_file_info_by_geid(geid: list) -> List[Dict[str, Any]]:
     payload = {'geid': geid}
     http_client = BaseAuthClient(AppConfig.Connections.url_bff, timeout=60)
     try:
@@ -75,7 +83,7 @@ def get_file_info_by_geid(geid: list):
         res = e.response
         SrvErrorHandler.default_handle(res.text, True)
 
-    return res.json()['result']
+    return res.json().get('result', [])
 
 
 @require_valid_token()
