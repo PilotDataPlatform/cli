@@ -10,7 +10,7 @@ on:
 
 jobs:
   tests:
-    runs-on: pilot-dev-runners
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -55,7 +55,7 @@ jobs:
           coverage-path-prefix: app/
 
   extract-branch-name:
-    runs-on: pilot-dev-runners
+    runs-on: ubuntu-20.04
     needs: [ tests ]
     outputs:
       branch: ${{steps.extract_branch.outputs.branch}}
@@ -67,7 +67,7 @@ jobs:
   push-binary:
     needs: [ extract-branch-name ]
     if: ${{ needs.extract-branch-name.outputs.branch == 'hdc' }}
-    runs-on: pilot-dev-runners
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
