@@ -7,8 +7,8 @@
 from env import ConfigClass
 
 
-class AppConfig(object):
-    class Env(object):
+class AppConfig:
+    class Env:
         section = 'environment'
         project = ConfigClass.project
         user_config_path = ConfigClass.config_path
@@ -34,7 +34,7 @@ class AppConfig(object):
 
         keycloak_device_client_id = ConfigClass.keycloak_device_client_id
 
-    class Connections(object):
+    class Connections:
         section = 'connections'
         url_harbor = ConfigClass.url_harbor
         url_authn = ConfigClass.url_authn

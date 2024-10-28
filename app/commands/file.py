@@ -236,7 +236,7 @@ def file_resume(**kwargs):  # noqa: C901
     if not os.path.exists(resumable_manifest_file):
         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_RESUMABLE, True)
 
-    with open(resumable_manifest_file, 'r') as f:
+    with open(resumable_manifest_file) as f:
         resumable_manifest = json.load(f)
         validate_upload_event(resumable_manifest)
 

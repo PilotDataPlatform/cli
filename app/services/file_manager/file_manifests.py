@@ -21,7 +21,7 @@ def dupe_checking_hook(pairs):
     result = {}
     for key, val in pairs:
         if key in result:
-            raise KeyError('Duplicate attribute specified: %s' % key)
+            raise KeyError(f'Duplicate attribute specified: {key}')
         result[key] = val
     return result
 
@@ -38,7 +38,7 @@ class SrvFileManifests(metaclass=MetaService):
 
     @staticmethod
     def read_manifest_template(path):
-        with open(path, 'r') as file:
+        with open(path) as file:
             data = file.read()
         decoder.decode(data)
         obj = json.loads(data)
@@ -107,8 +107,8 @@ class SrvFileManifests(metaclass=MetaService):
 
     def export_template(self, project_code, manifest_def):
         manifest_name = manifest_def.get('name')
-        manifest_template_path = '{}_{}_template.json'.format(project_code, manifest_name)
-        manifest_definition_path = '{}_{}_definition.json'.format(project_code, manifest_name)
+        manifest_template_path = f'{project_code}_{manifest_name}_template.json'
+        manifest_definition_path = f'{project_code}_{manifest_name}_definition.json'
         with open(manifest_definition_path, 'w') as outfile1:
             json.dump(manifest_def, outfile1, indent=4, sort_keys=False)
         converted_template = self.convert_export(manifest_def)

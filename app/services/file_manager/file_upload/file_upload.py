@@ -10,9 +10,6 @@ import time
 import zipfile
 from multiprocessing.pool import ThreadPool
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Tuple
 
 import click
 
@@ -44,8 +41,8 @@ def compress_folder_to_zip(path):
 
 def assemble_path(
     f: str, target_folder: str, project_code: str, zone: str, zipping: bool = False
-) -> Tuple[str, Dict, bool, str]:
-    '''
+) -> tuple[str, dict, bool, str]:
+    """
     Summary:
         the function is to find the longest parent folder that exists
         in the backend. Since cli will allow user to specify the folder
@@ -68,7 +65,7 @@ def assemble_path(
          - create_folder_flag: the flag to indicate if need to create new folder
          - result_file: the result file if zipping
 
-    '''
+    """
 
     current_file_path = target_folder + '/' + f.rstrip('/').split('/')[-1]
     result_file = current_file_path
@@ -105,7 +102,7 @@ def simple_upload(  # noqa: C901
     upload_event,
     num_of_thread: int = 1,
     output_path: str = None,
-) -> List[str]:
+) -> list[str]:
     upload_start_time = time.time()
     input_path = upload_event.get('file')
     project_code = upload_event.get('project_code')
@@ -202,7 +199,7 @@ def simple_upload(  # noqa: C901
 
 
 def resume_upload(
-    manifest_json: Dict[str, Any],
+    manifest_json: dict[str, Any],
     num_of_thread: int = 1,
 ):
     """

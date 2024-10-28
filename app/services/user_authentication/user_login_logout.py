@@ -6,7 +6,6 @@
 
 import time
 from typing import Any
-from typing import Dict
 from uuid import uuid4
 
 import jwt
@@ -45,7 +44,7 @@ def user_login(username, password):
     return res_to_dict
 
 
-def user_device_id_login() -> Dict[str, Any]:
+def user_device_id_login() -> dict[str, Any]:
     """Get device code URL for user login."""
 
     url = f'{AppConfig.Connections.url_keycloak}/auth/device'

@@ -8,7 +8,7 @@
 class HelpPage:
     page = {
         'update': {
-            'version': '2.2.5',
+            'version': '2.2.6',
             '1': 'CLI supports listing of all datasets a project administrator has access to.',
         },
         'dataset': {

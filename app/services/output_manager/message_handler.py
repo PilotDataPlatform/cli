@@ -98,12 +98,12 @@ class SrvOutPutHandler(metaclass=MetaService):
     @staticmethod
     def export_manifest_template(name):
         """e.g. Succeed, template saved: 0212_Manifest1_template.json."""
-        return logger.succeed('Template saved successfully: {}'.format(name))
+        return logger.succeed(f'Template saved successfully: {name}')
 
     @staticmethod
     def export_manifest_definition(name):
         """e.g. Succeed, definition saved: 0212_Manifest1_definition.json."""
-        return logger.succeed('Attribute definition saved successfully: {}'.format(name))
+        return logger.succeed(f'Attribute definition saved successfully: {name}')
 
     @staticmethod
     def file_manifest_validation(post_result):

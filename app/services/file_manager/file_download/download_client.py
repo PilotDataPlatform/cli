@@ -166,7 +166,7 @@ class SrvFileDownload(metaclass=MetaService):
                     self.total_size = int(size) if size else self.total_size
                 if self.total_size:
                     with open(local_filename, 'wb') as file, tqdm(
-                        desc='Downloading {}'.format(filename),
+                        desc=f'Downloading {filename}',
                         total=self.total_size,
                         unit='iB',
                         unit_scale=True,

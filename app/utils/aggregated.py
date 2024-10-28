@@ -33,7 +33,7 @@ def resilient_session():
 @require_valid_token()
 def search_item(project_code, zone, folder_relative_path, item_type, container_type='project'):
     token = UserConfig().access_token
-    url = AppConfig.Connections.url_bff + '/v1/project/{}/search'.format(project_code)
+    url = AppConfig.Connections.url_bff + f'/v1/project/{project_code}/search'
     params = {
         'zone': zone,
         'project_code': project_code,

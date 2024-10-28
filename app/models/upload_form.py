@@ -4,8 +4,6 @@
 # Version 3.0 (the "License") available at https://www.gnu.org/licenses/agpl-3.0.en.html.
 # You may not use this file except in compliance with the License.
 
-from typing import List
-
 from app.services.file_manager.file_upload.models import FileObject
 
 
@@ -105,7 +103,7 @@ def generate_on_success_form(
     project_code: str,
     operator: str,
     file_object: FileObject,
-    tags: List[str],
+    tags: list[str],
     from_parents: str = None,
     process_pipeline: str = None,
     upload_message: str = None,

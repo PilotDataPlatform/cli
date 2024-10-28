@@ -40,7 +40,7 @@ def encryption(message_to_encrypt, secret):
         iterations=100000,
         backend=default_backend(),
     )
-    key = base64.urlsafe_b64encode(kdf.derive('SECRETKEYPASSWORD'.encode()))
+    key = base64.urlsafe_b64encode(kdf.derive(b'SECRETKEYPASSWORD'))
     message_encode = message_to_encrypt.encode()
     f = Fernet(key)
     encrypt_message = f.encrypt(message_encode)
@@ -64,7 +64,7 @@ def decryption(encrypted_message, secret, interactive=True):
                 iterations=100000,
                 backend=default_backend(),
             )
-            key = base64.urlsafe_b64encode(kdf.derive('SECRETKEYPASSWORD'.encode()))
+            key = base64.urlsafe_b64encode(kdf.derive(b'SECRETKEYPASSWORD'))
             f = Fernet(key)
             decrypted = f.decrypt(base64.b64decode(encrypted_message))
             return decrypted.decode()

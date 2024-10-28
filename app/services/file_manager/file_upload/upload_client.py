@@ -12,9 +12,6 @@ import time
 from multiprocessing.pool import ApplyResult
 from multiprocessing.pool import ThreadPool
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Tuple
 
 import httpx
 
@@ -89,7 +86,7 @@ class UploadClient:
 
         self.finish_upload = False
 
-    def generate_meta(self, local_path: str) -> Tuple[int, int]:
+    def generate_meta(self, local_path: str) -> tuple[int, int]:
         """
         Summary:
             The function is to generate chunk upload meatedata for a file.
@@ -105,7 +102,7 @@ class UploadClient:
         return total_size, total_chunks
 
     @require_valid_token()
-    def resume_upload(self, unfinished_file_objects: List[FileObject]) -> List[FileObject]:
+    def resume_upload(self, unfinished_file_objects: list[FileObject]) -> list[FileObject]:
         """
         Summary:
             The function is to check the uploaded chunks in object storage.
@@ -149,7 +146,7 @@ class UploadClient:
         return unfinished_file_objects
 
     @require_valid_token()
-    def pre_upload(self, file_objects: List[FileObject], output_path: str) -> List[FileObject]:
+    def pre_upload(self, file_objects: list[FileObject], output_path: str) -> list[FileObject]:
         """
         Summary:
             The function is to initiate all the multipart upload.
@@ -165,7 +162,7 @@ class UploadClient:
         """
 
         headers = {'Authorization': 'Bearer ' + self.user.access_token, 'Session-ID': self.user.session_id}
-        url = AppConfig.Connections.url_bff + '/v1/project/{}/files'.format(self.project_code)
+        url = AppConfig.Connections.url_bff + f'/v1/project/{self.project_code}/files'
         payload = {
             'project_code': self.project_code,
             'operator': self.operator,
@@ -213,7 +210,7 @@ class UploadClient:
         else:
             SrvErrorHandler.default_handle(str(response.status_code) + ': ' + str(response.content), self.regular_file)
 
-    def output_manifest(self, file_objects: List[FileObject], output_path: str) -> Dict[str, Any]:
+    def output_manifest(self, file_objects: list[FileObject], output_path: str) -> dict[str, Any]:
         """
         Summary:
             The function is to output the manifest file.
@@ -240,7 +237,7 @@ class UploadClient:
 
         return manifest_json
 
-    def stream_upload(self, file_object: FileObject, pool: ThreadPool) -> List[ApplyResult]:
+    def stream_upload(self, file_object: FileObject, pool: ThreadPool) -> list[ApplyResult]:
         """
         Summary:
             The function is a wrap to display the uploading process.
@@ -305,7 +302,7 @@ class UploadClient:
         # retry three times
         for i in range(AppConfig.Env.resilient_retry):
             if i > 0:
-                SrvErrorHandler.default_handle('retry number %s' % i)
+                SrvErrorHandler.default_handle(f'retry number {i}')
 
             file_object.update_progress(0)
 
@@ -330,7 +327,7 @@ class UploadClient:
                 res = httpx.put(presigned_chunk_url, data=chunk, timeout=None)
 
                 if res.status_code != 200:
-                    error_msg = 'Fail to upload the chunck %s: %s' % (chunk_number, str(res.text))
+                    error_msg = f'Fail to upload the chunck {chunk_number}: {str(res.text)}'
                     raise Exception(error_msg)
 
                 # update the progress bar
@@ -340,7 +337,7 @@ class UploadClient:
 
                 return res
             else:
-                SrvErrorHandler.default_handle('Chunk Error: retry number %s' % i)
+                SrvErrorHandler.default_handle(f'Chunk Error: retry number {i}')
                 if i == 2:
                     SrvErrorHandler.default_handle('retry over 3 times')
                     SrvErrorHandler.default_handle(response.content)
@@ -349,7 +346,7 @@ class UploadClient:
             # the time will be longer for more retry
             time.sleep(AppConfig.Env.resilient_retry_interval * (i + 1))
 
-    def on_succeed(self, file_object: FileObject, tags: List[str], chunk_result: List[ApplyResult]) -> None:
+    def on_succeed(self, file_object: FileObject, tags: list[str], chunk_result: list[ApplyResult]) -> None:
         """
         Summary:
             The function is to finalize the upload process.
@@ -391,7 +388,7 @@ class UploadClient:
                 result = res_json['result']
                 return result
             else:
-                SrvErrorHandler.default_handle('Combine Error: retry number %s' % i)
+                SrvErrorHandler.default_handle(f'Combine Error: retry number {i}')
                 SrvErrorHandler.default_handle(response.content)
                 if i == 2:
                     SrvErrorHandler.default_handle('retry over 3 times')
