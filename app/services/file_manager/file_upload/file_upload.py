@@ -216,8 +216,6 @@ def simple_upload(  # noqa: C901
                 mhandler.SrvOutPutHandler.cancel_upload()
                 exit(1)
 
-    # raise Exception('This function is not implemented yet')
-
     # here is list of pre upload result. We decided to call pre upload api by batch
     pre_upload_infos = []
     for file_batchs in batch_generator(non_duplicate_file_objects, batch_size=AppConfig.Env.upload_batch_size):
