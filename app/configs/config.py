@@ -36,6 +36,8 @@ class Settings(BaseSettings):
     # for dev testing, please set the version to `api-key/v1`
     apikey_endpoint: str = 'api-key'
 
+    upload_batch_size: int = 100
+
     def __init__(self, **data):
         super().__init__(**data)
 

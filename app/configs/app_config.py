@@ -21,7 +21,7 @@ class AppConfig:
         pipeline_straight_upload = f'{ConfigClass.project}cli_upload'
         default_upload_message = f'{ConfigClass.project}cli straight uploaded'
         session_duration = 3600.0
-        upload_batch_size = 100
+        upload_batch_size = ConfigClass.upload_batch_size
         core_zone = 'core'
         green_zone = 'greenroom'
         core_bucket_prefix = 'core'
