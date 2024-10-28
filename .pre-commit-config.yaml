@@ -1,5 +1,5 @@
 default_language_version:
-    python: python3.9
+    python: python3.10
 
 repos:
 
@@ -15,8 +15,16 @@ repos:
       - id: end-of-file-fixer
       - id: trailing-whitespace
 
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.17.0
+    hooks:
+      - id: pyupgrade
+        args: [
+          '--py310-plus',
+        ]
+
   - repo: https://github.com/psf/black
-    rev: 22.8.0
+    rev: 24.8.0
     hooks:
       - id: black
         args: [
@@ -25,7 +33,7 @@ repos:
         ]
 
   - repo: https://github.com/PyCQA/isort
-    rev: 5.12.0
+    rev: 5.13.2
     hooks:
       - id: isort
         args: [
@@ -49,10 +57,11 @@ repos:
           'flake8-comprehensions==3.10.0',  # C4
           'flake8-debugger==4.1.2',  # T1
           'flake8-logging-format==0.7.5',  # G
+          'flake8-use-fstring==1.4.0',  # FS
           'flake8-print==5.0.0',  # T2
         ]
         args: [
-          '--select=E,W,F,C,B,A,C4,T1,G,T2',
+          '--select=E,W,F,C,B,A,C4,T1,G,FS,T2',
           '--ignore=E203,W503,B008,B305,A003,G004',
           '--max-complexity=10',
           '--max-line-length=120',
@@ -69,7 +78,7 @@ repos:
 #        ]
 
   - repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.4.2
+    rev: v1.5.5
     hooks:
       - id: insert-license
         files: \.py$

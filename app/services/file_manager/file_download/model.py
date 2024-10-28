@@ -14,4 +14,4 @@ class EFileStatus(Enum):
     FAILED = 'FAILED'
 
     def __str__(self):
-        return '%s' % self.name
+        return f'{self.name}'

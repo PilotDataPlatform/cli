@@ -9,8 +9,6 @@ from enum import Enum
 from os.path import basename
 from os.path import dirname
 from os.path import getsize
-from typing import List
-from typing import Tuple
 
 from tqdm import tqdm
 
@@ -59,7 +57,7 @@ class FileObject:
     total_size: int
     total_chunks: int
 
-    uploaded_chunks: List[dict]
+    uploaded_chunks: list[dict]
 
     progress_bar = None
 
@@ -82,7 +80,7 @@ class FileObject:
 
         self.uploaded_chunks = {}
 
-    def generate_meta(self, local_path: str) -> Tuple[int, int]:
+    def generate_meta(self, local_path: str) -> tuple[int, int]:
         """
         Summary:
             The function is to generate chunk upload meatedata for a file.

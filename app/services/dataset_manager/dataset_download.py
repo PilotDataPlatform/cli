@@ -122,7 +122,7 @@ class SrvDatasetDownloadManager(metaclass=MetaService):
             output_path = self.avoid_duplicate_file_name(self.output.rstrip('/') + '/' + filename)
             self.total_size = int(r.headers.get('Content-length'))
             with open(output_path, 'wb') as file, tqdm(
-                desc='Downloading {}'.format(filename),
+                desc=f'Downloading {filename}',
                 unit='iB',
                 unit_scale=True,
                 total=self.total_size,

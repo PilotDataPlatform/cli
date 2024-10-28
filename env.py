@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     env = 'dev'
     project = 'pilot'
     app_name = 'pilotcli'
-    config_path = '{}/.{}cli/'.format(os.environ.get('HOME') or os.environ.get('HOMEPATH'), project)
+    config_path = f'{os.environ.get("HOME") or os.environ.get("HOMEPATH")}/.{project}cli/'
     custom_path = 'app/resources'
     harbor_client_secret: str = ''
     base_url: str = ''

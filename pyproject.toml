@@ -1,16 +1,16 @@
 [tool.poetry]
 name = "app"
-version = "2.2.5"
+version = "2.2.6"
 description = "This service is designed to support pilot platform"
 authors = ["Indoc Research"]
 
 [tool.poetry.dependencies]
-python = ">=3.7,<3.11"
+python = ">=3.10,<3.11"
 click = "7.1.2"
 PyJWT = "1.7.1"
 questionary = "^1.10.0"
 tqdm = "4.56.0"
-cryptography = "3.1.1"
+cryptography = "3.4.8"
 urllib3 = "^1.26.14"
 requests = "^2.28.2"
 pydantic = "^1.9.2"
