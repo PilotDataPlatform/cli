@@ -137,7 +137,7 @@ def test_resumable_upload_command_failed_with_file_not_exists(mocker, cli_runner
 
     result = cli_runner.invoke(file_resume, ['--resumable-manifest', 'test.json', '--thread', 1])
     assert result.exit_code == 1
-    assert result.output == customized_error_msg(ECustomizedError.INVALID_RESUMABLE) + '\n'
+    assert result.output == customized_error_msg(ECustomizedError.INVALID_RESUMABLE_FILE) + '\n'
 
 
 @pytest.mark.parametrize(

@@ -344,3 +344,37 @@ def test_resume_upload(mocker):
 
     get_mock.assert_called_once()
     resume_upload_mock.assert_called_once()
+
+
+def test_resume_upload_failed_when_REGISTERED_doesnt_exist(mocker, capfd):
+    mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
+    test_obj = FileObject('object/path', 'local_path', 'resumable_id', 'job_id', 'item_id')
+
+    manifest_json = {
+        'project_code': 'project_code',
+        'operator': 'operator',
+        'zone': AppConfig.Env.green_zone,
+        'parent_folder_id': 'parent_folder_id',
+        'current_folder_node': 'current_folder_node',
+        'tags': 'tags',
+        'file_objects': {test_obj.item_id: test_obj.to_dict()},
+    }
+
+    get_return = test_obj.to_dict()
+    get_mock = mocker.patch(
+        'app.services.file_manager.file_upload.file_upload.get_file_info_by_geid',
+        return_value=[{'result': {}, 'geid': get_return.get('item_id')}],
+    )
+    resume_upload_mock = mocker.patch(
+        'app.services.file_manager.file_upload.file_upload.UploadClient.resume_upload', return_value=[]
+    )
+
+    try:
+        resume_upload(manifest_json, 1)
+    except SystemExit:
+        out, _ = capfd.readouterr()
+        expect = customized_error_msg(ECustomizedError.INVALID_RESUMABLE_UPLOAD) % ('object/path') + '\n'
+        assert expect in out
+
+    get_mock.assert_called_once()
+    assert resume_upload_mock.call_count == 0
