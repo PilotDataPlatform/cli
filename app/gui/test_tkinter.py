@@ -26,10 +26,7 @@ window.resizable(False, False)
 label = tk.Label(text='Python rocks!')
 
 image = Image.open('/home/color/indoc/pilot/cli/app/gui/assets/indoc.png')
-resized_image = image.resize(
-    (image.width // 4, image.height // 4), Image.Resampling.LANCZOS
-)  # Use LANCZOS for high-quality resizing
-# Convert the resized image to a PhotoImage object
+resized_image = image.resize((image.width // 4, image.height // 4), Image.Resampling.LANCZOS)
 photo = ImageTk.PhotoImage(resized_image)
 
 label = tk.Label(window, image=photo)
