@@ -279,7 +279,7 @@ def file_resume(**kwargs):  # noqa: C901
     srv_manifest.attach_manifest(attribute, item_id, zone) if attribute else None
     message_handler.SrvOutPutHandler.all_file_uploaded()
 
-    # remove_the_output_file(resumable_manifest_file)
+    remove_the_output_file(resumable_manifest_file)
 
 
 def validate_upload_event(event):
