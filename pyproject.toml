@@ -21,6 +21,8 @@ pyinstaller = "^5.13.0"
 pygithub = "2.2.0"
 pywin32 = { version = "^306", optional = true }
 pillow = "^10.4.0"
+opencv-python-headless = "^4.10.0.84"
+pyqt5 = "^5.15.11"
 
 
 [tool.poetry.extras]
