@@ -21,6 +21,7 @@ from app.services.user_authentication.user_login_logout import user_device_id_lo
 window = tk.Tk()
 window.title('Pilot CLI')
 window.geometry('800x400')
+window.configure(bg='#0f3c4c')
 window.resizable(False, False)
 
 label = tk.Label(text='Python rocks!')
@@ -29,11 +30,30 @@ image = Image.open('/home/color/indoc/pilot/cli/app/gui/assets/indoc.png')
 resized_image = image.resize((image.width // 4, image.height // 4), Image.Resampling.LANCZOS)
 photo = ImageTk.PhotoImage(resized_image)
 
-label = tk.Label(window, image=photo)
+label = tk.Label(window, image=photo, bg='#0f3c4c')
 label.pack()
 label.image = photo
 
 device_login = user_device_id_login()
+
+button_style = {
+    'bg': 'white',
+    'fg': 'black',
+    'font': ('Helvetica', 16, 'bold'),
+    'bd': 2,
+    'relief': 'ridge',
+    'activebackground': '#D3D3D3',
+}
+
+entry_style = {
+    'bg': 'white',
+    'font': ('Helvetica', 16),
+    'bd': 2,
+    'relief': 'groove',
+    'highlightthickness': 2,
+    'highlightbackground': '#cccccc',
+    'highlightcolor': '#cccccc',
+}
 
 
 def clear_window():
@@ -72,34 +92,51 @@ def check_login():
 
     clear_window()
     project_list = response.json().get('result', [])
-    table = ttk.Treeview(window)
+
+    style = ttk.Style()
+    style.configure(
+        'Treeview',
+        background='#ffffff',
+        foreground='black',
+        rowheight=25,
+        fieldbackground='#ffffff',
+        font=('Helvetica', 14),
+    )
+    style.configure('Treeview.Heading', font=('Helvetica', 14, 'bold'), background='#f5f5f5', foreground='#333333')
+
+    # Alternate row colors
+    style.map('Treeview', background=[('selected', '#4CAF50')], foreground=[('selected', 'black')])
+
+    table = ttk.Treeview(window, show='headings')
     table['columns'] = ['name', 'code']
     for column in ['name', 'code']:
         table.heading(column, text=column)
         table.column(column, anchor='center')
 
-    for row in project_list:
+    for i in range(len(project_list)):
+        row = project_list[i]
         row_val = [row['name'], row['code']]
-        table.insert('', 'end', values=row_val)
-
+        table.insert('', 'end', values=row_val, tags=('evenrow' if i % 2 == 0 else 'oddrow'))
+    table.tag_configure('oddrow', background='#f9f9f9')
+    table.tag_configure('evenrow', background='#ffffff')
     table.pack(pady=20)
 
 
 def on_button_click():
     clear_window()
 
-    url_entry = tk.Entry(window, width=100, fg='blue', justify='center')
-    url_entry.insert(0, device_login['verification_uri_complete'])  # Insert the URL into the Entry widget
-    url_entry.config(state='readonly')  # Make the Entry read-only so users can copy but not edit
+    url_entry = tk.Entry(window, width=100, **entry_style)
+    url_entry.insert(0, device_login['verification_uri_complete'])
+    url_entry.config(state='readonly')
     url_entry.pack(pady=10)
-    button = tk.Button(window, text='Next', command=check_login, bg='white', fg='blue')
+    button = tk.Button(window, text='Next', command=check_login, **button_style)
     button.pack(pady=20)
 
     # force update
     window.update()
 
 
-button = tk.Button(window, text='Login', command=on_button_click, bg='white', fg='blue')
+button = tk.Button(window, text='Login', command=on_button_click, **button_style)
 button.pack(pady=20)
 
 

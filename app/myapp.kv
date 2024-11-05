@@ -1,0 +1,13 @@
+<Button>:
+    background_normal: ''  # Remove default background
+    background_color: 1, 1, 1, 1  # White background
+    color: 0, 0, 0, 1  # Black text color
+    font_size: 16
+    padding: [10, 24]  # Approximate padding, Kivy doesn't support exact padding
+    border: [12, 12, 12, 12]  # Approximate border radius effect
+    canvas.before:
+        Color:
+            rgba: (0.8, 0.8, 0.8, 1)  # Border color in RGBA
+        Line:
+            rounded_rectangle: self.x, self.y, self.width, self.height, 12
+            width: 2

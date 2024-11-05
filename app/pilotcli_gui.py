@@ -2,25 +2,23 @@
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
-import io
-import sys
 import time
 from uuid import uuid4
 
 import jwt
-from PIL import Image
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QImage
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtWidgets import QLabel
-from PyQt5.QtWidgets import QLineEdit
-from PyQt5.QtWidgets import QMainWindow
-from PyQt5.QtWidgets import QPushButton
-from PyQt5.QtWidgets import QTableWidget
-from PyQt5.QtWidgets import QTableWidgetItem
-from PyQt5.QtWidgets import QVBoxLayout
-from PyQt5.QtWidgets import QWidget
+from kivy.app import App
+from kivy.core.window import Window
+from kivy.graphics import Color
+from kivy.graphics import Line
+from kivy.graphics import Rectangle
+from kivy.properties import ListProperty
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.button import Button
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.image import Image
+from kivy.uix.label import Label
+from kivy.uix.scrollview import ScrollView
+from kivy.uix.textinput import TextInput
 
 from app.configs.app_config import AppConfig
 from app.configs.config import ConfigClass
@@ -30,74 +28,97 @@ from app.services.clients.base_client import BaseClient
 from app.services.user_authentication.user_login_logout import user_device_id_login
 
 
-# Create a class for the main window
-class MainWindow(QMainWindow):
+class HoverButton(Button):
+    # Default background color
+    default_color = ListProperty([1, 1, 1, 1])  # White
+    hover_color = ListProperty([0.95, 0.95, 0.95, 1])  # Light grey
+    pressed_color = ListProperty([0.83, 0.83, 0.83, 1])  # Darker grey
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.background_normal = ''  # Remove default background
+        self.background_color = self.default_color
+        self.bind(on_enter=self.on_hover, on_leave=self.on_unhover, on_press=self.on_press, on_release=self.on_unhover)
+        self.size_hint = (None, None)
+        self.width = 150  # Set specific width
+        self.height = 50
+
+    def on_hover(self, *args):
+        self.background_color = self.hover_color
+
+    def on_unhover(self, *args):
+        self.background_color = self.default_color
+
+    def on_press(self, *args):
+        self.background_color = self.pressed_color
+
+
+class TableCell(Label):
+    def __init__(self, text='', is_header=False, is_selected=False, **kwargs):
+        super().__init__(text=text, **kwargs)
+        self.color = (0, 0, 0, 1)
+        with self.canvas.before:
+            # Set cell background color
+            Color(*([0.95, 0.95, 0.95, 1] if is_header else [1, 1, 1, 1]))  # Light grey for header, white for cells
+            # make text black
+            self.rect = Rectangle(size=self.size, pos=self.pos)
+
+        # Bind cell to update color on resize and add selection effect
+        self.bind(size=self.update_rect, pos=self.update_rect)
+        self.is_selected = is_selected
+
+    def update_rect(self, *args):
+        self.rect.size = self.size
+        self.rect.pos = self.pos
+
+    def select(self):
+        with self.canvas.before:
+            Color(0.3, 0.75, 0.3, 1)  # Green background for selected cells
+            self.rect = Rectangle(size=self.size, pos=self.pos)
+
+
+class MyApp(App):
     device_login = user_device_id_login()
 
-    def __init__(self):
-        super().__init__()
+    def build(self):
+        self.title = 'Pilot CLI'
+        Window.clearcolor = (0.0588, 0.2353, 0.2980, 1)
 
-        # Set window properties
-        self.setWindowTitle('PILOT CLI GUI')
-        self.setGeometry(600, 600, 800, 600)
-        self.setStyleSheet('background-color: gray;')
+        self.layout = BoxLayout(orientation='vertical', padding=0, spacing=10)
 
-        # Load and resize the image with Pillow
-        image = Image.open('/home/color/indoc/pilot/cli/app/gui/assets/indoc.png')
-        resized_image = image.resize((image.width // 4, image.height // 4), Image.Resampling.LANCZOS)
+        img = Image(source='/home/color/indoc/pilot/cli/app/gui/assets/indoc.png')
+        button = HoverButton(text='Login', font_size=24, size_hint=(1, 0.2), pos_hint={'center_x': 0.5})
+        button.bind(on_press=self.login)  # Bind button to click event
 
-        # Convert the Pillow image to a format compatible with PyQt (QImage)
-        # Step 1: Convert Pillow image to bytes
-        img_data = io.BytesIO()
-        resized_image.save(img_data, format='PNG')
-        img_data.seek(0)
+        # Add widgets to the layout
+        self.layout.add_widget(img)
+        self.layout.add_widget(button)
 
-        # Step 2: Create QImage from the byte data
-        qt_image = QImage.fromData(img_data.read())
+        return self.layout
 
-        # Step 3: Convert QImage to QPixmap
-        pixmap = QPixmap.fromImage(qt_image)
+    # Define button click event
+    def login(self, instance):
+        self.clear_window()
 
-        # Create a QLabel to display the image
-        label = QLabel(self)
-        label.setPixmap(pixmap)
-        # add button
-        button = QPushButton('Login')
-        button.clicked.connect(self.on_button_click)
+        url_entry = TextInput(
+            text=self.device_login['verification_uri_complete'],
+            readonly=True,
+            font_size=20,
+            size_hint=(None, None),
+            width=1500,
+            multiline=False,
+            background_color=(1, 1, 1, 1),
+            foreground_color=(0, 0, 1, 1),
+            padding=[5, 10],
+        )
 
-        self.layout = QVBoxLayout()
-        self.layout.addWidget(label)
-        self.layout.addWidget(button)
+        button = HoverButton(text='Next', font_size=24, size_hint=(1, 0.2), pos_hint={'center_x': 0.5})
+        button.bind(on_press=self.check_login)
 
-        # Set the layout in a central widget
-        central_widget = QWidget()
-        central_widget.setLayout(self.layout)
-        self.setCentralWidget(central_widget)
+        self.layout.add_widget(url_entry)
+        self.layout.add_widget(button)
 
-    def on_button_click(self):
-        self.reset_window()
-
-        # Create a QLineEdit (equivalent to tkinter Entry)
-        url_entry = QLineEdit(self)
-        url_entry.setText(self.device_login['verification_uri_complete'])
-        url_entry.setReadOnly(True)
-        url_entry.setAlignment(Qt.AlignCenter)
-        url_entry.setStyleSheet('color: blue;')
-        self.layout.addWidget(url_entry)
-
-        # Create a QPushButton (equivalent to tkinter Button)
-        self.button = QPushButton('Next')
-        self.button.setStyleSheet('background-color: white; color: blue;')
-        self.button.clicked.connect(self.check_login)
-        self.layout.addWidget(self.button)
-
-        # Set the layout in the central widget
-        central_widget = QWidget()
-        central_widget.setLayout(self.layout)
-        self.setCentralWidget(central_widget)
-
-    def check_login(self):
+    def check_login(self, instance):
         http_client = BaseClient(AppConfig.Connections.url_keycloak)
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         data = {
@@ -125,46 +146,40 @@ class MainWindow(QMainWindow):
         response = http_client._get('projects', params=params)
         # print(response.json())
 
-        self.reset_window()
+        self.clear_window()
         project_list = response.json().get('result', [])
-        # Create a QTableWidget (equivalent to Treeview in tkinter)
-        table = QTableWidget()
-        table.setRowCount(len(project_list))  # Set number of rows
-        table.setColumnCount(2)  # Set number of columns
-        table.setStyleSheet('background-color: white;')
-        table.setHorizontalHeaderLabels(['name', 'code'])  # Set column headers
+        scroll_view = ScrollView(size_hint=(1, None), size=(400, 500))
+        table_layout = GridLayout(cols=2, size_hint_y=None, spacing=5, padding=5)
+        table_layout.bind(minimum_height=table_layout.setter('height'))
+        headers = ['Name', 'Code']
+        for header in headers:
+            cell = TableCell(text=header, is_header=True, bold=True, size_hint_y=None, height=40)
+            table_layout.add_widget(cell)
 
-        # Populate the table with data from project_list
-        for row_idx, row_data in enumerate(project_list):
-            # Create table items for each column
-            name_item = QTableWidgetItem(row_data['name'])
-            code_item = QTableWidgetItem(row_data['code'])
+            with cell.canvas.before:
+                Color(0, 0, 0, 1)  # Black border color
+                Line(rectangle=(cell.x, cell.y, cell.width, cell.height), width=1.2)
 
-            # Align text to center (optional)
-            name_item.setTextAlignment(Qt.AlignCenter)
-            code_item.setTextAlignment(Qt.AlignCenter)
+        for row in project_list:
+            name = TableCell(text=row['name'], size_hint_y=None, height=30)
+            with name.canvas.before:
+                Color(0, 0, 0, 1)
+                Line(rectangle=(name.x, name.y, name.width, name.height), width=1.2)
+            table_layout.add_widget(name)
 
-            # Insert data into the table
-            table.setItem(row_idx, 0, name_item)
-            table.setItem(row_idx, 1, code_item)
+            code = TableCell(text=row['code'], size_hint_y=None, height=30)
+            with code.canvas.before:
+                Color(0, 0, 0, 1)
+                Line(rectangle=(code.x, code.y, code.width, code.height), width=1.2)
+            table_layout.add_widget(code)
 
-        # Add the table to the layout
-        central_widget = QWidget()
-        self.layout.addWidget(table)
-        central_widget.setLayout(self.layout)
-        self.setCentralWidget(central_widget)
+        scroll_view.add_widget(table_layout)
+        self.layout.add_widget(scroll_view)
 
-    def reset_window(self):
-        # Clear the layout by removing all widgets
-        for i in reversed(range(self.layout.count())):
-            widget = self.layout.itemAt(i).widget()
-            if widget is not None:
-                widget.deleteLater()  # Delete each widget
+    def clear_window(self):
+        self.layout.clear_widgets()
 
 
-app = QApplication(sys.argv)
-
-main_window = MainWindow()
-main_window.show()
-
-sys.exit(app.exec_())
+# Run the application
+if __name__ == '__main__':
+    MyApp().run()

@@ -23,6 +23,7 @@ pywin32 = { version = "^306", optional = true }
 pillow = "^10.4.0"
 pyqt5 = "5.15.9"
 pyqt5-tools = "^5.15.9.3.3"
+kivy = "^2.3.0"
 
 
 [tool.poetry.extras]
