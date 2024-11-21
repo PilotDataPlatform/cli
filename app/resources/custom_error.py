@@ -83,7 +83,7 @@ class Error:
             'Please verify your role and check that the file exists.'
         ),
         'FOLDER_NOT_FOUND': 'Folder not found in the Project.',
-        'INVALID_ZONE': 'The data zone invalid. Please verify the data location and try again.',
+        'INVALID_ZONE': 'The data zone is invalid. Please verify the data location and try again.',
         'FOLDER_EMPTY': 'Folder is empty.',
         'RESERVED_FOLDER': 'Reserved folder name, please rename the folder and try again later',
         'INVALID_ACTION': 'Invalid action: %s',

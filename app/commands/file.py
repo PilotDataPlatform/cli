@@ -26,7 +26,6 @@ from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.output_manager.error_handler import customized_error_msg
 from app.services.user_authentication.decorator import require_valid_token
 from app.utils.aggregated import doc
-from app.utils.aggregated import fit_terminal_width
 from app.utils.aggregated import get_file_info_by_geid
 from app.utils.aggregated import get_zone
 from app.utils.aggregated import identify_target_folder
@@ -133,9 +132,8 @@ def file_put(**kwargs):  # noqa: C901
     user = UserConfig()
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
 
-    toc = customized_error_msg(ECustomizedError.TOU_CONTENT).replace(' ', '...')
-    if zone.lower() == AppConfig.Env.core_zone.lower() and click.confirm(fit_terminal_width(toc), abort=True):
-        pass
+    if zone.lower() == AppConfig.Env.core_zone.lower():
+        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_ZONE, True)
 
     if len(paths) == 0:
         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_PATHS, True)
@@ -344,7 +342,7 @@ def file_list(paths, zone, page, page_size, detached):
 @click.option(
     '-z',
     '--zone',
-    default=AppConfig.Env.green_zone,
+    default=AppConfig.Env.core_zone,
     required=False,
     help=file_help.file_help_page(file_help.FileHELP.FILE_SYNC_Z),
     show_default=False,
@@ -377,6 +375,8 @@ def file_download(**kwargs):
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone
     interactive = False if len(paths) > 1 else True
 
+    if zone.lower() == AppConfig.Env.green_zone.lower():
+        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_ZONE, True)
     if len(paths) == 0:
         SrvErrorHandler.customized_handle(ECustomizedError.MISSING_PROJECT_CODE, interactive)
     if geid:
