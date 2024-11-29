@@ -42,7 +42,12 @@ class Error:
             'may only contain lowercase letters, numbers, and/or special characters of -_, .'
         ),
         'INVALID_PATHS': 'The input path is empty. Please select at least one file or folder to upload',
-        'INVALID_RESUMABLE': 'The resumable manifest file is not exist.',
+        'INVALID_RESUMABLE_FILE': 'The resumable manifest file does not exist.',
+        'INVALID_RESUMABLE_UPLOAD': (
+            'The resumable upload log is invalid. Please verify the file content and try again.\n'
+            'File: %s does not exist in the folder.\n'
+            'Please remove the resumable upload log and retry uploading the entire folder again.'
+        ),
         'INVALID_FOLDERNAME': (
             'The input folder name is not valid. Please follow the rule:\n'
             ' - cannot contains special characters.\n'

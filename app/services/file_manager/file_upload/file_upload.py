@@ -306,8 +306,14 @@ def resume_upload(
         # get the detail of item to see if the file is already uploaded
         unfinished_files = []
         for x in items:
-            if x.get('result').get('status') == ItemStatus.REGISTERED:
-                file_info = all_files.get(x.get('result').get('id'))
+            file_meta = x.get('result')
+            if len(file_meta) == 0:
+                missing_item = all_files.get(x.get('geid'))
+                SrvErrorHandler.customized_handle(
+                    ECustomizedError.INVALID_RESUMABLE_UPLOAD, if_exit=True, value=missing_item.get('object_path')
+                )
+            elif x.get('result').get('status') == ItemStatus.REGISTERED:
+                file_info = all_files.get(file_meta.get('id'))
                 unfinished_files.append(
                     FileObject(
                         file_info.get('object_path'),

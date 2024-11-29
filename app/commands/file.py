@@ -261,7 +261,7 @@ def file_resume(**kwargs):  # noqa: C901
 
     # check if manifest file exist then read the manifest file as json
     if not os.path.exists(resumable_manifest_file):
-        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_RESUMABLE, True)
+        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_RESUMABLE_FILE, True)
 
     with open(resumable_manifest_file, 'r') as f:
         resumable_manifest = json.load(f)
