@@ -46,7 +46,7 @@ class Error:
         'INVALID_RESUMABLE_UPLOAD': (
             'The resumable upload log is invalid. Please verify the file content and try again.\n'
             'File: %s does not exist in the folder.\n'
-            'Please remove the resumable upload log and retry upload entire folder again.'
+            'Please remove the resumable upload log and retry uploading the entire folder again.'
         ),
         'INVALID_FOLDERNAME': (
             'The input folder name is not valid. Please follow the rule:\n'
