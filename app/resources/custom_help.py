@@ -34,7 +34,7 @@ class HelpPage:
             'FILE_ATTRIBUTE_LIST': 'List attribute templates of a given Project.',
             'FILE_ATTRIBUTE_EXPORT': 'Export attribute template from a given Project.',
             'FILE_LIST': 'List files and folders inside a given project/folder.',
-            'FILE_SYNC': 'Download files/folders from a given Project folder file in core zone.',
+            'FILE_SYNC': 'Download files/folders from a given Project/folder/file in core zone.',
             'FILE_UPLOAD': 'Upload files/folders to a given Project path (project/users/user/path).',
             'FILE_RESUME': 'Resume the upload process with a resumable upload log.',
             'FILE_Z': 'Target Zone (i.e., core/greenroom).',
