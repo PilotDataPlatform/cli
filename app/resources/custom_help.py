@@ -8,8 +8,9 @@
 class HelpPage:
     page = {
         'update': {
-            'version': '2.2.6',
-            '1': 'CLI supports listing of all datasets a project administrator has access to.',
+            'version': '2.2.7',
+            '1': 'Removed ability to upload to core zone and to download from greenroom zone'
+            ' for more secure file handling workflow.',
         },
         'dataset': {
             'DATASET_DOWNLOAD': 'Download a dataset or a particular version of a dataset.',
