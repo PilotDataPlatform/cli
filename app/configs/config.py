@@ -69,11 +69,11 @@ class Settings(BaseSettings):
 
     @computed_field
     def url_upload_greenroom(self) -> str:
-        return f'{self.api_url}/upload/gr'
+        return f'{self.url_portal}/fileops/gr'
 
     @computed_field
     def url_upload_core(self) -> str:
-        return f'{self.api_url}/upload/core'
+        return f'{self.url_portal}/fileops/core'
 
     @computed_field
     def url_status(self) -> str:
@@ -81,11 +81,11 @@ class Settings(BaseSettings):
 
     @computed_field
     def url_download_greenroom(self) -> str:
-        return f'{self.api_url}/portal/download/gr'
+        return f'{self.url_portal}/portal/download/gr'
 
     @computed_field
     def url_download_core(self) -> str:
-        return f'{self.api_url}/portal/download/core'
+        return f'{self.url_portal}/portal/download/core'
 
     @computed_field
     def url_v2_download_pre(self) -> str:
