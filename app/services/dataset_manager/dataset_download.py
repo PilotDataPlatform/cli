@@ -69,7 +69,7 @@ class SrvDatasetDownloadManager(BaseAuthClient, metaclass=MetaService):
     @require_valid_token()
     def download_status(self) -> EFileStatus:
         try:
-            self.endpoint = AppConfig.Connections.url_download_core
+            self.endpoint = AppConfig.Connections.url_fileops_core
             response = self._get(f'v1/download/status/{self.hash_code}')
         except HTTPStatusError as e:
             response = e.response
@@ -134,7 +134,7 @@ class SrvDatasetDownloadManager(BaseAuthClient, metaclass=MetaService):
     def download_dataset(self) -> None:
         pre_result = self.pre_dataset_download()
         self.hash_code = pre_result.get('result').get('payload').get('hash_code')
-        self.download_url = AppConfig.Connections.url_download_core + f'v1/download/{self.hash_code}'
+        self.download_url = AppConfig.Connections.url_fileops_core + f'v1/download/{self.hash_code}'
         # format the naming for the default filename
         self.default_filename = pre_result.get('result').get('target_names')[0]
         self.default_filename = self.default_filename.split('/')[-1]
@@ -153,7 +153,7 @@ class SrvDatasetDownloadManager(BaseAuthClient, metaclass=MetaService):
         self.version = version
         pre_result = self.pre_dataset_version_download()
         self.hash_code = pre_result.get('result').get('payload').get('hash_code')
-        self.download_url = f'{AppConfig.Connections.url_download_core}/v1/download/{self.hash_code}'
+        self.download_url = f'{AppConfig.Connections.url_fileops_core}/v1/download/{self.hash_code}'
 
         status = self.check_download_preparing_status()
         SrvOutPutHandler.download_status(status)

@@ -368,8 +368,8 @@ class UploadClient(BaseAuthClient):
         }
         try:
             self.endpoint = {
-                AppConfig.Env.green_zone: AppConfig.Connections.url_upload_greenroom + '/v1',
-                AppConfig.Env.core_zone: AppConfig.Connections.url_upload_core + '/v1',
+                AppConfig.Env.green_zone: AppConfig.Connections.url_fileops_greenroom + '/v1',
+                AppConfig.Env.core_zone: AppConfig.Connections.url_fileops_core + '/v1',
             }.get(self.zone.lower())
             response = self._get('upload/chunks/presigned', params=params, headers=headers)
             presigned_chunk_url = response.json().get('result')
@@ -416,8 +416,8 @@ class UploadClient(BaseAuthClient):
         )
         try:
             self.endpoint = {
-                AppConfig.Env.green_zone: AppConfig.Connections.url_upload_greenroom + '/v1',
-                AppConfig.Env.core_zone: AppConfig.Connections.url_upload_core + '/v1',
+                AppConfig.Env.green_zone: AppConfig.Connections.url_fileops_greenroom + '/v1',
+                AppConfig.Env.core_zone: AppConfig.Connections.url_fileops_core + '/v1',
             }.get(self.zone.lower())
 
             response = self._post('upload/chunks/combine', json=payload)

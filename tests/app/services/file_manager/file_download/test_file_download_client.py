@@ -103,8 +103,8 @@ def test_file_download_url_based_on_different_zones(zone: str):
 
     url = download_client.get_download_url(zone)
     except_url = {
-        ItemZone.GREENROOM.value: AppConfig.Connections.url_download_greenroom,
-        ItemZone.CORE.value: AppConfig.Connections.url_download_core,
+        ItemZone.GREENROOM.value: AppConfig.Connections.url_fileops_greenroom,
+        ItemZone.CORE.value: AppConfig.Connections.url_fileops_core,
     }.get(zone)
 
     assert url == except_url
@@ -189,8 +189,8 @@ def test_download_url(zone):
     test_client = SrvFileDownload(zone, True)
 
     except_url = {
-        ItemZone.GREENROOM.value: AppConfig.Connections.url_download_greenroom,
-        ItemZone.CORE.value: AppConfig.Connections.url_download_core,
+        ItemZone.GREENROOM.value: AppConfig.Connections.url_fileops_greenroom,
+        ItemZone.CORE.value: AppConfig.Connections.url_fileops_core,
     }.get(zone)
 
     assert test_client.get_download_url(zone) == except_url
@@ -265,8 +265,8 @@ def test_simple_download_with_folder(mocker, zone):
     )
 
     download_service_url = {
-        ItemZone.GREENROOM.value: AppConfig.Connections.url_download_greenroom,
-        ItemZone.CORE.value: AppConfig.Connections.url_download_core,
+        ItemZone.GREENROOM.value: AppConfig.Connections.url_fileops_greenroom,
+        ItemZone.CORE.value: AppConfig.Connections.url_fileops_core,
     }.get(zone)
     with click.testing.CliRunner().isolated_filesystem():
         test_client.simple_download_file('./', [{'id': 'test_id'}])
