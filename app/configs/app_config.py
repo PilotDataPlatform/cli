@@ -44,8 +44,6 @@ class AppConfig:
         url_fileops_greenroom = ConfigClass.url_fileops_greenroom
         url_fileops_core = ConfigClass.url_fileops_core
         url_status = ConfigClass.url_status
-        url_fileops_greenroom = ConfigClass.url_fileops_greenroom
-        url_fileops_core = ConfigClass.url_fileops_core
         url_v2_download_pre = ConfigClass.url_v2_download_pre
         url_dataset_v2download = ConfigClass.url_dataset_v2download
         url_dataset = ConfigClass.url_dataset
