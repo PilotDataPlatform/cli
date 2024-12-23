@@ -11,6 +11,7 @@ Command line tool that allows the user to execute data operations on the platfor
 
 ## Getting Started
 
+
 ### Prerequisites
 - Python 3.7+
 - [Poetry](https://python-poetry.org/docs/#installation)
