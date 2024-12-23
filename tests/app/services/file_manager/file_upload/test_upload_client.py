@@ -5,7 +5,6 @@
 import base64
 import hashlib
 import math
-import re
 from functools import wraps
 from multiprocessing import TimeoutError
 from multiprocessing.pool import ThreadPool
@@ -74,7 +73,10 @@ def test_chunk_upload(httpx_mock, mocker):
     upload_client = UploadClient('project_code', 'parent_folder_id')
 
     test_presigned_url = 'http://test.url/presigned'
-    url = re.compile('^' + AppConfig.Connections.url_upload_greenroom + '/v1/files/chunks/presigned.*$')
+    url = (
+        AppConfig.Connections.url_fileops_greenroom
+        + '/v1/upload/chunks/presigned?bucket=gr-project_code&key=test&upload_id=test&chunk_number=0&chunk_size=10'
+    )
     httpx_mock.add_response(method='GET', url=url, json={'result': test_presigned_url})
     httpx_mock.add_response(method='PUT', url=test_presigned_url, json={'result': ''})
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
@@ -90,7 +92,10 @@ def test_chunk_upload_failed_with_401(httpx_mock, mocker):
     upload_client = UploadClient('project_code', 'parent_folder_id')
 
     test_presigned_url = 'http://test.url/presigned'
-    url = re.compile('^' + AppConfig.Connections.url_upload_greenroom + '/v1/files/chunks/presigned.*$')
+    url = (
+        AppConfig.Connections.url_fileops_greenroom
+        + '/v1/upload/chunks/presigned?bucket=gr-project_code&key=test&upload_id=test&chunk_number=0&chunk_size=10'
+    )
     httpx_mock.add_response(method='GET', url=url, json={'result': test_presigned_url})
     httpx_mock.add_response(method='PUT', url=test_presigned_url, json={'result': ''}, status_code=401)
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))

@@ -68,24 +68,16 @@ class Settings(BaseSettings):
         return f'{self.api_url}/portal/v2/%s/tags'
 
     @computed_field
-    def url_upload_greenroom(self) -> str:
-        return f'{self.api_url}/upload/gr'
+    def url_fileops_greenroom(self) -> str:
+        return f'{self.url_portal}/fileops/gr'
 
     @computed_field
-    def url_upload_core(self) -> str:
-        return f'{self.api_url}/upload/core'
+    def url_fileops_core(self) -> str:
+        return f'{self.url_portal}/fileops/core'
 
     @computed_field
     def url_status(self) -> str:
         return f'{self.api_url}/portal/v1/files/actions/tasks'
-
-    @computed_field
-    def url_download_greenroom(self) -> str:
-        return f'{self.api_url}/portal/download/gr'
-
-    @computed_field
-    def url_download_core(self) -> str:
-        return f'{self.api_url}/portal/download/core'
 
     @computed_field
     def url_v2_download_pre(self) -> str:

@@ -27,7 +27,7 @@ from .model import EFileStatus
 
 class SrvFileDownload(BaseAuthClient, metaclass=MetaService):
     def __init__(self, zone: str, interactive=True):
-        super().__init__(AppConfig.Connections.url_download_greenroom)
+        super().__init__(AppConfig.Connections.url_fileops_greenroom)
 
         self.appconfig = AppConfig()
         self.user = UserConfig()
@@ -42,11 +42,11 @@ class SrvFileDownload(BaseAuthClient, metaclass=MetaService):
         self.green = self.appconfig.Env.green_zone
         self.zone = zone
         self.url = {
-            ItemZone.GREENROOM.value: self.appconfig.Connections.url_download_greenroom,
-            ItemZone.CORE.value: self.appconfig.Connections.url_download_core,
+            ItemZone.GREENROOM.value: self.appconfig.Connections.url_fileops_greenroom,
+            ItemZone.CORE.value: self.appconfig.Connections.url_fileops_core,
         }.get(zone)
 
-        self.endpoint = self.appconfig.Connections.url_download_greenroom + '/v1'
+        self.endpoint = self.appconfig.Connections.url_fileops_greenroom + '/v1'
 
     def print_prepare_msg(self, message):
         space_width = len(message)
@@ -62,9 +62,9 @@ class SrvFileDownload(BaseAuthClient, metaclass=MetaService):
 
     def get_download_url(self, zone):
         if zone == ItemZone.GREENROOM.value:
-            url = self.appconfig.Connections.url_download_greenroom
+            url = self.appconfig.Connections.url_fileops_greenroom
         else:
-            url = self.appconfig.Connections.url_download_core
+            url = self.appconfig.Connections.url_fileops_core
         return url
 
     def pre_download(self):
@@ -103,7 +103,7 @@ class SrvFileDownload(BaseAuthClient, metaclass=MetaService):
             else:
                 SrvErrorHandler.customized_handle(ECustomizedError.DOWNLOAD_FAIL, if_exit=self.interactive)
         finally:
-            self.endpoint = self.appconfig.Connections.url_download_greenroom + '/v1'
+            self.endpoint = self.appconfig.Connections.url_fileops_greenroom + '/v1'
 
         self.check_point = True
 

@@ -41,11 +41,9 @@ class AppConfig:
         url_authn = ConfigClass.url_authn
         url_refresh_token = ConfigClass.url_refresh_token
         url_file_tag = ConfigClass.url_file_tag
-        url_upload_greenroom = ConfigClass.url_upload_greenroom
-        url_upload_core = ConfigClass.url_upload_core
+        url_fileops_greenroom = ConfigClass.url_fileops_greenroom
+        url_fileops_core = ConfigClass.url_fileops_core
         url_status = ConfigClass.url_status
-        url_download_greenroom = ConfigClass.url_download_greenroom
-        url_download_core = ConfigClass.url_download_core
         url_v2_download_pre = ConfigClass.url_v2_download_pre
         url_dataset_v2download = ConfigClass.url_dataset_v2download
         url_dataset = ConfigClass.url_dataset
