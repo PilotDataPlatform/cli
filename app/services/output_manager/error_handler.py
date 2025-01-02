@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2024 Indoc Systems
+# Copyright (C) 2022-2025 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -72,6 +72,7 @@ class ECustomizedError(enum.Enum):
     DELETE_PATH_NOT_EXIST = 'DELETE_PATH_NOT_EXIST'
     TRASH_FAIL = 'TRASH_FAIL'
     DELETE_FAIL = 'DELETE_FAIL'
+    TRASH_FAIL_PERMISSION = 'TRASH_FAIL_PERMISSION'
     ALREADY_TRASHED = 'ALREADY_TRASHED'
 
     # file metadata related error

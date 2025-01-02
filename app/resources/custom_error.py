@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2024 Indoc Systems
+# Copyright (C) 2022-2025 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -105,6 +105,7 @@ class Error:
         'DELETE_PATH_NOT_EXIST': 'Selected path: %s does not exist.',
         'TRASH_FAIL': 'Failed to trash items: %s.',
         'DELETE_FAIL': 'Failed to delete items: %s.',
+        'TRASH_FAIL_PERMISSION': 'Failed to delete items due to permission issue.',
         'ALREADY_TRASHED': 'Selected path: %s is already in the trash. Please use permanent delete to remove it.',
         # file metadata related error
         'LOCAL_METADATA_FILE_EXISTS': 'Following metadata file already exists in the local directory: ',

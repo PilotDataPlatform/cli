@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2024 Indoc Systems
+# Copyright (C) 2022-2025 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -8,10 +8,14 @@ from typing import Dict
 from typing import List
 from uuid import UUID
 
+from httpx import HTTPStatusError
+
 from app.configs.app_config import AppConfig
 from app.models.item import ItemStatus
 from app.services.clients.base_auth_client import BaseAuthClient
 from app.services.output_manager import message_handler
+from app.services.output_manager.error_handler import ECustomizedError
+from app.services.output_manager.error_handler import SrvErrorHandler
 from app.utils.aggregated import get_file_info_by_geid
 from app.utils.aggregated import get_zone
 
@@ -53,7 +57,12 @@ class FileTrashClient(BaseAuthClient):
             'source_id': self.parent_id,
             'zone': self.zone,
         }
-        response = self._delete(f'{self.project_code}/files', params=params)
+        try:
+            response = self._delete(f'{self.project_code}/files', params=params)
+        except HTTPStatusError as e:
+            response = e.response
+            if response.status_code == 403:
+                SrvErrorHandler.customized_handle(ECustomizedError.TRASH_FAIL_PERMISSION, True)
 
         return response.json()
 
@@ -66,7 +75,13 @@ class FileTrashClient(BaseAuthClient):
             'target_ids': self.object_ids,
             'zone': self.zone,
         }
-        response = self._delete(f'{self.project_code}/files/purge', params=params)
+
+        try:
+            response = self._delete(f'{self.project_code}/files/purge', params=params)
+        except HTTPStatusError as e:
+            response = e.response
+            if response.status_code == 403:
+                SrvErrorHandler.customized_handle(ECustomizedError.TRASH_FAIL_PERMISSION, True)
 
         return response.json()
 
