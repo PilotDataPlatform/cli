@@ -63,6 +63,8 @@ class FileTrashClient(BaseAuthClient):
             response = e.response
             if response.status_code == 403:
                 SrvErrorHandler.customized_handle(ECustomizedError.TRASH_FAIL_PERMISSION, True)
+            else:
+                SrvErrorHandler.customized_handle(ECustomizedError.TRASH_FAIL, True)
 
         return response.json()
 
@@ -82,6 +84,8 @@ class FileTrashClient(BaseAuthClient):
             response = e.response
             if response.status_code == 403:
                 SrvErrorHandler.customized_handle(ECustomizedError.TRASH_FAIL_PERMISSION, True)
+            else:
+                SrvErrorHandler.customized_handle(ECustomizedError.DELETE_FAIL, True)
 
         return response.json()
 

@@ -1,18 +1,27 @@
-# Copyright (C) 2022-2024 Indoc Systems
+# Copyright (C) 2022-2025 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
 import pytest
-from httpx import HTTPStatusError
 
 from app.configs.app_config import AppConfig
 from app.models.item import ItemStatus
 from app.services.file_manager.file_trash.file_trash_client import FileTrashClient
+from app.services.output_manager.error_handler import ECustomizedError
+from app.services.output_manager.error_handler import customized_error_msg
 from tests.conftest import decoded_token
 
 
-@pytest.mark.parametrize('status_code', [400, 403, 404, 500])
-def test_trash_api_error_handling(httpx_mock, status_code):
+@pytest.mark.parametrize(
+    'status_code, error_message',
+    [
+        (400, ECustomizedError.TRASH_FAIL),
+        (403, ECustomizedError.TRASH_FAIL_PERMISSION),
+        (404, ECustomizedError.TRASH_FAIL),
+        (500, ECustomizedError.TRASH_FAIL),
+    ],
+)
+def test_trash_api_error_handling(httpx_mock, capfd, status_code, error_message):
     test_project_code = 'test_code'
     test_parent_id = 'test_parent_id'
     test_object_ids = ['test_object_id']
@@ -33,14 +42,22 @@ def test_trash_api_error_handling(httpx_mock, status_code):
     try:
         result = file_trash_client.move_to_trash()
         assert result == {}
-    except HTTPStatusError as e:
-        assert e.response.status_code == status_code
-    else:
-        raise AssertionError()
+    except SystemExit:
+        out, _ = capfd.readouterr()
+
+        assert customized_error_msg(error_message) in out
 
 
-@pytest.mark.parametrize('status_code', [400, 403, 404, 500])
-def test_permanent_delete_error_handling(httpx_mock, status_code):
+@pytest.mark.parametrize(
+    'status_code, error_message',
+    [
+        (400, ECustomizedError.DELETE_FAIL),
+        (403, ECustomizedError.TRASH_FAIL_PERMISSION),
+        (404, ECustomizedError.DELETE_FAIL),
+        (500, ECustomizedError.DELETE_FAIL),
+    ],
+)
+def test_permanent_delete_error_handling(httpx_mock, capfd, status_code, error_message):
     test_project_code = 'test_code'
     test_parent_id = 'test_parent_id'
     test_object_ids = ['test_object_id']
@@ -61,10 +78,10 @@ def test_permanent_delete_error_handling(httpx_mock, status_code):
     try:
         result = file_trash_client.permanently_delete()
         assert result == {}
-    except HTTPStatusError as e:
-        assert e.response.status_code == status_code
-    else:
-        assert AssertionError()
+    except SystemExit:
+        out, _ = capfd.readouterr()
+
+        assert customized_error_msg(error_message) in out
 
 
 @pytest.mark.parametrize('file_status', [ItemStatus.TRASHED, ItemStatus.DELETED, ItemStatus.ACTIVE])
@@ -149,3 +166,6 @@ def test_check_file_status_not_matched(mocker, httpx_mock):
     file_trash_client.max_status_check = 1
     res = file_trash_client.check_status(ItemStatus.TRASHED)
     assert res == ['test_parent_path/test_name']
+
+
+# def test_trash_item_with_permission_denied
