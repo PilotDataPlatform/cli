@@ -99,7 +99,7 @@ jobs:
   push-binary-macos:
     needs: [ push-binary-linux ]
     if: ${{ needs.extract-branch-name.outputs.branch == 'patch20250106' || needs.extract-branch-name.outputs.branch == 'develop'}}
-    runs-on: macos-latest
+    runs-on: macos-13
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -150,7 +150,7 @@ jobs:
   push-binary-windows:
     needs: [ push-binary-linux ]
     if: ${{ needs.extract-branch-name.outputs.branch == 'patch20250106' || needs.extract-branch-name.outputs.branch == 'develop'}}
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
