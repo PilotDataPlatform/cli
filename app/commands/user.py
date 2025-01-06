@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2024 Indoc Systems
+# Copyright (C) 2022-2025 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -63,9 +63,9 @@ def login(api_key: Union[str, None]):
             sys.exit(1)
 
     # message user if there is a newer version of the CLI
-    latest_version = get_latest_cli_version()
+    latest_version, download_url = get_latest_cli_version()
     if Version(pkg_resources.get_distribution('app').version) < latest_version:
-        mhandler.SrvOutPutHandler.newer_version_available(latest_version)
+        mhandler.SrvOutPutHandler.newer_version_available(latest_version, download_url)
 
 
 @click.command()

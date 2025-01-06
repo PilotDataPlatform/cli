@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2024 Indoc Systems
+# Copyright (C) 2022-2025 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -232,20 +232,21 @@ def remove_the_output_file(filepath: str) -> None:
         logger.warning(f'Unable to remove "{filepath}".')
 
 
-def get_latest_cli_version() -> Version:
+def get_latest_cli_version() -> Tuple[Version, str]:
     try:
         httpx_client = BaseAuthClient(AppConfig.Connections.url_fileops_greenroom)
         user_config = UserConfig()
         if not user_config.is_access_token_exists():
             return Version('0.0.0')
 
-        response = httpx_client._get('v2/download/cli')
+        response = httpx_client._get('v1/download/cli/presigned')
         result = response.json().get('result', {})
         latest_version = result.get('linux', {}).get('version', '0.0.0')
+        download_url = result.get('linux', {}).get('download_url', '')
 
-        return Version(latest_version)
+        return Version(latest_version), download_url
     except (SystemExit, Exception):
-        return Version('0.0.0')
+        return Version('0.0.0'), ''
 
 
 def normalize_input_paths(options: list[str]):

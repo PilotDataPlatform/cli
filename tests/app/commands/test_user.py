@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2024 Indoc Systems
+# Copyright (C) 2023-2025 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -26,7 +26,7 @@ def test_login_command_with_api_key_option_calls_keycloak_and_stores_response_in
         status_code=200,
         json={'access_token': access_token, 'refresh_token': refresh_token},
     )
-    mocker.patch('app.commands.user.get_latest_cli_version', return_value=Version('1.0.0'))
+    mocker.patch('app.commands.user.get_latest_cli_version', return_value=(Version('1.0.0'), ''))
 
     result = cli_runner.invoke(login, ['--api-key', api_key])
 
@@ -45,7 +45,7 @@ def test_login_command_without_api_key_option_takes_value_from_environment_varia
     api_key = fake.pystr(20)
     monkeypatch.setenv('PILOT_API_KEY', api_key)
     login_using_api_key_mock = mocker.patch('app.commands.user.login_using_api_key', return_value=True)
-    mocker.patch('app.commands.user.get_latest_cli_version', return_value=Version('1.0.0'))
+    mocker.patch('app.commands.user.get_latest_cli_version', return_value=(Version('1.0.0'), ''))
 
     result = cli_runner.invoke(login)
 
@@ -63,7 +63,7 @@ def test_login_command_without_api_key_option_falls_back_to_device_code_method(m
     }
     user_device_id_login_mock = mocker.patch('app.commands.user.user_device_id_login', return_value=device_login)
     validate_user_device_login_mock = mocker.patch('app.commands.user.validate_user_device_login', return_value=True)
-    mocker.patch('app.commands.user.get_latest_cli_version', return_value=Version('1.0.0'))
+    mocker.patch('app.commands.user.get_latest_cli_version', return_value=(Version('1.0.0'), ''))
 
     result = cli_runner.invoke(login)
 
@@ -96,7 +96,7 @@ def test_login_command_with_newer_version_available_message(
     access_token_exists = mocker.patch('app.utils.aggregated.UserConfig.is_access_token_exists', return_value=True)
 
     httpx_mock.add_response(
-        url=AppConfig.Connections.url_fileops_greenroom + '/v2/download/cli',
+        url=AppConfig.Connections.url_fileops_greenroom + '/v1/download/cli/presigned',
         status_code=200,
         json={'result': {'linux': {'version': new_version}}},
     )
@@ -108,7 +108,7 @@ def test_login_command_with_newer_version_available_message(
     assert login_using_api_key_mock.called_once_with(api_key)
     assert access_token_exists.called_once()
     if Version(current_version) < Version(new_version):
-        assert mhandler.SrvOutPutHandler.newer_version_available(new_version) in result.output
+        assert mhandler.SrvOutPutHandler.newer_version_available(new_version, '') in result.output
 
 
 # nothing should be printed out
@@ -119,7 +119,7 @@ def test_login_command_when_url_link_fails(mocker, cli_runner, fake, monkeypatch
     access_token_exists = mocker.patch('app.utils.aggregated.UserConfig.is_access_token_exists', return_value=True)
 
     httpx_mock.add_response(
-        url=AppConfig.Connections.url_fileops_greenroom + '/v2/download/cli',
+        url=AppConfig.Connections.url_fileops_greenroom + '/v1/download/cli/presigned',
         status_code=404,
         json={'error': 'Not Found'},
     )
