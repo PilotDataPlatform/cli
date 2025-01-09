@@ -72,6 +72,7 @@ class ECustomizedError(enum.Enum):
     DELETE_PATH_NOT_EXIST = 'DELETE_PATH_NOT_EXIST'
     TRASH_FAIL = 'TRASH_FAIL'
     DELETE_FAIL = 'DELETE_FAIL'
+    TRASH_FAIL_PERMISSION = 'TRASH_FAIL_PERMISSION'
     ALREADY_TRASHED = 'ALREADY_TRASHED'
 
     # file metadata related error
