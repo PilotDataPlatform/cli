@@ -1,16 +1,11 @@
-FROM indocpilot.azurecr.io/base-image/python:3.10.15-v1 AS base-image
+FROM ubuntu:24.04
 
 ARG CLI_VERSION
 
-RUN addgroup --system indoc && \
-    useradd --gid indoc --system --shell /bin/bash indoc
-
 RUN apt-get update \
-    && apt-get install --no-install-recommends -y \
-        build-essential \
-        curl
+     && apt-get install -y curl;
 
-RUN curl -L https://github.com/PilotDataPlatform/cli/releases/download/${CLI_VERSION}/pilotcli_cloud \
+RUN curl -L https://github.com/PilotDataPlatform/cli/releases/download/${CLI_VERSION}/pilotcli_linux \
     --output /usr/local/bin/pilotcli
 
 RUN chmod +x /usr/local/bin/pilotcli
