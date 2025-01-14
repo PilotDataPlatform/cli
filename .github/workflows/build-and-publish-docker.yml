@@ -7,7 +7,11 @@ on:
       os:
         description: 'Operating system of CLI binary'
         required: true
-        type: string
+        type: choice
+        options:
+          - linux
+          - macos
+          - cloud
       release:
         description: 'Release version of CLI tool'
         required: true
@@ -87,6 +91,7 @@ jobs:
             push: false
             build-args: |
               CLI_VERSION=${{ github.event.inputs.release }}
+              CLI_OS=${{ github.event.inputs.os }}
         - name: Run Trivy vulnerability scanner
           uses: aquasecurity/trivy-action@0.24.0
           with:
