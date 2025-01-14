@@ -129,6 +129,7 @@ def file_put(**kwargs):  # noqa: C901
     tag_files = kwargs.get('tag')
     zone = kwargs.get('zone')
     source_file = kwargs.get('source_file')
+    source_zone = kwargs.get('source_zone')
     zipping = kwargs.get('zip')
     attribute_file = kwargs.get('attribute')
     thread = kwargs.get('thread')
@@ -179,6 +180,7 @@ def file_put(**kwargs):  # noqa: C901
     upload_val_event = {
         'zone': zone,
         'source': source_files,
+        'source_zone': source_zone,
         'project_code': project_code,
         'attribute': attribute,
         'tag': tag,
@@ -297,12 +299,12 @@ def file_resume(**kwargs):  # noqa: C901
 
 def validate_upload_event(event):
     """validate upload request, raise error when filed."""
-    zone = event.get('zone')
     source = event.get('source')
+    source_zone = event.get('source_zone')
     project_code = event.get('project_code')
     attribute = event.get('attribute')
     tag = event.get('tag')
-    validator = UploadEventValidator(project_code, zone, source, attribute, tag)
+    validator = UploadEventValidator(project_code, source_zone, source, attribute, tag)
     converted_content = validator.validate_upload_event()
     return converted_content
 
