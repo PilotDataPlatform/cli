@@ -1,6 +1,7 @@
 name: Build and Publish Docker Image
 
 on:
+ pull_request:
  workflow_dispatch:
     inputs:
       os:
@@ -23,7 +24,7 @@ on:
 jobs:
   get-version:
     name: Get pilot cli version
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-20.04
     outputs:
       cli_version: ${{steps.get-version.outputs.cli_version}}
     steps:
