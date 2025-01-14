@@ -11,10 +11,6 @@ on:
         description: 'Version of CLI tool'
         required: true
         type: string
- pull_request:
-    branches:
-      - main
-      - develop
 
 jobs:
   build_and_publish_pilotcli_image:
