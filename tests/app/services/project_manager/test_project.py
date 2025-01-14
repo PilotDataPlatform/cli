@@ -71,7 +71,7 @@ def test_list_project_desc_by_code(httpx_mock, mocker, capsys):
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
     httpx_mock.add_response(
         method='GET',
-        url='http://bff_cli/v1/projects?page=0&page_size=10&order=code&order_by=desc',
+        url='http://bff_cli/v1/projects?page=0&page_size=10&order=desc&order_by=code',
         json={
             'code': 200,
             'error_msg': '',
@@ -115,7 +115,7 @@ def test_list_project_desc_by_name(httpx_mock, mocker, capsys):
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
     httpx_mock.add_response(
         method='GET',
-        url='http://bff_cli/v1/projects?page=0&page_size=10&order=code&order_by=desc',
+        url='http://bff_cli/v1/projects?page=0&page_size=10&order=desc&order_by=code',
         json={
             'code': 200,
             'error_msg': '',
@@ -159,7 +159,7 @@ def test_list_project_desc_by_name_with_page_size(httpx_mock, mocker, capsys):
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
     httpx_mock.add_response(
         method='GET',
-        url='http://bff_cli/v1/projects?page=0&page_size=3&order=code&order_by=desc',
+        url='http://bff_cli/v1/projects?page=0&page_size=3&order=desc&order_by=code',
         json={
             'code': 200,
             'error_msg': '',
@@ -189,7 +189,7 @@ def test_list_project_desc_by_name_with_page_size_and_page(httpx_mock, mocker, c
     mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
     httpx_mock.add_response(
         method='GET',
-        url='http://bff_cli/v1/projects?page=1&page_size=3&order=code&order_by=desc',
+        url='http://bff_cli/v1/projects?page=1&page_size=3&order=desc&order_by=code',
         json={
             'code': 200,
             'error_msg': '',

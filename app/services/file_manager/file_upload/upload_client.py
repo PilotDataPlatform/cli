@@ -15,6 +15,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Tuple
+from uuid import UUID
 
 import httpx
 from httpx import HTTPStatusError
@@ -58,7 +59,7 @@ class UploadClient(BaseAuthClient):
         current_folder_node: str = '',
         regular_file: str = True,
         tags: list = None,
-        source_id: str = '',
+        source_id: list[UUID] = '',
         attributes: dict = None,
     ):
         super().__init__('', timeout=60)

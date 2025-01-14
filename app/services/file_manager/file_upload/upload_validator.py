@@ -23,13 +23,15 @@ class UploadEventValidator:
         self.tag = tag
 
     def validate_zone(self):
-        source_file_info = {}
+        source_ids = []
         if self.source:
-            source_file_info = search_item(self.project_code, AppConfig.Env.core_zone.lower(), self.source)
-            source_file_info = source_file_info['result']
-            if not source_file_info:
-                SrvErrorHandler.customized_handle(ECustomizedError.INVALID_SOURCE_FILE, True, value=self.source)
-        return source_file_info
+            for source in self.source:
+                _, source_path = source.split('/', 1)
+                source_file_info = search_item(self.project_code, AppConfig.Env.green_zone.lower(), source_path)
+                source_ids.append(source_file_info['result'].get('id'))
+                if not source_file_info:
+                    SrvErrorHandler.customized_handle(ECustomizedError.INVALID_SOURCE_FILE, True, value=self.source)
+        return source_ids
 
     def validate_attribute(self):
         srv_manifest = SrvFileManifests()
@@ -45,12 +47,11 @@ class UploadEventValidator:
         srv_tag.validate_taglist(self.tag)
 
     def validate_upload_event(self):
-        source_file_info, loaded_attribute = {}, {}
+        loaded_attribute = {}
         if self.attribute:
             loaded_attribute = self.validate_attribute()
         if self.tag:
             self.validate_tag()
-        if self.zone == AppConfig.Env.core_zone.lower():
-            source_file_info = self.validate_zone()
-        converted_content = {'source_file': source_file_info, 'attribute': loaded_attribute}
+        source_ids = self.validate_zone()
+        converted_content = {'source_file': source_ids, 'attribute': loaded_attribute}
         return converted_content
