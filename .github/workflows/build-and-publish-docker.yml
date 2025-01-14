@@ -16,6 +16,9 @@ on:
         type: string
         required: false
         default: "indocpilot.azurecr.io"
+ push:
+   branches:
+     - 'PILOT-6741'
 
 jobs:
   get-version:
