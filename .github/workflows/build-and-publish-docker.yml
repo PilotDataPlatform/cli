@@ -16,7 +16,6 @@ on:
         type: string
         required: false
         default: "indocpilot.azurecr.io"
- pull_request:
 
 jobs:
   get-version:
@@ -50,8 +49,8 @@ jobs:
           uses: docker/login-action@v2
           with:
             registry: ${{ inputs.docker_registry }}
-            username: ${{ secrets.docker_registry_username }}
-            password: ${{ secrets.docker_registry_password }}
+            username: ${{ secrets.ACR_CLIENT }}
+            password: ${{ secrets.ACR_SECRET }}
         - name: Docker metadata
           id: meta
           uses: docker/metadata-action@v4
