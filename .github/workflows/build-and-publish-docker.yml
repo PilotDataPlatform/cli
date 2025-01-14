@@ -22,9 +22,19 @@ jobs:
     name: Get pilot cli version
     runs-on: ubuntu-24.04
     outputs:
-      cli_version: "${{ github.event.inputs.os }}-${{ github.event.inputs.release }}"
+      cli_version: ${{steps.get-version.outputs.cli_version}}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.sha }}  # Ensures the workflow checks out the commit it was triggered on
+      - name: Get Version
+        id: get-version
+        shell: bash
+        run: |
+          echo "cli_version=${{ github.event.inputs.os }}-${{ github.event.inputs.release }}" >> $GITHUB_OUTPUT
   build-and-push-docker-image:
-      needs: [get-version-tag]
+      needs: [get-version]
       name: Build Docker images and push to repositories
       runs-on: ubuntu-20.04
       steps:
