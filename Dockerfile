@@ -10,3 +10,5 @@ RUN curl -L https://github.com/PilotDataPlatform/cli/releases/download/${CLI_VER
     --output /usr/local/bin/pilotcli
 
 RUN chmod +x /usr/local/bin/pilotcli
+
+RUN pilotcli
