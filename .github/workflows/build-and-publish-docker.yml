@@ -89,6 +89,7 @@ jobs:
             tags: ${{ steps.meta.outputs.tags }}
             # build on feature branches, push only on main branch
             push: false
+            load: true
             build-args: |
               CLI_VERSION=${{ github.event.inputs.release }}
               CLI_OS=${{ github.event.inputs.os }}
