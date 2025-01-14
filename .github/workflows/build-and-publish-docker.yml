@@ -16,6 +16,7 @@ on:
         type: string
         required: false
         default: "indocpilot.azurecr.io"
+ pull_request:
 
 jobs:
   get-version:
