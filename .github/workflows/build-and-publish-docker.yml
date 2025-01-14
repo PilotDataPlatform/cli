@@ -1,0 +1,61 @@
+name: Build and Publish Docker Image
+
+on:
+ workflow_dispatch:
+    inputs:
+      os:
+        description: 'Operating system of CLI binary'
+        required: true
+        type: string
+      version:
+        description: 'Version of CLI tool'
+        required: true
+        type: string
+
+jobs:
+  build_and_publish_pilotcli_image:
+    uses: PilotDataPlatform/shared-ci-tools/.github/workflows/reusable_docker_build.yml@main
+    with:
+      docker_registry: 'indocpilot.azurecr.io'
+      image_name: 'pilotcli'
+      image_tag: "${{ github.event.inputs.os }}-${{ github.event.inputs.version }}"
+      dockerfile_path: '.'
+    secrets:
+      docker_registry_username: ${{ secrets.ACR_CLIENT }}
+      docker_registry_password: ${{ secrets.ACR_SECRET }}
+
+  run-trivy:
+    needs: [ build_and_publish_pilotcli_image ]
+    name: Run Trivy vulnerability scanner and publish scan results
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: '${{ needs.build_and_publish_pilotcli_image.steps.meta.outputs.tags }}'
+          format: 'table'
+          severity: 'CRITICAL'
+          exit-code: '1'
+          hide-progress: true
+          trivyignores: .github/.trivyignore
+          output: scan-results.txt
+        env:
+          TRIVY_IGNORE_STATUS: 'will_not_fix'
+          TRIVY_DB_REPOSITORY: 'public.ecr.aws/aquasecurity/trivy-db:2'
+
+      - name: Publish Trivy Scan Results to Summary
+        if: always()
+        run: |
+          if [[ -s scan-results.txt ]]; then
+            {
+              echo "### Trivy Scan Results"
+              echo "Please refer to https://indocconsortium.atlassian.net/wiki/spaces/PILOT/pages/3917316126/Trivy+reports+triage to find out the next steps to fix the vulnerabilities"
+              echo "<details><summary>Click to expand</summary>"
+              echo ""
+              echo '```workflow-manager'
+              cat scan-results.txt
+              echo '```'
+              echo "</details>"
+            } >> $GITHUB_STEP_SUMMARY
+          fi
