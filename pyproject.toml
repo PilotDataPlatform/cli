@@ -9,9 +9,7 @@ python = ">=3.10,<3.11"
 questionary = "^1.10.0"
 tqdm = "4.56.0"
 cryptography = "3.4.8"
-urllib3 = "^1.26.14"
 pydantic-settings = "2.0.1"
-cffi = "^1.15.1"
 pre-commit = "^2.19.0"
 httpx = "^0.23.0"
 qrcode = "^7.4.2"
@@ -21,6 +19,9 @@ pywin32 = { version = "^306", optional = true }
 pyjwt = "^2.9.0"
 requests = "^2.32.3"
 click = "^8.1.8"
+urllib3 = "^2.3.0"
+cffi = "^1.17.1"
+charset-normalizer = "3.4.1"
 
 
 [tool.poetry.extras]
