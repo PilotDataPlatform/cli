@@ -222,11 +222,12 @@ class UploadClient(BaseAuthClient):
             'current_folder_node': self.current_folder_node,
             'parent_folder_id': self.parent_folder_id,
             'folder_tags': self.tags,
-            'source_id': self.source_id,
             'data': [
                 {'resumable_filename': x.file_name, 'resumable_relative_path': x.parent_path} for x in file_objects
             ],
         }
+        if self.source_id:
+            payload.update({'source_id': self.source_id})
 
         try:
             self.endpoint = AppConfig.Connections.url_bff + '/v1'
