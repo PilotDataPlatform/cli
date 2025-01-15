@@ -18,6 +18,7 @@ from app.commands.file import file_move
 from app.commands.file import file_put
 from app.commands.file import file_resume
 from app.commands.file import file_trash
+from app.configs.app_config import AppConfig
 from app.models.item import ItemType
 from app.services.file_manager.file_metadata.file_metadata_client import FileMetaClient
 from app.services.file_manager.file_upload.models import FileObject
@@ -89,6 +90,45 @@ def test_file_upload_failed_with_invalid_attribute_file(cli_runner):
         )
     assert result.exit_code == 1
     assert result.output == customized_error_msg(ECustomizedError.INVALID_TEMPLATE) + '\n'
+
+
+def test_file_upload_failed_with_invalid_source_file(cli_runner):
+    # create invalid source file with wrong format
+    runner = click.testing.CliRunner()
+    with runner.isolated_filesystem():
+        with open('wrong_source.json', 'w') as f:
+            f.write('wrong_source.json')
+
+        result = cli_runner.invoke(
+            file_put,
+            ['test', '--thread', 1, '--source-file', 'wrong_source.json', 'wrong_source.json'],
+        )
+    assert result.exit_code == 1
+    assert result.output == customized_error_msg(ECustomizedError.INVALID_SOURCE_FILE) + '\n'
+
+
+@pytest.mark.parametrize('source_zone', [AppConfig.Env.green_zone, AppConfig.Env.core_zone])
+def test_file_upload_failed_with_invalid_source_items(cli_runner, mocker, source_zone):
+    runner = click.testing.CliRunner()
+    with runner.isolated_filesystem():
+        file_path = 'test_project/users/admin/test.txt'
+        with open('source.txt', 'w') as f:
+            f.write(f'[\'{file_path}\']')
+
+        mocker.patch(
+            'app.commands.file.identify_target_folder', return_value=('test_project', ItemType.FOLDER, 'users/admin')
+        )
+        mocker.patch(
+            'app.services.file_manager.file_upload.upload_validator.search_item',
+            return_value={'code': 404, 'result': {}},
+        )
+
+        result = cli_runner.invoke(
+            file_put,
+            ['test', '--thread', 1, '--source-file', 'source.txt', '--source-zone', source_zone, 'source.txt'],
+        )
+    assert result.exit_code == 1
+    assert result.output == customized_error_msg(ECustomizedError.INVALID_SOURCE_ITEM) % (file_path, source_zone) + '\n'
 
 
 def test_resumable_upload_command_success(mocker, cli_runner):
