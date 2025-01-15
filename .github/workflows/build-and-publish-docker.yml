@@ -83,7 +83,7 @@ jobs:
             # Note: tags has to be all lower-case
             tags: ${{ steps.meta.outputs.tags }}
             # build on feature branches, push only on main branch
-            push: false
+            push: true
             load: true
             build-args: |
               CLI_VERSION=${{ github.event.inputs.release }}
