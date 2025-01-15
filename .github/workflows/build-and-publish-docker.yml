@@ -1,7 +1,6 @@
 name: Build and Publish Docker Image
 
 on:
- pull_request:
  workflow_dispatch:
     inputs:
       os:
@@ -21,9 +20,6 @@ on:
         type: string
         required: false
         default: "indocpilot.azurecr.io"
- push:
-   branches:
-     - 'PILOT-6741'
 
 jobs:
   get-version:
