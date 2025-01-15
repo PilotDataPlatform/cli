@@ -27,9 +27,11 @@ class UploadEventValidator:
             for source in self.source:
                 _, source_path = source.split('/', 1)
                 source_file_info = search_item(self.project_code, self.source_zone, source_path)
+                if not source_file_info['result']:
+                    SrvErrorHandler.customized_handle(
+                        ECustomizedError.INVALID_SOURCE_ITEM, True, value=(source, self.source_zone)
+                    )
                 source_ids.append(source_file_info['result'].get('id'))
-                if not source_file_info:
-                    SrvErrorHandler.customized_handle(ECustomizedError.INVALID_SOURCE_FILE, True, value=self.source)
         return source_ids
 
     def validate_attribute(self):
