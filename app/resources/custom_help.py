@@ -46,8 +46,8 @@ class HelpPage:
             'FILE_UPLOAD_A': 'Add attributes to the file using a File Attribute Template.',
             'FILE_UPLOAD_T': 'Add tags to the file using a Tag file.',
             'FILE_UPLOAD_S': (
-                'Project file path for identifying a source file when creating an upstream '
-                'file lineage node. Source files must exist in the Core zone.'
+                'The location of a json that contains the project file path(s) for identifying source file(s) '
+                'when creating an upstream file lineage node. '
             ),
             'FILE_UPLOAD_PIPELINE': (
                 "The processed pipeline of your processed files. [only used with '--source' option]"
