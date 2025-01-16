@@ -7,7 +7,6 @@ import io
 import qrcode
 
 import app.services.logger_services.log_functions as logger
-from app.configs.app_config import AppConfig
 from app.models.enums import LoginMethod
 from app.models.item import ItemStatus
 from app.models.service_meta_class import MetaService
@@ -353,10 +352,11 @@ class SrvOutPutHandler(metaclass=MetaService):
         logger.succeed(f'Shared project {project} with {username} as {role}')
 
     @staticmethod
-    def newer_version_available(version, print_message=True):
+    def newer_version_available(version, download_url, print_message=True):
+        clickable_text = f'\033]8;;{download_url}\033\\latest cli version\033]8;;\033\\'
         message = (
-            f'\nNewer version available! pilotcli v{version} is available.\n'
-            + f'Please visit https://github.com/{AppConfig.Env.github_url}/releases/latest\n'
+            f'\nNewer version available! Pilotcli v{version} is available. Please vist \n{clickable_text}. '
+            'This link will expire in 10 minutes.\n'
         )
         if print_message:
             logger.warning(message)
