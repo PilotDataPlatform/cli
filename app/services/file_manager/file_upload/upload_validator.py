@@ -32,6 +32,14 @@ class UploadEventValidator:
                         ECustomizedError.INVALID_SOURCE_ITEM, True, value=(source, self.source_zone)
                     )
                 source_ids.append(source_file_info['result'].get('id'))
+
+            # check if there is any duplication source id
+            if len(source_ids) != len(set(source_ids)):
+                SrvErrorHandler.customized_handle(
+                    ECustomizedError.INVALID_UPLOAD_REQUEST,
+                    value=('Source file list contains duplication',),
+                    if_exit=True,
+                )
         return source_ids
 
     def validate_attribute(self):

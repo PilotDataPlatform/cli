@@ -107,6 +107,59 @@ def test_file_upload_failed_with_invalid_source_file(cli_runner):
     assert result.output == customized_error_msg(ECustomizedError.INVALID_SOURCE_FILE) + '\n'
 
 
+def test_file_upload_failed_with_duplicated_source_items(cli_runner, mocker):
+    runner = click.testing.CliRunner()
+    with runner.isolated_filesystem():
+
+        with open('source.txt', 'w') as f:
+            f.write('[\'test_project/users/test\', \'test_project/users/test\']')
+
+        mocker.patch(
+            'app.commands.file.identify_target_folder', return_value=('test_project', ItemType.FOLDER, 'users/admin')
+        )
+        mocker.patch(
+            'app.services.file_manager.file_upload.upload_validator.search_item',
+            return_value={'code': 200, 'result': {'id': 'id'}},
+        )
+
+        result = cli_runner.invoke(
+            file_put,
+            ['test', '--thread', 1, '--source-file', 'source.txt', 'source.txt'],
+        )
+    assert result.exit_code == 1
+    assert (
+        customized_error_msg(ECustomizedError.INVALID_UPLOAD_REQUEST) % 'Source file list contains duplication'
+        in result.output
+    )
+
+
+def test_file_upload_failed_with_n2n_relationship_in_source_lineage(cli_runner, mocker):
+    runner = click.testing.CliRunner()
+    with runner.isolated_filesystem():
+
+        test_folder = 'test_folder'
+        makedirs(test_folder, exist_ok=True)
+
+        with open('source.txt', 'w') as f:
+            f.write('[\'test1\', \'test2\']')
+
+        mocker.patch(
+            'app.commands.file.identify_target_folder', return_value=('test_project', ItemType.FOLDER, 'users/admin')
+        )
+        mocker.patch(
+            'app.commands.file.validate_upload_event',
+            return_value={'source_file': ['test1', 'test2'], 'attribute': None},
+        )
+        mocker.patch('app.commands.file.assemble_path', return_value=('test', {'id': 'id'}, False, 'test'))
+
+        result = cli_runner.invoke(
+            file_put,
+            ['test', '--thread', 1, '--source-file', 'source.txt', test_folder],
+        )
+    assert result.exit_code == 1
+    assert customized_error_msg(ECustomizedError.UNSUPPORT_SOURCE_MANIFEST) in result.output
+
+
 @pytest.mark.parametrize('source_zone', [AppConfig.Env.green_zone, AppConfig.Env.core_zone])
 def test_file_upload_failed_with_invalid_source_items(cli_runner, mocker, source_zone):
     runner = click.testing.CliRunner()
