@@ -79,7 +79,7 @@ class Error:
         ),
         'UNSUPPORT_TAG_MANIFEST': 'Tagging and manifest attaching are not supported for folder type.',
         'UNSUPPORT_SOURCE_MANIFEST': (
-            'Multiple source files attaching are not supported for folder type. ' 'Please only use one source item.'
+            'Multiple source files attaching are not supported for folder type. Please only use one source item.'
         ),
         'INVALID_INPUT': 'Invalid input. Please try again.',
         'UNSUPPORTED_PROJECT': 'This function is not supported in the given Project %s',
