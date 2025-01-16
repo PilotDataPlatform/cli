@@ -145,8 +145,13 @@ def simple_upload(  # noqa: C901
         if job_type == UploadType.AS_FILE:
             upload_file_path = [input_path.rstrip('/').lstrip() + '.zip']
             compress_folder_to_zip(input_path)
-        elif tags or attribute or source_id:
+        # currently not support tag and attribute for a folder upload
+        elif tags or attribute:
             SrvErrorHandler.customized_handle(ECustomizedError.UNSUPPORT_TAG_MANIFEST, True)
+        # currently not support n-to-n relationship in lineage, meaning
+        # can ONLY specify one source id for a folder upload
+        elif len(source_id) > 1 and job_type == UploadType.AS_FOLDER:
+            SrvErrorHandler.customized_handle(ECustomizedError.UNSUPPORT_SOURCE_MANIFEST, True)
         else:
             upload_file_path = get_file_in_folder(input_path)
     else:
