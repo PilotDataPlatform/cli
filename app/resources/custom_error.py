@@ -78,8 +78,9 @@ class Error:
             'Please to double check the file content.'
         ),
         'UNSUPPORT_TAG_MANIFEST': 'Tagging and manifest attaching are not supported for folder type.',
-        'UNSUPPORT_SOURCE_MANIFEST': 'Multiple source files attaching are not supported for folder type.'
-        'Please only use one source item.',
+        'UNSUPPORT_SOURCE_MANIFEST': (
+            'Multiple source files attaching are not supported for folder type. ' 'Please only use one source item.'
+        ),
         'INVALID_INPUT': 'Invalid input. Please try again.',
         'UNSUPPORTED_PROJECT': 'This function is not supported in the given Project %s',
         'CREATE_FOLDER_IF_NOT_EXIST': 'Target folder does not exist. Would you like to create a new folder?',
