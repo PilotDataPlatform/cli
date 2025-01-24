@@ -7,6 +7,7 @@ import hashlib
 import json
 import math
 import os
+import threading
 import time
 from logging import getLogger
 from multiprocessing.pool import ApplyResult
@@ -66,6 +67,8 @@ class UploadClient(BaseAuthClient):
         self.user = UserConfig()
         self.operator = self.user.username
         self.chunk_size = AppConfig.Env.chunk_size
+        # this indicate when we check the applied sync in pool
+        self.threadpool_check = 20
 
         prefix = {
             AppConfig.Env.green_zone: AppConfig.Env.greenroom_bucket_prefix,
@@ -302,6 +305,10 @@ class UploadClient(BaseAuthClient):
                 been uploaded.
         """
         count = 0
+        semaphore = threading.Semaphore(AppConfig.Env.num_of_jobs)
+
+        def on_complete(result):
+            semaphore.release()
 
         # process on the file content
         f = open(file_object.local_path, 'rb')
@@ -327,9 +334,11 @@ class UploadClient(BaseAuthClient):
                 chunk_size = chunk_info.get('chunk_size', self.chunk_size)
                 file_object.update_progress(chunk_size)
             else:
+                semaphore.acquire()
                 res = pool.apply_async(
                     self.upload_chunk,
                     args=(file_object, count + 1, chunk, local_chunk_etag, len(chunk)),
+                    callback=on_complete,
                 )
                 chunk_result.append(res)
 
