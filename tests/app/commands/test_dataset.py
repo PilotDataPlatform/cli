@@ -31,7 +31,6 @@ def test_dataset_list_total_less_than_10(mocker, cli_runner):
     question_mock = mocker.patch.object(questionary, 'select', return_value=questionary.select)
 
     result = cli_runner.invoke(dataset_list, ['--page', 0, '--page-size', page_size])
-
     assert result.exit_code == 0
     assert '' == result.output
     assert question_mock.call_count == 0
