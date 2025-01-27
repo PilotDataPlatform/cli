@@ -67,8 +67,6 @@ class UploadClient(BaseAuthClient):
         self.user = UserConfig()
         self.operator = self.user.username
         self.chunk_size = AppConfig.Env.chunk_size
-        # this indicate when we check the applied sync in pool
-        self.threadpool_check = 20
 
         prefix = {
             AppConfig.Env.green_zone: AppConfig.Env.greenroom_bucket_prefix,
