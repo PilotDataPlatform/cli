@@ -13,7 +13,7 @@ class AppConfig:
         # NOTE: there is a limitation on minio that
         # the multipart number is 10000. so we set
         # the chunk_size as 20MB -> total 200GB
-        chunk_size = 1024 * 1024 * 20  # MB
+        chunk_size = ConfigClass.upload_chunk_size  # MB
         resilient_retry = 3
         resilient_backoff = 1
         resilient_retry_interval = 1  # seconds
@@ -31,7 +31,7 @@ class AppConfig:
         # set hard limit for pending jobs, otherwise cli will consume all memory
         # to cache jobs. If later on the speed of chunk deliver become faster, we
         # can increase the concurrency number.
-        num_of_jobs = 20
+        num_of_jobs = ConfigClass.concurrent_job_limit
 
         github_url = 'PilotDataPlatform/cli'
 
