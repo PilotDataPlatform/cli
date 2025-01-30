@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     apikey_endpoint: str = 'api-key'
 
     upload_batch_size: int = 100
+    concurrent_job_limit: int = 10
 
     def __init__(self, **data):
         super().__init__(**data)
