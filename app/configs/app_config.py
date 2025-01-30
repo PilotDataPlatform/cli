@@ -13,7 +13,7 @@ class AppConfig:
         # NOTE: there is a limitation on minio that
         # the multipart number is 10000. so we set
         # the chunk_size as 20MB -> total 200GB
-        chunk_size = 1024 * 1024 * 20  # MB
+        chunk_size = ConfigClass.upload_chunk_size  # MB
         resilient_retry = 3
         resilient_backoff = 1
         resilient_retry_interval = 1  # seconds

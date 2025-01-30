@@ -38,6 +38,7 @@ class Settings(BaseSettings):
 
     upload_batch_size: int = 100
     concurrent_job_limit: int = 10
+    upload_chunk_size: int = 1024 * 1024 * 20  # 20MB
 
     def __init__(self, **data):
         super().__init__(**data)
