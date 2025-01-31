@@ -89,6 +89,11 @@ class UploadClient(BaseAuthClient):
         # then the token refresh loop will end
         self.finish_upload = False
 
+        # for tracking the multi-threading chunk upload
+        self.active_jobs = 0
+        self.lock = threading.Lock()
+        self.chunk_upload_done = threading.Event()
+
     def generate_meta(self, local_path: str) -> Tuple[int, int]:
         """
         Summary:
@@ -307,6 +312,10 @@ class UploadClient(BaseAuthClient):
 
         def on_complete(result):
             semaphore.release()
+            with self.lock:
+                self.active_jobs -= 1
+                if self.active_jobs == 0:
+                    self.chunk_upload_done.set()
 
         # process on the file content
         f = open(file_object.local_path, 'rb')
@@ -332,17 +341,22 @@ class UploadClient(BaseAuthClient):
                 chunk_size = chunk_info.get('chunk_size', self.chunk_size)
                 file_object.update_progress(chunk_size)
             else:
+                # let the semaphore to control the number of concurrent jobs
+                # and the upload client to detect if upload finished
                 semaphore.acquire()
-                res = pool.apply_async(
+                with self.lock:
+                    self.active_jobs += 1
+
+                pool.apply_async(
                     self.upload_chunk,
                     args=(file_object, count + 1, chunk, local_chunk_etag, len(chunk)),
                     callback=on_complete,
                 )
-                chunk_result.append(res)
 
-            count += 1  # uploaded successfully
+            count += 1
 
         f.close()
+        self.chunk_upload_done.wait()
 
         return chunk_result
 
