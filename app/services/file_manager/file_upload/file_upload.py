@@ -242,7 +242,7 @@ def simple_upload(  # noqa: C901
         # the on_success api will be called after all chunk uploaded
         res = pool.apply_async(
             upload_client.on_succeed,
-            args=(file_object),
+            args=(file_object,),
         )
         on_success_res.append(res)
 
