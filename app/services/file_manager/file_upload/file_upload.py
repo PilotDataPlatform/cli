@@ -238,11 +238,11 @@ def simple_upload(  # noqa: C901
 
     file_object: FileObject
     for file_object in pre_upload_infos:
-        chunk_res = upload_client.stream_upload(file_object, pool)
+        upload_client.stream_upload(file_object, pool)
         # the on_success api will be called after all chunk uploaded
         res = pool.apply_async(
             upload_client.on_succeed,
-            args=(file_object, tags, chunk_res),
+            args=(file_object),
         )
         on_success_res.append(res)
 
@@ -340,12 +340,12 @@ def resume_upload(
     pool.apply_async(upload_client.upload_token_refresh)
     on_success_res = []
     for file_object in unfinished_items:
-        chunk_res = upload_client.stream_upload(file_object, pool)
+        upload_client.stream_upload(file_object, pool)
         # NOTE: if there is some racing error make the combine chunks
         # out of thread pool.
         res = pool.apply_async(
             upload_client.on_succeed,
-            args=(file_object, manifest_json.get('tags'), chunk_res),
+            args=(file_object),
         )
         on_success_res.append(res)
 
