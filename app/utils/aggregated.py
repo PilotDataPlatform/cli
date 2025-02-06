@@ -233,13 +233,23 @@ def remove_the_output_file(filepath: str) -> None:
 
 
 def get_latest_cli_version() -> Tuple[Version, str]:
+    import logging
+    import time
+
     try:
+        start_time = time.time()
         httpx_client = BaseAuthClient(AppConfig.Connections.url_fileops_greenroom)
+        logging.critical(f'http client init time: {time.time() - start_time}')
         user_config = UserConfig()
+        logging.critical(f'user config init time: {time.time() - start_time}')
+        t1 = time.time()
         if not user_config.is_access_token_exists():
             return Version('0.0.0')
+        logging.critical(f'Check token time: {time.time() - t1}')
+        t2 = time.time()
 
         response = httpx_client._get('v1/download/cli/presigned')
+        logging.critical(f'Get latest version time: {time.time() - t2}')
         result = response.json().get('result', {})
         latest_version = result.get('linux', {}).get('version', '0.0.0')
         download_url = result.get('linux', {}).get('download_url', '')

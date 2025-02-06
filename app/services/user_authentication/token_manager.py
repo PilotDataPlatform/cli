@@ -2,6 +2,7 @@
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
+import logging
 import time
 
 import jwt
@@ -20,11 +21,15 @@ from app.services.user_authentication.user_login_logout import login_using_api_k
 class SrvTokenManager(BaseClient, metaclass=MetaService):
     def __init__(self):
         super().__init__(AppConfig.Connections.url_keycloak_token, 10)
+        import time
+
+        start = time.time()
         user_config = UserConfig()
         if user_config.is_logged_in():
             self.config = user_config
         else:
             raise Exception('Login session not found, please login first.')
+        logging.critical(f'Token Manager Init Time: {time.time() - start}')
 
     def update_token(self, access_token, refresh_token):
         self.config.access_token = access_token

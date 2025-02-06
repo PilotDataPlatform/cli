@@ -3,6 +3,7 @@
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
 import configparser
+import logging
 import platform
 import sys
 import time
@@ -53,7 +54,6 @@ class UserConfig(metaclass=Singleton):
 
         This adjustment is made to prevent complications with mounted NFS volumes where all files have root ownership.
         """
-
         if config_path is None:
             config_path = ConfigClass.config_path
         if config_filename is None:
@@ -105,6 +105,8 @@ class UserConfig(metaclass=Singleton):
                 'session_id': '',
             }
             self.save()
+
+        # print(f'save config time: {time.time() - t2}')
 
     def _check_user_permissions(self, path: Path, expected_bits: Iterable[int]) -> Union[str, None]:
         """Check if file or folder is owned by the user and has proper access mode."""
@@ -163,7 +165,12 @@ class UserConfig(metaclass=Singleton):
 
     @property
     def api_key(self):
-        return decryption(self.config['USER']['api_key'], self.secret)
+        import time
+
+        start_time = time.time()
+        api_key = decryption(self.config['USER']['api_key'], self.secret)
+        logging.info(f'api_key decryption time: {time.time() - start_time}')
+        return api_key
 
     @api_key.setter
     def api_key(self, val):
@@ -171,7 +178,13 @@ class UserConfig(metaclass=Singleton):
 
     @property
     def access_token(self):
-        return decryption(self.config['USER'].get('access_token', ''), self.secret)
+        # return decryption(self.config['USER'].get('access_token', ''), self.secret)
+        import time
+
+        start_time = time.time()
+        access_token = decryption(self.config['USER']['access_token'], self.secret)
+        logging.info(f'access_token decryption time: {time.time() - start_time}')
+        return access_token
 
     @access_token.setter
     def access_token(self, val):
@@ -179,7 +192,13 @@ class UserConfig(metaclass=Singleton):
 
     @property
     def refresh_token(self):
-        return decryption(self.config['USER']['refresh_token'], self.secret)
+        # return decryption(self.config['USER']['refresh_token'], self.secret)
+        import time
+
+        start_time = time.time()
+        refresh_token = decryption(self.config['USER']['refresh_token'], self.secret)
+        logging.info(f'refresh_token decryption time: {time.time() - start_time}')
+        return refresh_token
 
     @refresh_token.setter
     def refresh_token(self, val):

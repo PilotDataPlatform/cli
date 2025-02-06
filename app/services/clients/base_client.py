@@ -44,6 +44,7 @@ class BaseClient:
             if response.status_code not in self.retry_status:
                 response.raise_for_status()
                 return response
+
             time.sleep(self.retry_interval)
 
         logger.debug(f'failed with over {self.retry_count} retries.')

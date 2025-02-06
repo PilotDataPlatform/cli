@@ -47,7 +47,7 @@ Command line tool that allows the user to execute data operations on the platfor
 
     Linux example for each environment:
 
-        pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --paths=./.venv/lib/python3.8/site-packages ./app/pilotcli.py -n <app-name>
+        pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --paths=./.venv/lib/python3.10/site-packages ./app/pilotcli.py -n <app-name>
 
     Note: Building for ARM Mac may require a newer version of `pyinstaller`.
 

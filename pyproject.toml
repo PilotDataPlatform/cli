@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "app"
-version = "3.12.3"
+version = "3.12.4"
 description = "This service is designed to support pilot platform"
 authors = ["Indoc Systems"]
 
@@ -14,7 +14,6 @@ pre-commit = "^2.19.0"
 httpx = "^0.23.0"
 qrcode = "^7.4.2"
 pytest-click = "^1.1.0"
-pyinstaller = "^5.13.0"
 pywin32 = { version = "^306", optional = true }
 pyjwt = "^2.9.0"
 requests = "^2.32.3"
@@ -22,6 +21,7 @@ click = "^8.1.8"
 urllib3 = "^2.3.0"
 cffi = "^1.17.1"
 charset-normalizer = "3.4.1"
+pyinstaller = "^6.11.1"
 
 
 [tool.poetry.extras]
