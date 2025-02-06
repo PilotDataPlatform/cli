@@ -169,7 +169,7 @@ class UserConfig(metaclass=Singleton):
 
         start_time = time.time()
         api_key = decryption(self.config['USER']['api_key'], self.secret)
-        logging.info(f'api_key decryption time: {time.time() - start_time}')
+        logging.critical(f'api_key decryption time: {time.time() - start_time}')
         return api_key
 
     @api_key.setter
@@ -183,7 +183,7 @@ class UserConfig(metaclass=Singleton):
 
         start_time = time.time()
         access_token = decryption(self.config['USER']['access_token'], self.secret)
-        logging.info(f'access_token decryption time: {time.time() - start_time}')
+        logging.critical(f'access_token decryption time: {time.time() - start_time}')
         return access_token
 
     @access_token.setter
@@ -197,7 +197,7 @@ class UserConfig(metaclass=Singleton):
 
         start_time = time.time()
         refresh_token = decryption(self.config['USER']['refresh_token'], self.secret)
-        logging.info(f'refresh_token decryption time: {time.time() - start_time}')
+        logging.critical(f'refresh_token decryption time: {time.time() - start_time}')
         return refresh_token
 
     @refresh_token.setter
