@@ -3,7 +3,6 @@
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
 import configparser
-import logging
 import platform
 import sys
 import time
@@ -42,6 +41,11 @@ class UserConfig(metaclass=Singleton):
 
     This user config is global.
     """
+
+    _api_key: str
+    _access_token: str
+    _refresh_token: str
+    _username: str
 
     def __init__(
         self,
@@ -106,7 +110,11 @@ class UserConfig(metaclass=Singleton):
             }
             self.save()
 
-        # print(f'save config time: {time.time() - t2}')
+        # load all config into memory
+        self._api_key = decryption(self.config['USER']['api_key'], self.secret)
+        self._access_token = decryption(self.config['USER']['access_token'], self.secret)
+        self._refresh_token = decryption(self.config['USER']['refresh_token'], self.secret)
+        self._username = decryption(self.config['USER']['username'], self.secret)
 
     def _check_user_permissions(self, path: Path, expected_bits: Iterable[int]) -> Union[str, None]:
         """Check if file or folder is owned by the user and has proper access mode."""
@@ -149,59 +157,45 @@ class UserConfig(metaclass=Singleton):
 
     @property
     def username(self):
-        return decryption(self.config['USER']['username'], self.secret)
+        return self._username
 
     @username.setter
     def username(self, val):
         self.config['USER']['username'] = encryption(val, self.secret)
 
-    @property
-    def password(self):
-        return decryption(self.config['USER']['password'], self.secret)
+    # @property
+    # def password(self):
+    #     return decryption(self.config['USER']['password'], self.secret)
 
-    @password.setter
-    def password(self, val):
-        self.config['USER']['password'] = encryption(val, self.secret)
+    # @password.setter
+    # def password(self, val):
+    #     self.config['USER']['password'] = encryption(val, self.secret)
 
     @property
     def api_key(self):
-        import time
-
-        start_time = time.time()
-        api_key = decryption(self.config['USER']['api_key'], self.secret)
-        logging.critical(f'api_key decryption time: {time.time() - start_time}')
-        return api_key
+        return self._api_key
 
     @api_key.setter
     def api_key(self, val):
+        self._api_key = val
         self.config['USER']['api_key'] = encryption(val, self.secret)
 
     @property
     def access_token(self):
-        # return decryption(self.config['USER'].get('access_token', ''), self.secret)
-        import time
-
-        start_time = time.time()
-        access_token = decryption(self.config['USER']['access_token'], self.secret)
-        logging.critical(f'access_token decryption time: {time.time() - start_time}')
-        return access_token
+        return self._access_token
 
     @access_token.setter
     def access_token(self, val):
+        self._access_token = val
         self.config['USER']['access_token'] = encryption(val, self.secret)
 
     @property
     def refresh_token(self):
-        # return decryption(self.config['USER']['refresh_token'], self.secret)
-        import time
-
-        start_time = time.time()
-        refresh_token = decryption(self.config['USER']['refresh_token'], self.secret)
-        logging.critical(f'refresh_token decryption time: {time.time() - start_time}')
-        return refresh_token
+        return self._refresh_token
 
     @refresh_token.setter
     def refresh_token(self, val):
+        self._refresh_token = val
         self.config['USER']['refresh_token'] = encryption(val, self.secret)
 
     @property

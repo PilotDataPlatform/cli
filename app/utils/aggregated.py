@@ -20,6 +20,7 @@ from app.configs.user_config import UserConfig
 from app.models.item import ItemStatus
 from app.models.item import ItemType
 from app.services.clients.base_auth_client import BaseAuthClient
+from app.services.clients.base_auth_client import BaseClient
 from app.services.logger_services.debugging_log import debug_logger
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
@@ -238,7 +239,7 @@ def get_latest_cli_version() -> Tuple[Version, str]:
 
     try:
         start_time = time.time()
-        httpx_client = BaseAuthClient(AppConfig.Connections.url_fileops_greenroom)
+        httpx_client = BaseClient(AppConfig.Connections.url_fileops_greenroom)
         logging.critical(f'http client init time: {time.time() - start_time}')
         user_config = UserConfig()
         logging.critical(f'user config init time: {time.time() - start_time}')
@@ -248,7 +249,8 @@ def get_latest_cli_version() -> Tuple[Version, str]:
         logging.critical(f'Check token time: {time.time() - t1}')
         t2 = time.time()
 
-        response = httpx_client._get('v1/download/cli/presigned')
+        headers = {'Authorization': 'Bearer'}
+        response = httpx_client._get('v1/download/cli/presigned', headers=headers)
         logging.critical(f'Get latest version time: {time.time() - t2}')
         result = response.json().get('result', {})
         latest_version = result.get('linux', {}).get('version', '0.0.0')
