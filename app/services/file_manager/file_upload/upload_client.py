@@ -15,6 +15,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Tuple
+from uuid import UUID
 
 import httpx
 from httpx import HTTPStatusError
@@ -58,7 +59,7 @@ class UploadClient(BaseAuthClient):
         current_folder_node: str = '',
         regular_file: str = True,
         tags: list = None,
-        source_id: str = '',
+        source_id: list[UUID] = '',
         attributes: dict = None,
     ):
         super().__init__('', timeout=60)
@@ -226,11 +227,12 @@ class UploadClient(BaseAuthClient):
             'current_folder_node': self.current_folder_node,
             'parent_folder_id': self.parent_folder_id,
             'folder_tags': self.tags,
-            'source_id': self.source_id,
             'data': [
                 {'resumable_filename': x.file_name, 'resumable_relative_path': x.parent_path} for x in file_objects
             ],
         }
+        if self.source_id:
+            payload.update({'source_id': self.source_id})
 
         try:
             self.endpoint = AppConfig.Connections.url_bff + '/v1'

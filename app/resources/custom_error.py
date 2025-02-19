@@ -24,6 +24,7 @@ class Error:
         ),
         'INVALID_TEMPLATE': 'Attribute validation failed. Please correct JSON format and try again.',
         'INVALID_TAG_FILE': 'Tag files validation failed. Please correct JSON format and try again.',
+        'INVALID_SOURCE_FILE': 'Source file validation failed. Please verify and try again.',
         'LIMIT_TAG_ERROR': 'Tag limit has been reached. A maximum of 10 tags are allowed per file.',
         'INVALID_TAG_ERROR': (
             'Invalid tag format. Tags must be between 1 and 32 characters long '
@@ -36,7 +37,7 @@ class Error:
         'MANIFEST_NOT_EXIST': "Attribute '%s' not found in Project. Please verify and try again.",
         'INVALID_ATTRIBUTE': "Invalid attribute '%s'. Please verify and try again.",
         'INVALID_UPLOAD_REQUEST': 'Invalid upload request: %s',
-        'INVALID_SOURCE_FILE': 'File does not exist or source file provided is invalid: %s',
+        'INVALID_SOURCE_ITEM': 'File does not exist or source file provided is invalid: %s in (%s) zone',
         'INVALID_PIPELINENAME': (
             'Invalid pipeline name. Pipeline names must be between 1 and 20 characters long and '
             'may only contain lowercase letters, numbers, and/or special characters of -_, .'
@@ -77,6 +78,9 @@ class Error:
             'Please to double check the file content.'
         ),
         'UNSUPPORT_TAG_MANIFEST': 'Tagging and manifest attaching are not supported for folder type.',
+        'UNSUPPORT_SOURCE_MANIFEST': (
+            'Multiple source files attaching are not supported for folder type. Please only use one source item.'
+        ),
         'INVALID_INPUT': 'Invalid input. Please try again.',
         'UNSUPPORTED_PROJECT': 'This function is not supported in the given Project %s',
         'CREATE_FOLDER_IF_NOT_EXIST': 'Target folder does not exist. Would you like to create a new folder?',

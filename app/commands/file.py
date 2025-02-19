@@ -2,6 +2,7 @@
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
+import ast
 import json
 import logging
 import os
@@ -84,6 +85,14 @@ def cli():
     default=None,
     required=False,
     help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_S),
+    type=click.File('rb'),
+    show_default=True,
+)
+@click.option(
+    '--source-zone',
+    default=AppConfig.Env.green_zone,
+    required=False,
+    help=file_help.file_help_page(file_help.FileHELP.FILE_Z),
     show_default=True,
 )
 @click.option(
@@ -125,6 +134,7 @@ def file_put(**kwargs):  # noqa: C901
     tag_files = kwargs.get('tag')
     zone = kwargs.get('zone')
     source_file = kwargs.get('source_file')
+    source_zone = kwargs.get('source_zone')
     zipping = kwargs.get('zip')
     attribute_file = kwargs.get('attribute')
     thread = kwargs.get('thread')
@@ -141,6 +151,10 @@ def file_put(**kwargs):  # noqa: C901
         attribute = json.load(attribute_file) if attribute_file else None
     except Exception:
         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TEMPLATE, True)
+    try:
+        source_files = ast.literal_eval(source_file.read().decode('utf-8')) if source_file else None
+    except Exception:
+        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_SOURCE_FILE, True)
 
     # Check zone and upload-message
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
@@ -174,7 +188,8 @@ def file_put(**kwargs):  # noqa: C901
     srv_manifest = SrvFileManifests()
     upload_val_event = {
         'zone': zone,
-        'source': source_file,
+        'source': source_files,
+        'source_zone': source_zone,
         'project_code': project_code,
         'attribute': attribute,
         'tag': tag,
@@ -226,7 +241,7 @@ def file_put(**kwargs):  # noqa: C901
             'attribute': attribute,
         }
         if source_file:
-            upload_event['source_id'] = src_file_info.get('id', '')
+            upload_event['source_id'] = src_file_info
 
         current, peak = tracemalloc.get_traced_memory()
         logging.warning(f'Current Memory Usage at file_put assemble object path: {current / 1e6:.2f} MB')
@@ -305,12 +320,12 @@ def file_resume(**kwargs):  # noqa: C901
 
 def validate_upload_event(event):
     """validate upload request, raise error when filed."""
-    zone = event.get('zone')
     source = event.get('source')
+    source_zone = event.get('source_zone')
     project_code = event.get('project_code')
     attribute = event.get('attribute')
     tag = event.get('tag')
-    validator = UploadEventValidator(project_code, zone, source, attribute, tag)
+    validator = UploadEventValidator(project_code, source_zone, source, attribute, tag)
     converted_content = validator.validate_upload_event()
     return converted_content
 
