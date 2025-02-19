@@ -3,6 +3,7 @@
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
 import json
+import logging
 import os
 from sys import exit
 
@@ -114,6 +115,10 @@ def cli():
 def file_put(**kwargs):  # noqa: C901
     """"""
 
+    import tracemalloc
+
+    tracemalloc.start()
+
     project_path = kwargs.get('object_path').strip('/')
     files = kwargs.get('files')
 
@@ -160,6 +165,10 @@ def file_put(**kwargs):  # noqa: C901
     except Abort:
         message_handler.SrvOutPutHandler.cancel_upload()
         exit(1)
+
+    current, peak = tracemalloc.get_traced_memory()
+    logging.warning(f'Current Memory Usage at file_put preparation: {current / 1e6:.2f} MB')
+    logging.warning(f'Peak Memory Usage at file_put preparation: {peak / 1e6:.2f} MB')
 
     project_code, folder_type, target_folder = identify_target_folder(project_path)
     srv_manifest = SrvFileManifests()
@@ -219,13 +228,25 @@ def file_put(**kwargs):  # noqa: C901
         if source_file:
             upload_event['source_id'] = src_file_info.get('id', '')
 
+        current, peak = tracemalloc.get_traced_memory()
+        logging.warning(f'Current Memory Usage at file_put assemble object path: {current / 1e6:.2f} MB')
+        logging.warning(f'Peak Memory Usage at file_put assemble object path: {peak / 1e6:.2f} MB')
+
         item_ids = simple_upload(upload_event, num_of_thread=thread, output_path=output_path)
+
+        current, peak = tracemalloc.get_traced_memory()
+        logging.warning(f'Current Memory Usage at file_put AFTER file uploading: {current / 1e6:.2f} MB')
+        logging.warning(f'Peak Memory Usage at file_put AFTER file uploading: {peak / 1e6:.2f} MB')
 
         # since only file upload can attach manifest, take the first file object
         srv_manifest.attach_manifest(attribute, item_ids[0], zone) if attribute else None
         message_handler.SrvOutPutHandler.all_file_uploaded()
 
         remove_the_output_file(output_path)
+
+        current, peak = tracemalloc.get_traced_memory()
+        logging.warning(f'Current Memory Usage at file_put AFTER all: {current / 1e6:.2f} MB')
+        logging.warning(f'Peak Memory Usage at file_put AFTER all: {peak / 1e6:.2f} MB')
 
 
 @click.command(name='resume')
