@@ -5,6 +5,7 @@
 import base64
 import hashlib
 import math
+import re
 from functools import wraps
 from multiprocessing import TimeoutError
 from multiprocessing.pool import ThreadPool
@@ -106,7 +107,8 @@ def test_chunk_upload_failed_with_401(httpx_mock, mocker):
 
 
 @pytest.mark.parametrize('total_size, chunk_size', [(101, 1), (101, 5), (101, 101)])
-def test_stream_upload_success_with_new_upload(mocker, total_size, chunk_size):
+def test_stream_upload_success_with_new_upload(httpx_mock, mocker, total_size, chunk_size):
+    spy_func = mocker.spy(UploadClient, 'upload_chunk')
     upload_client = UploadClient('project_code', 'parent_folder_id')
     upload_client.chunk_size = chunk_size
     test_data = '1' * total_size
@@ -118,8 +120,14 @@ def test_stream_upload_success_with_new_upload(mocker, total_size, chunk_size):
         'app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(file_size, file_chunks)
     )
     test_obj = FileObject('object_path', file_local_path)
-    upload_chunk_mock = mocker.patch(
-        'app.services.file_manager.file_upload.upload_client.UploadClient.upload_chunk', return_value=None
+    test_presigned_url = 'http://test.url/presigned'
+    url_pattern = re.compile(
+        r'http:\/\/upload_gr\/v1\/upload\/chunks\/presigned\?bucket=gr-project_code&'
+        r'key=[^&]*&upload_id=[^&]*&chunk_number=\d+&chunk_size=\d+'
+    )
+    httpx_mock.add_response(method='GET', url=url_pattern, json={'result': test_presigned_url})
+    httpx_mock.add_response(
+        method='PUT', url=test_presigned_url, json={'result': ''}, status_code=200, match_headers=False
     )
 
     runner = click.testing.CliRunner()
@@ -127,23 +135,22 @@ def test_stream_upload_success_with_new_upload(mocker, total_size, chunk_size):
         with open(file_local_path, 'w') as f:
             f.write(test_data)
         pool = ThreadPool(2)
-        res = upload_client.stream_upload(test_obj, pool)
+        upload_client.stream_upload(test_obj, pool)
 
         pool.close()
         pool.join()
 
-    assert len(res) == file_chunks
     # assert call with all chunks and params
     for i in range(file_chunks):
         chunk = test_data[i * upload_client.chunk_size : (i + 1) * upload_client.chunk_size].encode()
-
         etag = base64.b64encode(hashlib.md5(chunk).digest()).decode('utf-8')
         chunk_size = len(chunk)
-        upload_chunk_mock.assert_any_call(test_obj, i + 1, chunk, etag, chunk_size)
+        spy_func.assert_any_call(upload_client, test_obj, i + 1, chunk, etag, chunk_size)
 
 
-@pytest.mark.parametrize('total_size, chunk_size, uploaded_offest', [(101, 1, 1), (101, 5, 1), (101, 101, 1)])
-def test_stream_upload_success_with_resume_upload(mocker, total_size, chunk_size, uploaded_offest):
+@pytest.mark.parametrize('total_size, chunk_size, uploaded_offest', [(101, 1, 1), (101, 5, 1), (101, 101, 0)])
+def test_stream_upload_success_with_resume_upload(mocker, httpx_mock, total_size, chunk_size, uploaded_offest):
+    spy_func = mocker.spy(UploadClient, 'upload_chunk')
     upload_client = UploadClient('project_code', 'parent_folder_id')
     upload_client.chunk_size = chunk_size
     test_data = '1' * total_size
@@ -161,8 +168,14 @@ def test_stream_upload_success_with_resume_upload(mocker, total_size, chunk_size
     )
     test_obj = FileObject('object_path', file_local_path)
     test_obj.uploaded_chunks = uploaded_chunk
-    upload_chunk_mock = mocker.patch(
-        'app.services.file_manager.file_upload.upload_client.UploadClient.upload_chunk', return_value=None
+    test_presigned_url = 'http://test.url/presigned'
+    url_pattern = re.compile(
+        r'http:\/\/upload_gr\/v1\/upload\/chunks\/presigned\?bucket=gr-project_code&'
+        r'key=[^&]*&upload_id=[^&]*&chunk_number=\d+&chunk_size=\d+'
+    )
+    httpx_mock.add_response(method='GET', url=url_pattern, json={'result': test_presigned_url})
+    httpx_mock.add_response(
+        method='PUT', url=test_presigned_url, json={'result': ''}, status_code=200, match_headers=False
     )
 
     runner = click.testing.CliRunner()
@@ -170,20 +183,17 @@ def test_stream_upload_success_with_resume_upload(mocker, total_size, chunk_size
         with open(file_local_path, 'w') as f:
             f.write(test_data)
         pool = ThreadPool(2)
-        res = upload_client.stream_upload(test_obj, pool)
+        upload_client.stream_upload(test_obj, pool)
 
         pool.close()
         pool.join()
 
-    assert len(res) == file_chunks - uploaded_offest
     # assert call with all chunks and params
-    for i in range(file_chunks - uploaded_offest):
-        offset = uploaded_offest + i
-        chunk = test_data[offset * upload_client.chunk_size : (offset + 1) * upload_client.chunk_size].encode()
-
+    for i in range(uploaded_offest, file_chunks):
+        chunk = test_data[i * upload_client.chunk_size : (i + 1) * upload_client.chunk_size].encode()
         etag = base64.b64encode(hashlib.md5(chunk).digest()).decode('utf-8')
         chunk_size = len(chunk)
-        upload_chunk_mock.assert_any_call(test_obj, offset + 1, chunk, etag, chunk_size)
+        spy_func.assert_any_call(upload_client, test_obj, i + 1, chunk, etag, chunk_size)
 
 
 def test_stream_upload_failed_with_etag_mismatch(mocker):

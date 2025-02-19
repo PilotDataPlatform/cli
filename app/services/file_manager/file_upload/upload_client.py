@@ -7,9 +7,9 @@ import hashlib
 import json
 import math
 import os
+import threading
 import time
 from logging import getLogger
-from multiprocessing.pool import ApplyResult
 from multiprocessing.pool import ThreadPool
 from typing import Any
 from typing import Dict
@@ -88,6 +88,11 @@ class UploadClient(BaseAuthClient):
         # the flag to indicate if all upload process finished
         # then the token refresh loop will end
         self.finish_upload = False
+
+        # for tracking the multi-threading chunk upload
+        self.active_jobs = 0
+        self.lock = threading.Lock()
+        self.chunk_upload_done = threading.Event()
 
     def generate_meta(self, local_path: str) -> Tuple[int, int]:
         """
@@ -289,7 +294,7 @@ class UploadClient(BaseAuthClient):
 
         return manifest_json
 
-    def stream_upload(self, file_object: FileObject, pool: ThreadPool) -> List[ApplyResult]:
+    def stream_upload(self, file_object: FileObject, pool: ThreadPool) -> None:
         """
         Summary:
             The function is a wrap to display the uploading process.
@@ -304,13 +309,20 @@ class UploadClient(BaseAuthClient):
                 been uploaded.
         """
         count = 0
+        semaphore = threading.Semaphore(AppConfig.Env.num_of_jobs)
+
+        def on_complete(result):
+            semaphore.release()
+            with self.lock:
+                self.active_jobs -= 1
+                if self.active_jobs == 0:
+                    self.chunk_upload_done.set()
 
         # process on the file content
         f = open(file_object.local_path, 'rb')
         # this will be used to check if the chunk has been uploaded
         # in the on_success function. to make sure on_success is called
         # after all the chunks have been uploaded.
-        chunk_result = []
         while True:
             chunk_info = file_object.uploaded_chunks.get(str(count + 1), {})
             chunk_etag = chunk_info.get('etag')
@@ -329,17 +341,22 @@ class UploadClient(BaseAuthClient):
                 chunk_size = chunk_info.get('chunk_size', self.chunk_size)
                 file_object.update_progress(chunk_size)
             else:
-                res = pool.apply_async(
+                # let the semaphore to control the number of concurrent jobs
+                # and the upload client to detect if upload finished
+                semaphore.acquire()
+                with self.lock:
+                    self.active_jobs += 1
+
+                pool.apply_async(
                     self.upload_chunk,
                     args=(file_object, count + 1, chunk, local_chunk_etag, len(chunk)),
+                    callback=on_complete,
                 )
-                chunk_result.append(res)
 
-            count += 1  # uploaded successfully
+            count += 1
 
         f.close()
-
-        return chunk_result
+        self.chunk_upload_done.wait()
 
     def upload_chunk(self, file_object: FileObject, chunk_number: int, chunk: str, etag: str, chunk_size: int) -> None:
         """
@@ -394,7 +411,7 @@ class UploadClient(BaseAuthClient):
 
         return res
 
-    def on_succeed(self, file_object: FileObject, tags: List[str], chunk_result: List[ApplyResult]) -> None:
+    def on_succeed(self, file_object: FileObject) -> None:
         """
         Summary:
             The function is to finalize the upload process.
@@ -406,9 +423,6 @@ class UploadClient(BaseAuthClient):
         return:
             - None
         """
-
-        # check if all the chunks have been uploaded
-        [res.wait() for res in chunk_result]
 
         payload = generate_on_success_form(
             self.project_code,
