@@ -8,7 +8,6 @@ import json
 import math
 import os
 import threading
-import time
 from logging import getLogger
 from multiprocessing.pool import ThreadPool
 from typing import Any
@@ -22,7 +21,6 @@ from httpx import HTTPStatusError
 
 import app.services.output_manager.message_handler as mhandler
 from app.configs.app_config import AppConfig
-from app.configs.config import ConfigClass
 from app.configs.user_config import UserConfig
 from app.models.upload_form import generate_on_success_form
 from app.services.clients.base_auth_client import BaseAuthClient
@@ -31,7 +29,6 @@ from app.services.file_manager.file_upload.models import UploadType
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
-from app.services.user_authentication.token_manager import SrvTokenManager
 from app.utils.aggregated import get_file_info_by_geid
 
 from .exception import INVALID_CHUNK_ETAG
@@ -92,7 +89,6 @@ class UploadClient(BaseAuthClient):
         # for tracking the multi-threading chunk upload
         self.active_jobs = 0
         self.lock = threading.Lock()
-        self.chunk_upload_done = threading.Event()
 
     def generate_meta(self, local_path: str) -> Tuple[int, int]:
         """
@@ -309,14 +305,15 @@ class UploadClient(BaseAuthClient):
                 been uploaded.
         """
         count = 0
-        semaphore = threading.Semaphore(AppConfig.Env.num_of_jobs)
+        semaphore = threading.Semaphore(pool._processes + 1)
+        chunk_upload_done = threading.Event()
 
         def on_complete(result):
             semaphore.release()
             with self.lock:
                 self.active_jobs -= 1
                 if self.active_jobs == 0:
-                    self.chunk_upload_done.set()
+                    chunk_upload_done.set()
 
         # process on the file content
         f = open(file_object.local_path, 'rb')
@@ -355,8 +352,14 @@ class UploadClient(BaseAuthClient):
 
             count += 1
 
+        # for resumable check ONLY if user resume the upload at 100%
+        # just check if there is any active job, if not, set the event
+        while not chunk_upload_done.wait(timeout=60):
+            if self.active_jobs == 0:
+                chunk_upload_done.set()
+            logger.warning('Waiting for all the chunks to be uploaded, remaining jobs: %s', file_object.progress)
+
         f.close()
-        self.chunk_upload_done.wait()
 
     def upload_chunk(self, file_object: FileObject, chunk_number: int, chunk: str, etag: str, chunk_size: int) -> None:
         """
@@ -466,16 +469,3 @@ class UploadClient(BaseAuthClient):
 
     def set_finish_upload(self):
         self.finish_upload = True
-
-    def upload_token_refresh(self, azp: str = ConfigClass.keycloak_device_client_id):
-        token_manager = SrvTokenManager()
-        DEFAULT_INTERVAL = 2  # seconds to check if the upload is finished
-        total_count = 0  # when total_count equals token_refresh_interval, refresh token
-        while self.finish_upload is not True:
-            if total_count >= AppConfig.Env.token_refresh_interval:
-                token_manager.refresh(azp)
-                total_count = 0
-
-            # if not then sleep for DEFAULT_INTERVAL seconds
-            time.sleep(DEFAULT_INTERVAL)
-            total_count = total_count + DEFAULT_INTERVAL

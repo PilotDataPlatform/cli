@@ -17,11 +17,12 @@ from app.services.user_authentication.token_manager import SrvTokenManager
 class BaseAuthClient(BaseClient):
 
     token_manager: SrvTokenManager
-    user = UserConfig()
+    user: UserConfig
 
     def __init__(self, endpoint: str, timeout: int = 10) -> None:
         super().__init__(endpoint, timeout)
 
+        self.user = UserConfig()
         self.token_manager = SrvTokenManager()
         self.headers = {
             'Authorization': 'Bearer ' + self.user.access_token,

@@ -28,10 +28,6 @@ class AppConfig:
         greenroom_bucket_prefix = 'gr'
         # the number of items to active interative mode
         interative_threshold = 10
-        # set hard limit for pending jobs, otherwise cli will consume all memory
-        # to cache jobs. If later on the speed of chunk deliver become faster, we
-        # can increase the concurrency number.
-        num_of_jobs = ConfigClass.concurrent_job_limit
 
         github_url = 'PilotDataPlatform/cli'
 
