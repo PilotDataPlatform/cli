@@ -18,10 +18,11 @@ def error_log(mocker):
 
 
 class TestUserConfig:
-    def test__init__creates_config_folder_with_0700_and_file_with_0600_access_modes(self, tmp_path, fake):
+    def test__init__creates_config_folder_with_0700_and_file_with_0600_access_modes(self, tmp_path, fake, mocker):
         config_folder = tmp_path / fake.pystr()
         file_name = fake.pystr()
 
+        mocker.patch('app.configs.user_config.decryption', return_value='')
         UserConfig(config_folder, file_name)
 
         config_folder_mode = stat.S_IMODE(config_folder.stat().st_mode)
@@ -77,15 +78,16 @@ class TestUserConfig:
         error_log.assert_called_with(expected_message)
 
     def test__init__does_not_exit_with_error_when_config_folder_has_invalid_access_mode_and_is_cloud_mode_set_to_true(
-        self, tmp_path, fake
+        self, tmp_path, fake, mocker
     ):
         config_folder = tmp_path / fake.pystr()
         config_folder.mkdir(mode=0o0755)
 
+        mocker.patch('app.configs.user_config.decryption', return_value='')
         UserConfig(config_folder, is_cloud_mode=True)
 
     def test__init__does_not_exit_with_error_when_config_file_has_invalid_access_mode_and_is_cloud_mode_set_to_true(
-        self, tmp_path, fake
+        self, tmp_path, fake, mocker
     ):
         config_folder = tmp_path / fake.pystr()
         file_name = fake.pystr()
@@ -93,17 +95,19 @@ class TestUserConfig:
         config_folder.mkdir(mode=0o0700)
         config_file.touch(mode=0o0644)
 
+        mocker.patch('app.configs.user_config.decryption', return_value='')
         UserConfig(config_folder, file_name, is_cloud_mode=True)
 
-    def test__init__sets_is_cloud_mode_to_false_by_default(self, tmp_path, fake):
+    def test__init__sets_is_cloud_mode_to_false_by_default(self, tmp_path, fake, mocker):
         config_folder = tmp_path / fake.pystr()
 
+        mocker.patch('app.configs.user_config.decryption', return_value='')
         user_config = UserConfig(config_folder)
 
         assert user_config.is_cloud_mode is False
 
     def test__init__sets_is_cloud_mode_to_true_when_pyinstaller_bundle_params_are_set_and_cloud_mode_file_is_present(
-        self, tmp_path, monkeypatch
+        self, tmp_path, monkeypatch, mocker
     ):
         monkeypatch.setattr(sys, 'frozen', True, raising=False)
         monkeypatch.setattr(sys, '_MEIPASS', str(tmp_path), raising=False)
@@ -111,6 +115,7 @@ class TestUserConfig:
         cloud_mode_file = tmp_path / 'ENABLE_CLOUD_MODE'
         cloud_mode_file.touch()
 
+        mocker.patch('app.configs.user_config.decryption', return_value='')
         user_config = UserConfig()
 
         assert user_config.is_cloud_mode is True

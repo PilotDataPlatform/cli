@@ -233,12 +233,7 @@ def simple_upload(  # noqa: C901
 
     # now loop over each file under the folder and start
     # the chunk upload
-
-    # thread number +1 reserve one thread to refresh token
-    # and remove the token decorator in functions
-
     pool = ThreadPool(num_of_thread)
-    # pool.apply_async(upload_client.upload_token_refresh)
     on_success_res = []
 
     file_object: FileObject
@@ -342,7 +337,6 @@ def resume_upload(
     # and remove the token decorator in functions
 
     pool = ThreadPool(num_of_thread)
-    # pool.apply_async(upload_client.upload_token_refresh)
     on_success_res = []
     for file_object in unfinished_items:
         upload_client.stream_upload(file_object, pool)

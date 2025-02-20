@@ -163,14 +163,6 @@ class UserConfig(metaclass=Singleton):
     def username(self, val):
         self.config['USER']['username'] = encryption(val, self.secret)
 
-    # @property
-    # def password(self):
-    #     return decryption(self.config['USER']['password'], self.secret)
-
-    # @password.setter
-    # def password(self, val):
-    #     self.config['USER']['password'] = encryption(val, self.secret)
-
     @property
     def api_key(self):
         return self._api_key

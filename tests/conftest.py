@@ -30,7 +30,6 @@ def mock_settings(monkeypatch, mocker):
     monkeypatch.setattr(AppConfig.Connections, 'url_keycloak', 'http://url_keycloak')
     monkeypatch.setattr(AppConfig.Connections, 'url_portal', 'http://bff_cli')
     monkeypatch.setattr(UserConfig, 'username', 'test-user')
-    monkeypatch.setattr(UserConfig, 'password', 'test-password')
     monkeypatch.setattr(UserConfig, 'api_key', 'test-api-key')
     monkeypatch.setattr(UserConfig, 'access_token', 'test-access-token')
     monkeypatch.setattr(UserConfig, 'refresh_token', 'test-refresh-token')
