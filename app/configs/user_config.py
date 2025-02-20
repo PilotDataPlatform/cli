@@ -42,6 +42,11 @@ class UserConfig(metaclass=Singleton):
     This user config is global.
     """
 
+    _api_key: str
+    _access_token: str
+    _refresh_token: str
+    _username: str
+
     def __init__(
         self,
         config_path: Union[str, Path, None] = None,
@@ -53,7 +58,6 @@ class UserConfig(metaclass=Singleton):
 
         This adjustment is made to prevent complications with mounted NFS volumes where all files have root ownership.
         """
-
         if config_path is None:
             config_path = ConfigClass.config_path
         if config_filename is None:
@@ -106,6 +110,12 @@ class UserConfig(metaclass=Singleton):
             }
             self.save()
 
+        # load all config into memory
+        self._api_key = decryption(self.config['USER']['api_key'], self.secret)
+        self._access_token = decryption(self.config['USER']['access_token'], self.secret)
+        self._refresh_token = decryption(self.config['USER']['refresh_token'], self.secret)
+        self._username = decryption(self.config['USER']['username'], self.secret)
+
     def _check_user_permissions(self, path: Path, expected_bits: Iterable[int]) -> Union[str, None]:
         """Check if file or folder is owned by the user and has proper access mode."""
 
@@ -147,42 +157,45 @@ class UserConfig(metaclass=Singleton):
 
     @property
     def username(self):
-        return decryption(self.config['USER']['username'], self.secret)
+        return self._username
 
     @username.setter
     def username(self, val):
         self.config['USER']['username'] = encryption(val, self.secret)
 
-    @property
-    def password(self):
-        return decryption(self.config['USER']['password'], self.secret)
+    # @property
+    # def password(self):
+    #     return decryption(self.config['USER']['password'], self.secret)
 
-    @password.setter
-    def password(self, val):
-        self.config['USER']['password'] = encryption(val, self.secret)
+    # @password.setter
+    # def password(self, val):
+    #     self.config['USER']['password'] = encryption(val, self.secret)
 
     @property
     def api_key(self):
-        return decryption(self.config['USER']['api_key'], self.secret)
+        return self._api_key
 
     @api_key.setter
     def api_key(self, val):
+        self._api_key = val
         self.config['USER']['api_key'] = encryption(val, self.secret)
 
     @property
     def access_token(self):
-        return decryption(self.config['USER'].get('access_token', ''), self.secret)
+        return self._access_token
 
     @access_token.setter
     def access_token(self, val):
+        self._access_token = val
         self.config['USER']['access_token'] = encryption(val, self.secret)
 
     @property
     def refresh_token(self):
-        return decryption(self.config['USER']['refresh_token'], self.secret)
+        return self._refresh_token
 
     @refresh_token.setter
     def refresh_token(self, val):
+        self._refresh_token = val
         self.config['USER']['refresh_token'] = encryption(val, self.secret)
 
     @property

@@ -20,11 +20,7 @@ from app.services.user_authentication.user_login_logout import login_using_api_k
 class SrvTokenManager(BaseClient, metaclass=MetaService):
     def __init__(self):
         super().__init__(AppConfig.Connections.url_keycloak_token, 10)
-        user_config = UserConfig()
-        if user_config.is_logged_in():
-            self.config = user_config
-        else:
-            raise Exception('Login session not found, please login first.')
+        self.config = UserConfig()
 
     def update_token(self, access_token, refresh_token):
         self.config.access_token = access_token
