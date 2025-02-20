@@ -89,7 +89,6 @@ class UploadClient(BaseAuthClient):
         # for tracking the multi-threading chunk upload
         self.active_jobs = 0
         self.lock = threading.Lock()
-        # self.chunk_upload_done = threading.Event()
 
     def generate_meta(self, local_path: str) -> Tuple[int, int]:
         """
