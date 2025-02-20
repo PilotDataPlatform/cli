@@ -17,10 +17,11 @@ from app.services.user_authentication.decorator import require_valid_token
 
 class SrvFileTag(metaclass=MetaService):
     appconfig = AppConfig()
-    user = UserConfig()
+    user: UserConfig
 
     def __init__(self, interactive=True):
         self.interactive = interactive
+        self.user = UserConfig()
 
     @staticmethod
     def validate_tag(tag):

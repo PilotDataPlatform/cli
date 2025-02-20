@@ -333,9 +333,6 @@ def resume_upload(
     mhandler.SrvOutPutHandler.resume_check_success()
 
     # lastly, start resumable upload for the rest of the chunks
-    # thread number +1 reserve one thread to refresh token
-    # and remove the token decorator in functions
-
     pool = ThreadPool(num_of_thread)
     on_success_res = []
     for file_object in unfinished_items:

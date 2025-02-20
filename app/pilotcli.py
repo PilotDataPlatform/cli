@@ -52,15 +52,9 @@ click.Context.formatter_class = CustomHelpFormatter
 
 class ComplexCLI(click.MultiCommand):
     def format_help_text(self, ctx, formatter):
-        import logging
-        import time
-
-        start = time.time()
         latest_version, download_url = get_latest_cli_version()
         if Version(pkg_resources.get_distribution('app').version) < latest_version:
             mhandler.SrvOutPutHandler.newer_version_available(latest_version, download_url)
-
-        logging.critical(f'Elapsed time: {time.time() - start}')
 
         click.MultiCommand.format_help_text(self, ctx, formatter)
 

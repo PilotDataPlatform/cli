@@ -28,10 +28,12 @@ decoder = json.JSONDecoder(object_pairs_hook=dupe_checking_hook)
 
 class SrvFileManifests(BaseAuthClient, metaclass=MetaService):
     app_config = AppConfig()
-    user = UserConfig()
+    user: UserConfig
 
     def __init__(self, interactive=True):
         super().__init__(self.app_config.Connections.url_bff)
+
+        self.user = UserConfig()
 
         self.interactive = interactive
         self.endpoint = self.app_config.Connections.url_bff + '/v1'

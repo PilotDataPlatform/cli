@@ -14,7 +14,9 @@ from app.models.singleton import Singleton
 
 
 @pytest.fixture(autouse=True)
-def reset_singletons():
+def reset_singletons(mocker):
+    mocker.patch('app.configs.user_config.decryption', return_value='')
+
     Singleton._instances = {}
 
 
