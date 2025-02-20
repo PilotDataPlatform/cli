@@ -5,10 +5,12 @@
 import base64
 import hashlib
 import json
+import logging
 import math
 import os
 import threading
 import time
+import tracemalloc
 from logging import getLogger
 from multiprocessing.pool import ThreadPool
 from typing import Any
@@ -353,7 +355,12 @@ class UploadClient(BaseAuthClient):
                     callback=on_complete,
                 )
 
+            current, peak = tracemalloc.get_traced_memory()
+
             count += 1
+
+            logging.info(f'Current Memory Usage at chunk {count}: {current / 1e6:.2f} MB')
+            logging.info(f'Peak Memory Usage at chunk {count}: {peak / 1e6:.2f} MB')
 
         f.close()
         self.chunk_upload_done.wait()

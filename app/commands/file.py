@@ -181,8 +181,8 @@ def file_put(**kwargs):  # noqa: C901
         exit(1)
 
     current, peak = tracemalloc.get_traced_memory()
-    logging.warning(f'Current Memory Usage at file_put preparation: {current / 1e6:.2f} MB')
-    logging.warning(f'Peak Memory Usage at file_put preparation: {peak / 1e6:.2f} MB')
+    logging.info(f'Current Memory Usage at file_put preparation: {current / 1e6:.2f} MB')
+    logging.info(f'Peak Memory Usage at file_put preparation: {peak / 1e6:.2f} MB')
 
     project_code, folder_type, target_folder = identify_target_folder(project_path)
     srv_manifest = SrvFileManifests()
@@ -244,14 +244,14 @@ def file_put(**kwargs):  # noqa: C901
             upload_event['source_id'] = src_file_info
 
         current, peak = tracemalloc.get_traced_memory()
-        logging.warning(f'Current Memory Usage at file_put assemble object path: {current / 1e6:.2f} MB')
-        logging.warning(f'Peak Memory Usage at file_put assemble object path: {peak / 1e6:.2f} MB')
+        logging.info(f'Current Memory Usage at file_put assemble object path: {current / 1e6:.2f} MB')
+        logging.info(f'Peak Memory Usage at file_put assemble object path: {peak / 1e6:.2f} MB')
 
         item_ids = simple_upload(upload_event, num_of_thread=thread, output_path=output_path)
 
         current, peak = tracemalloc.get_traced_memory()
-        logging.warning(f'Current Memory Usage at file_put AFTER file uploading: {current / 1e6:.2f} MB')
-        logging.warning(f'Peak Memory Usage at file_put AFTER file uploading: {peak / 1e6:.2f} MB')
+        logging.info(f'Current Memory Usage at file_put AFTER file uploading: {current / 1e6:.2f} MB')
+        logging.info(f'Peak Memory Usage at file_put AFTER file uploading: {peak / 1e6:.2f} MB')
 
         # since only file upload can attach manifest, take the first file object
         srv_manifest.attach_manifest(attribute, item_ids[0], zone) if attribute else None
@@ -260,8 +260,8 @@ def file_put(**kwargs):  # noqa: C901
         remove_the_output_file(output_path)
 
         current, peak = tracemalloc.get_traced_memory()
-        logging.warning(f'Current Memory Usage at file_put AFTER all: {current / 1e6:.2f} MB')
-        logging.warning(f'Peak Memory Usage at file_put AFTER all: {peak / 1e6:.2f} MB')
+        logging.info(f'Current Memory Usage at file_put AFTER all: {current / 1e6:.2f} MB')
+        logging.info(f'Peak Memory Usage at file_put AFTER all: {peak / 1e6:.2f} MB')
 
 
 @click.command(name='resume')

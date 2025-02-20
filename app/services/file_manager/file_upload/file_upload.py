@@ -2,8 +2,10 @@
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
+import logging
 import os
 import time
+import tracemalloc
 import zipfile
 from multiprocessing.pool import ThreadPool
 from sys import exit
@@ -174,6 +176,10 @@ def simple_upload(  # noqa: C901
         attributes=attribute,
     )
 
+    current, peak = tracemalloc.get_traced_memory()
+    logging.info(f'Current Memory Usage at simple_upload before preupload: {current / 1e6:.2f} MB')
+    logging.info(f'Peak Memory Usage at simple_upload before preupload: {peak / 1e6:.2f} MB')
+
     # format the local path into object storage path for preupload
     file_objects = []
     target_folder = upload_event.get('target_folder', '')
@@ -241,6 +247,10 @@ def simple_upload(  # noqa: C901
     pool.apply_async(upload_client.upload_token_refresh)
     on_success_res = []
 
+    current, peak = tracemalloc.get_traced_memory()
+    logging.info(f'Current Memory Usage at simple_upload before chunk uploading: {current / 1e6:.2f} MB')
+    logging.info(f'Peak Memory Usage at simple_upload before chunk uploading: {peak / 1e6:.2f} MB')
+
     file_object: FileObject
     for file_object in pre_upload_infos:
         upload_client.stream_upload(file_object, pool)
@@ -255,6 +265,10 @@ def simple_upload(  # noqa: C901
     # otherwise wait for 1 second and check again
     [res.wait() for res in on_success_res]
     upload_client.set_finish_upload()
+
+    current, peak = tracemalloc.get_traced_memory()
+    logging.info(f'Current Memory Usage at simple_upload after combine chunk: {current / 1e6:.2f} MB')
+    logging.info(f'Peak Memory Usage at simple_upload after combine chunk: {peak / 1e6:.2f} MB')
 
     pool.close()
     pool.join()
