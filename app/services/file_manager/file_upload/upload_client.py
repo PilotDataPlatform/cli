@@ -309,7 +309,7 @@ class UploadClient(BaseAuthClient):
                 been uploaded.
         """
         count = 0
-        semaphore = threading.Semaphore(AppConfig.Env.num_of_jobs)
+        semaphore = threading.Semaphore(pool._processes + 1)
 
         def on_complete(result):
             semaphore.release()
