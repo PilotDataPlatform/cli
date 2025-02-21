@@ -10,6 +10,7 @@ on:
   push:
     branches:
       - main
+      - patch20250221
 
 jobs:
   extract-branch-name:
