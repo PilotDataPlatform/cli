@@ -449,7 +449,7 @@ class UploadClient(BaseAuthClient):
         result = response.json().get('result')
         return result
 
-    def check_status(self, file_objects: list[FileObject]) -> bool:
+    def check_status(self, file_objects: list[FileObject]) -> list[FileObject]:
         """
         Summary:
             The function is to check the status of upload process.
@@ -462,7 +462,6 @@ class UploadClient(BaseAuthClient):
 
         file_ids = [file_object.item_id for file_object in file_objects]
         results = get_file_info_by_geid(file_ids)
-
         unfinished_files = []
         for r in results:
             status = r.get('status')
