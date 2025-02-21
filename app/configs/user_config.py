@@ -58,6 +58,7 @@ class UserConfig(metaclass=Singleton):
 
         This adjustment is made to prevent complications with mounted NFS volumes where all files have root ownership.
         """
+
         if config_path is None:
             config_path = ConfigClass.config_path
         if config_filename is None:

@@ -75,5 +75,4 @@ def decryption(encrypted_message, secret, interactive=True):
                 ehandler.SrvErrorHandler.default_handle(str(ex) + ', please try login as a valid user.')
             else:
                 raise ex
-    else:
-        ehandler.SrvErrorHandler.customized_handle(ehandler.ECustomizedError.LOGIN_SESSION_INVALID, True)
+    return ''
