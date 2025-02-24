@@ -356,7 +356,8 @@ class SrvOutPutHandler(metaclass=MetaService):
         clickable_text = f'\033]8;;{download_url}\033\\latest cli version\033]8;;\033\\'
         message = (
             f'\nNewer version available! Pilotcli v{version} is available. Please vist \n{clickable_text}. '
-            'This link will expire in 10 minutes.\n'
+            'This link will expire in 10 minutes. If the link doesn\'t show up, Please visit the \n'
+            'support page on portal to download the latest version.'
         )
         if print_message:
             logger.warning(message)
