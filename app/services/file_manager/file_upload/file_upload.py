@@ -254,13 +254,13 @@ def simple_upload(  # noqa: C901
     pool.close()
     pool.join()
 
-    if attribute:
-        continue_loop = True
-        while continue_loop:
-            # the last uploaded file
-            succeed = upload_client.check_status(file_object)
-            continue_loop = not succeed
-            time.sleep(0.5)
+    unfinished_files = pre_upload_infos
+    while len(unfinished_files) > 0:
+        temp = []
+        mhandler.SrvOutPutHandler.finalize_upload()
+        for file_batchs in batch_generator(pre_upload_infos, batch_size=AppConfig.Env.upload_batch_size):
+            temp.extend(upload_client.check_status(file_batchs))
+        unfinished_files = temp
 
     num_of_file = len(pre_upload_infos)
     logger.info(f'Upload Time: {time.time() - upload_start_time:.2f}s for {num_of_file:d} files')
@@ -341,7 +341,7 @@ def resume_upload(
         # out of thread pool.
         res = pool.apply_async(
             upload_client.on_succeed,
-            args=(file_object),
+            args=(file_object,),
         )
         on_success_res.append(res)
 
@@ -352,6 +352,15 @@ def resume_upload(
 
     pool.close()
     pool.join()
+
+    unfinished_files = unfinished_items
+    while len(unfinished_files) > 0:
+        temp = []
+        mhandler.SrvOutPutHandler.finalize_upload()
+        for file_batchs in batch_generator(unfinished_items, batch_size=AppConfig.Env.upload_batch_size):
+            temp.extend(upload_client.check_status(file_batchs))
+        unfinished_files = temp
+        time.sleep(1)
 
     num_of_file = len(unfinished_items)
     logger.info(f'Upload Time: {time.time() - upload_start_time:.2f}s for {num_of_file:d} files')

@@ -52,7 +52,7 @@ def mock_upload_client(monkeypatch):
     monkeypatch.setattr(UploadClient, 'stream_upload', lambda *args, **kwargs: [])
     monkeypatch.setattr(UploadClient, 'on_succeed', lambda *args, **kwargs: None)
     monkeypatch.setattr(UploadClient, 'output_manifest', lambda *args, **kwargs: {})
-    monkeypatch.setattr(UploadClient, 'check_status', lambda *args, **kwargs: True)
+    monkeypatch.setattr(UploadClient, 'check_status', lambda *args, **kwargs: [])
 
 
 @pytest.fixture

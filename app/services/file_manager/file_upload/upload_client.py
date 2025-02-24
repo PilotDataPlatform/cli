@@ -29,6 +29,7 @@ from app.services.file_manager.file_upload.models import UploadType
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
+from app.utils.aggregated import ItemStatus
 from app.utils.aggregated import get_file_info_by_geid
 
 from .exception import INVALID_CHUNK_ETAG
@@ -354,10 +355,11 @@ class UploadClient(BaseAuthClient):
 
         # for resumable check ONLY if user resume the upload at 100%
         # just check if there is any active job, if not, set the event
-        while not chunk_upload_done.wait(timeout=60):
+        while not chunk_upload_done.wait(timeout=5):
             if self.active_jobs == 0:
                 chunk_upload_done.set()
-            logger.warning('Waiting for all the chunks to be uploaded, remaining jobs: %s', file_object.progress)
+            else:
+                logger.warning('Waiting for all the chunks to be uploaded, remaining jobs: %s', self.active_jobs)
 
         f.close()
 
@@ -447,7 +449,7 @@ class UploadClient(BaseAuthClient):
         result = response.json().get('result')
         return result
 
-    def check_status(self, file_object: FileObject) -> bool:
+    def check_status(self, file_objects: list[FileObject]) -> list[FileObject]:
         """
         Summary:
             The function is to check the status of upload process.
@@ -458,14 +460,15 @@ class UploadClient(BaseAuthClient):
             - bool: if job success or not
         """
 
-        # with pre-register upload, we can check if the file entity is already exist
-        # if exist, we can continue with manifest process
-        file_entity = get_file_info_by_geid([file_object.item_id])[0].get('result', {})
-        mhandler.SrvOutPutHandler.finalize_upload()
-        if file_entity.get('status') == 'ACTIVE':
-            return True
-        else:
-            return False
+        file_ids = [file_object.item_id for file_object in file_objects]
+        results = get_file_info_by_geid(file_ids)
+        unfinished_files = []
+        for r in results:
+            status = r.get('status')
+            if status != ItemStatus.ACTIVE:
+                unfinished_files.append(r.get('result'))
+
+        return unfinished_files
 
     def set_finish_upload(self):
         self.finish_upload = True

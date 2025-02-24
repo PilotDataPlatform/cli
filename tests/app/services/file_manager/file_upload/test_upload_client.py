@@ -13,6 +13,7 @@ import click
 import pytest
 
 from app.configs.app_config import AppConfig
+from app.models.item import ItemStatus
 from app.services.file_manager.file_upload.exception import INVALID_CHUNK_ETAG
 from app.services.file_manager.file_upload.models import FileObject
 from app.services.file_manager.file_upload.upload_client import UploadClient
@@ -39,14 +40,14 @@ def test_check_status_success(httpx_mock, mocker):
     httpx_mock.add_response(
         method='POST',
         url=AppConfig.Connections.url_bff + '/v1/query/geid',
-        json={'result': [{'result': {'filename': 'test', 'status': 'ACTIVE'}}]},
+        json={'result': [{'status': ItemStatus.ACTIVE, 'result': {'name': 'test', 'status': ItemStatus.ACTIVE}}]},
         status_code=200,
     )
 
     test_obj = FileObject('test', 'test', 'test', 'test', 'test')
-    result = upload_client.check_status(test_obj)
+    result = upload_client.check_status([test_obj])
 
-    assert result is True
+    assert len(result) == 0
 
 
 def test_check_status_fail(httpx_mock, mocker):
@@ -58,14 +59,16 @@ def test_check_status_fail(httpx_mock, mocker):
     httpx_mock.add_response(
         method='POST',
         url=AppConfig.Connections.url_bff + '/v1/query/geid',
-        json={'result': [{'result': {'filename': 'test', 'status': 'REGISTERED'}}]},
+        json={
+            'result': [{'status': ItemStatus.REGISTERED, 'result': {'name': 'test', 'status': ItemStatus.REGISTERED}}]
+        },
         status_code=200,
     )
 
     test_obj = FileObject('test', 'test', 'test', 'test', 'test')
-    result = upload_client.check_status(test_obj)
+    result = upload_client.check_status([test_obj])
 
-    assert result is False
+    assert len(result) == 1
 
 
 def test_chunk_upload(httpx_mock, mocker):
