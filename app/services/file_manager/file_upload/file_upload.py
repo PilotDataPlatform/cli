@@ -344,7 +344,7 @@ def resume_upload(
 
     # check files in manifest if some of them are already uploaded
     all_files = manifest_json.get('file_objects')
-    item_ids = all_files.keys()
+    item_ids = list(all_files.keys())
     unfinished_items = resume_get_unfinished_items(upload_client, all_files, item_ids)
 
     mhandler.SrvOutPutHandler.resume_warning(len(unfinished_items))
