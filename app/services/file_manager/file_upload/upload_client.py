@@ -225,7 +225,8 @@ class UploadClient(BaseAuthClient):
             'parent_folder_id': self.parent_folder_id,
             'folder_tags': self.tags,
             'data': [
-                {'resumable_filename': x.file_name, 'resumable_relative_path': x.parent_path} for x in file_objects
+                {'resumable_filename': x.file_name, 'resumable_relative_path': x.parent_path, 'size': x.total_size}
+                for x in file_objects
             ],
         }
         if self.source_id:

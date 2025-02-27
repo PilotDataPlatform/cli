@@ -268,6 +268,77 @@ def simple_upload(  # noqa: C901
     return [file_object.item_id for file_object in pre_upload_infos]
 
 
+def resume_get_unfinished_items(
+    upload_client: UploadClient, all_files: Dict[str, Any], item_ids: List[str]
+) -> List[FileObject]:
+    '''
+    Summary:
+        Function will loop over `all_files` batchly and check if the file is already uploaded.
+        During the process, the logic wll check if the size registered in the backend is matched
+        with the local file size. If not, the function will raise an error.
+
+    Parameter:
+        - upload_client(UploadClient): the upload client object
+        - all_files(Dict[str, Any]): the file object dictionary
+        - item_ids(List[str]): the list of item ids that will be checked
+    Return:
+        - unfinished_items(List[FileObject]): the list of file object that is not uploaded yet
+    '''
+
+    unfinished_items = []
+    # here add the batch of 500 per loop, the pre upload api cannot
+    # process very large amount of file at same time. otherwise it will timeout
+    # here is list of pre upload result. We decided to call pre upload api by batch
+    for file_batchs in batch_generator(item_ids, batch_size=AppConfig.Env.upload_batch_size):
+        items = get_file_info_by_geid(file_batchs)
+
+        # get the detail of item to see if the file is already uploaded
+        unfinished_files = []
+        for x in items:
+            file_meta = x.get('result')
+            if len(file_meta) == 0:
+                missing_item = all_files.get(x.get('geid'))
+                SrvErrorHandler.customized_handle(
+                    ECustomizedError.INVALID_RESUMABLE_UPLOAD, if_exit=True, value=missing_item.get('object_path')
+                )
+            # check if the file is already registered
+            elif x.get('result').get('status') == ItemStatus.REGISTERED:
+                file_info = all_files.get(file_meta.get('id'))
+                # check if size is matched during resume vs preupload
+                logger.info(
+                    f'Check file size: {file_info.get("object_path")}, '
+                    f'expected size: {file_info.get("total_size")}, '
+                    f'actual size: {x.get("result").get("size")}'
+                )
+                if file_info.get('total_size') != x.get('result').get('size'):
+                    SrvErrorHandler.customized_handle(
+                        ECustomizedError.INVALID_RESUMABLE_FILE_SIZE,
+                        if_exit=True,
+                        value=(
+                            file_info.get('object_path'),
+                            x.get('result').get('size'),
+                            file_info.get('total_size'),
+                        ),
+                    )
+
+                unfinished_files.append(
+                    FileObject(
+                        file_info.get('object_path'),
+                        file_info.get('local_path'),
+                        file_info.get('resumable_id'),
+                        file_info.get('job_id'),
+                        file_info.get('item_id'),
+                    )
+                )
+
+        # then for the rest of the files, check if any chunks are already uploaded
+        mhandler.SrvOutPutHandler.resume_check_in_progress()
+        if len(unfinished_files) > 0:
+            unfinished_items.extend(upload_client.resume_upload(unfinished_files))
+
+    return unfinished_items
+
+
 def resume_upload(
     manifest_json: Dict[str, Any],
     num_of_thread: int = 1,
@@ -291,43 +362,9 @@ def resume_upload(
     )
 
     # check files in manifest if some of them are already uploaded
-    unfinished_items = []
     all_files = manifest_json.get('file_objects')
-    item_ids = []
-    for item_id in all_files:
-        item_ids.append(item_id)
-
-    # here add the batch of 500 per loop, the pre upload api cannot
-    # process very large amount of file at same time. otherwise it will timeout
-    # here is list of pre upload result. We decided to call pre upload api by batch
-    for file_batchs in batch_generator(item_ids, batch_size=AppConfig.Env.upload_batch_size):
-        items = get_file_info_by_geid(file_batchs)
-
-        # get the detail of item to see if the file is already uploaded
-        unfinished_files = []
-        for x in items:
-            file_meta = x.get('result')
-            if len(file_meta) == 0:
-                missing_item = all_files.get(x.get('geid'))
-                SrvErrorHandler.customized_handle(
-                    ECustomizedError.INVALID_RESUMABLE_UPLOAD, if_exit=True, value=missing_item.get('object_path')
-                )
-            elif x.get('result').get('status') == ItemStatus.REGISTERED:
-                file_info = all_files.get(file_meta.get('id'))
-                unfinished_files.append(
-                    FileObject(
-                        file_info.get('object_path'),
-                        file_info.get('local_path'),
-                        file_info.get('resumable_id'),
-                        file_info.get('job_id'),
-                        file_info.get('item_id'),
-                    )
-                )
-
-        # then for the rest of the files, check if any chunks are already uploaded
-        mhandler.SrvOutPutHandler.resume_check_in_progress()
-        if len(unfinished_files) > 0:
-            unfinished_items.extend(upload_client.resume_upload(unfinished_files))
+    item_ids = list(all_files.keys())
+    unfinished_items = resume_get_unfinished_items(upload_client, all_files, item_ids)
 
     mhandler.SrvOutPutHandler.resume_warning(len(unfinished_items))
     mhandler.SrvOutPutHandler.resume_check_success()

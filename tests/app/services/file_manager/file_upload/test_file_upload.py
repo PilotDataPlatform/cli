@@ -319,6 +319,7 @@ def test_folder_merge_skip_with_all_duplication(mocker, mock_upload_client, capf
 def test_resume_upload(mocker):
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
     test_obj = FileObject('object/path', 'local_path', 'resumable_id', 'job_id', 'item_id')
+    test_obj.total_size = 1
 
     manifest_json = {
         'project_code': 'project_code',
@@ -328,11 +329,13 @@ def test_resume_upload(mocker):
         'current_folder_node': 'current_folder_node',
         'tags': 'tags',
         'file_objects': {test_obj.item_id: test_obj.to_dict()},
+        'total_size': 1,
     }
 
     get_return = test_obj.to_dict()
     get_return.update({'status': ItemStatus.REGISTERED})
     get_return.update({'id': get_return.get('item_id')})
+    get_return.update({'size': 1})
     get_mock = mocker.patch(
         'app.services.file_manager.file_upload.file_upload.get_file_info_by_geid', return_value=[{'result': get_return}]
     )
@@ -378,3 +381,39 @@ def test_resume_upload_failed_when_REGISTERED_doesnt_exist(mocker, capfd):
 
     get_mock.assert_called_once()
     assert resume_upload_mock.call_count == 0
+
+
+def test_resume_upload_integrity_check_failed(mocker, capfd):
+    mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
+    test_obj = FileObject('object/path', 'local_path', 'resumable_id', 'job_id', 'item_id')
+    test_obj.total_size = 2  # wrong size
+
+    manifest_json = {
+        'project_code': 'project_code',
+        'operator': 'operator',
+        'zone': AppConfig.Env.green_zone,
+        'parent_folder_id': 'parent_folder_id',
+        'current_folder_node': 'current_folder_node',
+        'tags': 'tags',
+        'file_objects': {test_obj.item_id: test_obj.to_dict()},
+        'total_size': 1,
+    }
+
+    get_return = test_obj.to_dict()
+    get_return.update({'status': ItemStatus.REGISTERED})
+    get_return.update({'id': get_return.get('item_id')})
+    get_return.update({'size': 1})
+    get_mock = mocker.patch(
+        'app.services.file_manager.file_upload.file_upload.get_file_info_by_geid', return_value=[{'result': get_return}]
+    )
+
+    try:
+        resume_upload(manifest_json, 1)
+    except SystemExit:
+        out, _ = capfd.readouterr()
+        expect = customized_error_msg(ECustomizedError.INVALID_RESUMABLE_FILE_SIZE) % ('object/path', 1, 2)
+        assert expect in out
+    else:
+        AssertionError('SystemExit not raised')
+
+    get_mock.assert_called_once()

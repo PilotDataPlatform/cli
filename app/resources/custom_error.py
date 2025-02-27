@@ -49,6 +49,10 @@ class Error:
             'File: %s does not exist in the folder.\n'
             'Please remove the resumable upload log and retry uploading the entire folder again.'
         ),
+        'INVALID_RESUMABLE_FILE_SIZE': (
+            'The file size of %s is not the same as the previous upload. '
+            'Expected size: %s, Actual size: %s. Please verify the file content and try again.'
+        ),
         'INVALID_FOLDERNAME': (
             'The input folder name is not valid. Please follow the rule:\n'
             ' - cannot contains special characters.\n'
