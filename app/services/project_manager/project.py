@@ -22,8 +22,7 @@ class SrvProjectManager(BaseAuthClient, metaclass=MetaService):
 
         self.user = UserConfig()
         self.interactive = interactive
-        # self.endpoint = AppConfig.Connections.url_bff + '/v1'
-        self.endpoint = 'http://localhost:5080/v1'
+        self.endpoint = AppConfig.Connections.url_bff + '/v1'
 
     @require_valid_token()
     def list_projects(self, page, page_size, order, order_by) -> Tuple[Dict, int]:

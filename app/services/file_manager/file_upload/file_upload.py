@@ -305,7 +305,7 @@ def resume_get_unfinished_items(
             elif x.get('result').get('status') == ItemStatus.REGISTERED:
                 file_info = all_files.get(file_meta.get('id'))
                 # check if size is matched during resume vs preupload
-                logger.debug(
+                logger.info(
                     f'Check file size: {file_info.get("object_path")}, '
                     f'expected size: {file_info.get("total_size")}, '
                     f'actual size: {x.get("result").get("size")}'
