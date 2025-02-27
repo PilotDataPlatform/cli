@@ -38,7 +38,7 @@ def test_list_project(httpx_mock, mocker, capsys):
         },
     )
     project_mgr = SrvProjectManager()
-    project_mgr.list_projects(page=0, page_size=10, order='created_at', order_by='desc')
+    project_mgr.list_projects(page=0, page_size=10, order='desc', order_by='created_at')
     out, _ = capsys.readouterr()
     print_out = out.split('\n')
     assert print_out[0] == '              Project Name                            Project Code              '
@@ -58,7 +58,7 @@ def test_list_project_no_project(httpx_mock, mocker, capsys):
         json={'code': 200, 'error_msg': '', 'result': [], 'total': 0, 'page': 0},
     )
     project_mgr = SrvProjectManager()
-    project_mgr.list_projects(page=0, page_size=10, order='created_at', order_by='desc')
+    project_mgr.list_projects(page=0, page_size=10, order='desc', order_by='created_at')
     out, _ = capsys.readouterr()
     print_out = out.split('\n')
     assert print_out[0] == '              Project Name                            Project Code              '
