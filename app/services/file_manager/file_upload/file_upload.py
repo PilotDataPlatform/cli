@@ -271,6 +271,20 @@ def simple_upload(  # noqa: C901
 def resume_get_unfinished_items(
     upload_client: UploadClient, all_files: Dict[str, Any], item_ids: List[str]
 ) -> List[FileObject]:
+    '''
+    Summary:
+        Function will loop over `all_files` batchly and check if the file is already uploaded.
+        During the process, the logic wll check if the size registered in the backend is matched
+        with the local file size. If not, the function will raise an error.
+
+    Parameter:
+        - upload_client(UploadClient): the upload client object
+        - all_files(Dict[str, Any]): the file object dictionary
+        - item_ids(List[str]): the list of item ids that will be checked
+    Return:
+        - unfinished_items(List[FileObject]): the list of file object that is not uploaded yet
+    '''
+
     unfinished_items = []
     # here add the batch of 500 per loop, the pre upload api cannot
     # process very large amount of file at same time. otherwise it will timeout
@@ -291,9 +305,14 @@ def resume_get_unfinished_items(
             elif x.get('result').get('status') == ItemStatus.REGISTERED:
                 file_info = all_files.get(file_meta.get('id'))
                 # check if size is matched during resume vs preupload
+                logger.debug(
+                    f'Check file size: {file_info.get("object_path")}, '
+                    f'expected size: {file_info.get("total_size")}, '
+                    f'actual size: {x.get("result").get("size")}'
+                )
                 if file_info.get('total_size') != x.get('result').get('size'):
                     SrvErrorHandler.customized_handle(
-                        ECustomizedError.INVALID_RESUMABLE_SIZE,
+                        ECustomizedError.INVALID_RESUMABLE_FILE_SIZE,
                         if_exit=True,
                         value=(
                             file_info.get('object_path'),

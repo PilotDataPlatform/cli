@@ -411,7 +411,7 @@ def test_resume_upload_integrity_check_failed(mocker, capfd):
         resume_upload(manifest_json, 1)
     except SystemExit:
         out, _ = capfd.readouterr()
-        expect = customized_error_msg(ECustomizedError.INVALID_RESUMABLE_SIZE) % ('object/path', 1, 2)
+        expect = customized_error_msg(ECustomizedError.INVALID_RESUMABLE_FILE_SIZE) % ('object/path', 1, 2)
         assert expect in out
     else:
         AssertionError('SystemExit not raised')
