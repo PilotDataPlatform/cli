@@ -265,13 +265,18 @@ class UploadClient(BaseAuthClient):
         mhandler.SrvOutPutHandler.preupload_success()
         return file_objets
 
-    def output_manifest(self, file_objects: List[FileObject], output_path: str) -> Dict[str, Any]:
+    def output_manifest(
+        self, registered_items: List[FileObject], unregistered_items: List[FileObject], output_path: str
+    ) -> Dict[str, Any]:
         """
         Summary:
             The function is to output the manifest file.
         Parameter:
-            - file_objects(list of FileObject): the file objects that contains correct
-                information for chunk uploading.
+            - registered_items(list of FileObject): the file object that has been registered
+                in metadata service.
+            - unregistered_items(list of FileObject): the file object that has not been registered
+                and still need to pass thought preupload
+            - output_path(str): the output path of manifest.
         return:
             - manifest_json(dict): the manifest file in json format.
         """
@@ -283,8 +288,10 @@ class UploadClient(BaseAuthClient):
             'parent_folder_id': self.parent_folder_id,
             'current_folder_node': self.current_folder_node,
             'tags': self.tags,
-            'file_objects': {file_object.item_id: file_object.to_dict() for file_object in file_objects},
+            'registered_items': {file_object.item_id: file_object.to_dict() for file_object in registered_items},
+            'unregistered_items': {file_object.local_path: file_object.to_dict() for file_object in unregistered_items},
             'attributes': self.attributes if self.attributes else {},
+            'resumable_manifest_file': output_path,
         }
 
         with open(output_path, 'w') as f:
