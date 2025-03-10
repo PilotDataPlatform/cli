@@ -8,6 +8,7 @@ import json
 import math
 import os
 import threading
+import time
 from logging import getLogger
 from multiprocessing.pool import ThreadPool
 from typing import Any
@@ -30,6 +31,7 @@ from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
 from app.utils.aggregated import ItemStatus
+from app.utils.aggregated import batch_generator
 from app.utils.aggregated import get_file_info_by_geid
 
 from .exception import INVALID_CHUNK_ETAG
@@ -470,6 +472,33 @@ class UploadClient(BaseAuthClient):
                 unfinished_files.append(r.get('result'))
 
         return unfinished_files
+
+    def upload_status_check(self, file_objects: list[FileObject]) -> None:
+        '''
+        Summary:
+            The function is to check the list of upload status.
+
+        Parameter:
+            - file_objects(list[FileObject]): the list of file objects that need to be checked.
+
+        '''
+
+        unfinished_files = file_objects
+        wait_count = 0
+        while len(unfinished_files) > 0:
+            temp = []
+            if wait_count % AppConfig.Env.output_truncate_count == 0:
+                mhandler.SrvOutPutHandler.finalize_upload()
+            elif wait_count > AppConfig.Env.max_waiting_count:
+                SrvErrorHandler.customized_handle(ECustomizedError.UPLOAD_TIMEOUT, True)
+
+            for file_batchs in batch_generator(file_objects, batch_size=AppConfig.Env.upload_batch_size):
+                temp.extend(self.check_status(file_batchs))
+            unfinished_files = temp
+            wait_count += 1
+            time.sleep(1)
+
+        return
 
     def set_finish_upload(self):
         self.finish_upload = True
