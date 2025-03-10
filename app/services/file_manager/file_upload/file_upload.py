@@ -304,14 +304,17 @@ def resume_get_unfinished_items(
                     f'expected size: {file_info.get("total_size")}, '
                     f'actual size: {x.get("result").get("size")}'
                 )
-                if file_info.get('total_size') != x.get('result').get('size'):
+                local_file_size = os.path.getsize(file_info.get('local_path'))
+                if file_info.get('total_size') != x.get('result').get('size') or local_file_size != x.get('result').get(
+                    'size'
+                ):
                     SrvErrorHandler.customized_handle(
                         ECustomizedError.INVALID_RESUMABLE_FILE_SIZE,
                         if_exit=True,
                         value=(
                             file_info.get('object_path'),
                             x.get('result').get('size'),
-                            file_info.get('total_size'),
+                            local_file_size,
                         ),
                     )
 
