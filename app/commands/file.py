@@ -2,7 +2,6 @@
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
-import ast
 import json
 import os
 from sys import exit
@@ -84,7 +83,8 @@ def cli():
     default=None,
     required=False,
     help=file_help.file_help_page(file_help.FileHELP.FILE_UPLOAD_S),
-    type=click.File('rb'),
+    # type=click.File('rb'),
+    type=str,
     show_default=True,
 )
 @click.option(
@@ -146,10 +146,11 @@ def file_put(**kwargs):  # noqa: C901
         attribute = json.load(attribute_file) if attribute_file else None
     except Exception:
         SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TEMPLATE, True)
-    try:
-        source_files = ast.literal_eval(source_file.read().decode('utf-8')) if source_file else None
-    except Exception:
-        SrvErrorHandler.customized_handle(ECustomizedError.INVALID_SOURCE_FILE, True)
+    # try:
+    #     source_files = ast.literal_eval(source_file.read().decode('utf-8')) if source_file else None
+    # except Exception:
+    #     SrvErrorHandler.customized_handle(ECustomizedError.INVALID_SOURCE_FILE, True)
+    source_files = [source_file] if source_file else None
 
     # Check zone and upload-message
     zone = get_zone(zone) if zone else AppConfig.Env.green_zone.lower()
