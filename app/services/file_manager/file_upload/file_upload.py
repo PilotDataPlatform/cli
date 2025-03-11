@@ -150,7 +150,9 @@ def item_duplication_check(
             non_duplicate_file_objects.extend(non_duplicates)
             duplicated_file.extend(duplicate_path)
 
-        if len(non_duplicate_file_objects) == 0:
+        # if all file objects we check are already existed on the platform
+        # then we will exit the upload process
+        if len(non_duplicate_file_objects) == 0 and len(file_objects) != 0:
             mhandler.SrvOutPutHandler.file_duplication_check_warning_with_all_same()
             SrvErrorHandler.customized_handle(ECustomizedError.UPLOAD_CANCEL, if_exit=True)
         elif len(duplicated_file) > 0:

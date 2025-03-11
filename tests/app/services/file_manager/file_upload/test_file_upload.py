@@ -328,7 +328,8 @@ def test_resume_upload(mocker):
         'parent_folder_id': 'parent_folder_id',
         'current_folder_node': 'current_folder_node',
         'tags': 'tags',
-        'file_objects': {test_obj.item_id: test_obj.to_dict()},
+        'registered_items': {test_obj.item_id: test_obj.to_dict()},
+        'unregistered_items': {},
         'total_size': 1,
     }
 
@@ -360,7 +361,8 @@ def test_resume_upload_failed_when_REGISTERED_doesnt_exist(mocker, capfd):
         'parent_folder_id': 'parent_folder_id',
         'current_folder_node': 'current_folder_node',
         'tags': 'tags',
-        'file_objects': {test_obj.item_id: test_obj.to_dict()},
+        'registered_items': {test_obj.item_id: test_obj.to_dict()},
+        'unregistered_items': {},
     }
 
     get_return = test_obj.to_dict()
@@ -395,7 +397,8 @@ def test_resume_upload_integrity_check_failed(mocker, capfd):
         'parent_folder_id': 'parent_folder_id',
         'current_folder_node': 'current_folder_node',
         'tags': 'tags',
-        'file_objects': {test_obj.item_id: test_obj.to_dict()},
+        'registered_items': {test_obj.item_id: test_obj.to_dict()},
+        'unregistered_items': {},
         'total_size': 1,
     }
 
