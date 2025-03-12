@@ -71,6 +71,32 @@ def test_check_status_fail(httpx_mock, mocker):
     assert len(result) == 1
 
 
+def test_check_upload_status_with_timeout(httpx_mock, mocker, capfd):
+    upload_client = UploadClient('project_code', 'parent_folder_id')
+
+    mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
+    mocker.patch('app.services.user_authentication.token_manager.SrvTokenManager.check_valid', return_value=0)
+
+    httpx_mock.add_response(
+        method='POST',
+        url=AppConfig.Connections.url_bff + '/v1/query/geid',
+        json={'result': [{'status': ItemStatus.REGISTERED, 'result': {'name': 'test', 'status': ItemStatus.ACTIVE}}]},
+        status_code=200,
+    )
+
+    test_obj = FileObject('test', 'test', 'test', 'test', 'test')
+    try:
+        AppConfig.Env.max_waiting_count = 1
+        upload_client.upload_status_check([test_obj])
+    except SystemExit:
+        out, _ = capfd.readouterr()
+
+        expect_out = 'Upload task was timeout. Please check the portal for the upload status.\n'
+        assert expect_out in out
+    else:
+        AssertionError('SystemExit not raised')
+
+
 def test_chunk_upload(httpx_mock, mocker):
     upload_client = UploadClient('project_code', 'parent_folder_id')
 

@@ -29,6 +29,10 @@ class AppConfig:
         # the number of items to active interative mode
         interative_threshold = 10
 
+        # number looping when waiting upload status
+        output_truncate_count = 10
+        max_waiting_count = 30
+
         github_url = 'PilotDataPlatform/cli'
 
         zone_int2string = {
