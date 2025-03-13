@@ -87,7 +87,7 @@ jobs:
           #
           # Successfully parsed lines will be ignored,
           #   if the exception date exist and is less than 90 days, the step will exit with 0.
-          uses: PilotDataPlatform/shared-ci-tools/.github/actions/trivyignore-checking@PILOT-6081-2
+          uses: PilotDataPlatform/shared-ci-tools/.github/actions/trivyignore-checking@main
         - name: Build image and push to GitHub Container Registry
           uses: docker/build-push-action@v4
           with:
