@@ -69,6 +69,7 @@ class Error:
             'The following files already exist in the upload destination: \n%s\n'
             'Do you want to cancel the upload [N] or skip duplicates and continue uploading [y]?'
         ),
+        'UPLOAD_TIMEOUT': 'Upload task was timeout. Please check the portal for the upload status.',
         'UPLOAD_ID_NOT_EXIST': (
             'The specified multipart upload does not exist. '
             'The upload ID may be invalid, or the upload may have been aborted or completed.'

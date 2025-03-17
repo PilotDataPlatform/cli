@@ -281,14 +281,8 @@ def simple_upload(  # noqa: C901
     pool.close()
     pool.join()
 
-    unfinished_files = pre_upload_infos
-    while len(unfinished_files) > 0:
-        temp = []
-        mhandler.SrvOutPutHandler.finalize_upload()
-        for file_batchs in batch_generator(pre_upload_infos, batch_size=AppConfig.Env.upload_batch_size):
-            temp.extend(upload_client.check_status(file_batchs))
-        unfinished_files = temp
-
+    # check the status of the upload
+    upload_client.upload_status_check(pre_upload_infos)
     num_of_file = len(pre_upload_infos)
     logger.info(f'Upload Time: {time.time() - upload_start_time:.2f}s for {num_of_file:d} files')
 
@@ -332,19 +326,22 @@ def resume_get_unfinished_items(
             elif x.get('result').get('status') == ItemStatus.REGISTERED:
                 file_info = all_files.get(file_meta.get('id'))
                 # check if size is matched during resume vs preupload
+                local_file_size = os.path.getsize(file_info.get('local_path'))
                 logger.info(
                     f'Check file size: {file_info.get("object_path")}, '
-                    f'expected size: {file_info.get("total_size")}, '
-                    f'actual size: {x.get("result").get("size")}'
+                    f'expected size: {x.get("result").get("size")}, '
+                    f'actual size: {local_file_size}'
                 )
-                if file_info.get('total_size') != x.get('result').get('size'):
+                if file_info.get('total_size') != x.get('result').get('size') or local_file_size != x.get('result').get(
+                    'size'
+                ):
                     SrvErrorHandler.customized_handle(
                         ECustomizedError.INVALID_RESUMABLE_FILE_SIZE,
                         if_exit=True,
                         value=(
                             file_info.get('object_path'),
                             x.get('result').get('size'),
-                            file_info.get('total_size'),
+                            local_file_size,
                         ),
                     )
 
@@ -441,14 +438,7 @@ def resume_upload(
     pool.close()
     pool.join()
 
-    unfinished_files = unfinished_items
-    while len(unfinished_files) > 0:
-        temp = []
-        mhandler.SrvOutPutHandler.finalize_upload()
-        for file_batchs in batch_generator(unfinished_items, batch_size=AppConfig.Env.upload_batch_size):
-            temp.extend(upload_client.check_status(file_batchs))
-        unfinished_files = temp
-        time.sleep(1)
-
+    # check the status of the upload
+    upload_client.upload_status_check(unfinished_items)
     num_of_file = len(unfinished_items)
     logger.info(f'Upload Time: {time.time() - upload_start_time:.2f}s for {num_of_file:d} files')

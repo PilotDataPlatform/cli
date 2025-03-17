@@ -343,6 +343,10 @@ def test_resume_upload(mocker):
     resume_upload_mock = mocker.patch(
         'app.services.file_manager.file_upload.file_upload.UploadClient.resume_upload', return_value=[]
     )
+    mocker.patch(
+        'os.path.getsize',
+        return_value=1,
+    )
 
     resume_upload(manifest_json, 1)
 
@@ -408,6 +412,10 @@ def test_resume_upload_integrity_check_failed(mocker, capfd):
     get_return.update({'size': 1})
     get_mock = mocker.patch(
         'app.services.file_manager.file_upload.file_upload.get_file_info_by_geid', return_value=[{'result': get_return}]
+    )
+    mocker.patch(
+        'os.path.getsize',
+        return_value=2,
     )
 
     try:
