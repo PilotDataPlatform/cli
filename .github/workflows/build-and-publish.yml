@@ -10,7 +10,6 @@ on:
   push:
     branches:
       - main
-      - PILOT-7101
 
 jobs:
   extract-branch-name:
@@ -25,7 +24,7 @@ jobs:
 
   push-binary-linux:
     needs: [ extract-branch-name ]
-    if: ${{ needs.extract-branch-name.outputs.branch == 'PILOT-7101' || needs.extract-branch-name.outputs.branch == 'develop'}}
+    if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop'}}
     runs-on: ubuntu-20.04
     outputs:
       upload_url: ${{steps.create_release.outputs.upload_url}}
