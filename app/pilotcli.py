@@ -5,9 +5,9 @@
 from multiprocessing import freeze_support
 
 import click
-import pkg_resources
+
+# import pkg_resources
 from click.formatting import HelpFormatter
-from packaging.version import Version
 
 import app.services.output_manager.error_handler as error_handler
 import app.services.output_manager.message_handler as mhandler
@@ -16,6 +16,8 @@ from app.commands.entry_point import entry_point
 from app.services.output_manager.help_page import get_cli_help_message
 from app.utils.aggregated import doc
 from app.utils.aggregated import get_latest_cli_version
+
+# from packaging.version import Version
 
 
 class CustomHelpFormatter(HelpFormatter):
@@ -53,8 +55,8 @@ click.Context.formatter_class = CustomHelpFormatter
 class ComplexCLI(click.MultiCommand):
     def format_help_text(self, ctx, formatter):
         latest_version, download_url = get_latest_cli_version()
-        if Version(pkg_resources.get_distribution('app').version) < latest_version:
-            mhandler.SrvOutPutHandler.newer_version_available(latest_version, download_url)
+        # if Version(pkg_resources.get_distribution('app').version) < latest_version:
+        mhandler.SrvOutPutHandler.newer_version_available(latest_version, download_url)
 
         click.MultiCommand.format_help_text(self, ctx, formatter)
 
