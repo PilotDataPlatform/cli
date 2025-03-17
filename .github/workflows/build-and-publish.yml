@@ -196,3 +196,43 @@ jobs:
           asset_path: ./app/bundled_app/windows/${{ github.sha }}.exe
           asset_name: pilotcli_windows.exe
           asset_content_type: application/octet-stream
+
+  update-compatible-versions:
+    needs: [ extract-branch-name ]
+    if: ${{ needs.extract-branch-name.outputs.branch == 'PILOT-7234' || needs.extract-branch-name.outputs.branch == 'develop'}}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract Versions from PR
+        id: extract_versions
+        run: |
+          PR_BODY="${{ github.event.pull_request.body }}"
+
+          # Extract the "## Versions" section
+          echo "$PR_BODY" | awk '/## Versions/{flag=1; next} /^## /{flag=0} flag' > PR_VERSIONS.md
+
+          # Read extracted content
+          CLI_VERSION=$(grep -oP '(?<=- Pilot Release Version: ).*' PR_VERSIONS.md | tr -d '\r')
+          COMPATIBLE_VERSION=$(grep -oP '(?<=- Compatible Version: ).*' PR_VERSIONS.md | tr -d '\r')
+
+          # Handle missing values
+          CLI_VERSION=${CLI_VERSION:-"Unknown"}
+          COMPATIBLE_VERSION=${COMPATIBLE_VERSION:-"Unknown"}
+
+          # Get the latest Git tag (assuming it's the CLI version)
+          LATEST_CLI_VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "Unknown")
+
+          # Append new entry
+          echo "| $LATEST_CLI_VERSION | $CLI_VERSION | $COMPATIBLE_VERSION |" >> compatible_version.md
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add compatible_version.md
+          git commit -m "Updated compatible_version.md with PR #${{ github.event.pull_request.number }}"
+          git push
+        continue-on-error: true  # Avoid breaking workflow if no changes detected
