@@ -10,6 +10,7 @@ on:
   push:
     branches:
       - main
+      - PILOT-7234
 
 jobs:
   extract-branch-name:
