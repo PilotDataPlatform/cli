@@ -306,6 +306,7 @@ def test_folder_merge_skip_with_all_duplication(mocker, mock_upload_client, capf
         out, _ = capfd.readouterr()
         expect = (
             f'Starting upload of: {file_name}\n'
+            + 'Start checking file duplication\n'
             + 'Checking for file duplication...\n'
             + '\nAll files already exist in the upload destination.\n\n'
             + customized_error_msg(ECustomizedError.UPLOAD_CANCEL)
