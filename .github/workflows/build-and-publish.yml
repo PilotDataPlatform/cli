@@ -212,6 +212,7 @@ jobs:
         id: extract_versions
         run: |
           PR_BODY="${{ github.event.pull_request.body }}"
+          echo "$PR_BODY"
 
           # Extract the "## Versions" section
           echo "$PR_BODY" | awk '/## Versions/{flag=1; next} /^## /{flag=0} flag' > PR_VERSIONS.md
