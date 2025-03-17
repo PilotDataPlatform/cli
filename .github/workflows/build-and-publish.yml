@@ -5,12 +5,12 @@ on:
     workflows: [ "Run Tests" ]
     branches:
       - develop
+      - PILOT-7234
     types:
       - completed
   push:
     branches:
       - main
-      - PILOT-7234
 
 jobs:
   extract-branch-name:
@@ -227,7 +227,7 @@ jobs:
           LATEST_CLI_VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "Unknown")
 
           # Append new entry
-          echo "| $LATEST_CLI_VERSION | $CLI_VERSION | $COMPATIBLE_VERSION |" >> compatible_version.md
+          echo "| $LATEST_CLI_VERSION | $CLI_VERSION | $COMPATIBLE_VERSION |" >> docs/compatible_version.md
 
       - name: Commit and Push Changes
         run: |
