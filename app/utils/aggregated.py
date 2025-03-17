@@ -239,7 +239,7 @@ def get_latest_cli_version() -> Tuple[Version, str]:
         httpx_client = BaseClient(AppConfig.Connections.url_fileops_greenroom)
         user_config = UserConfig()
         if not user_config.is_access_token_exists():
-            return Version('0.0.0')
+            return Version('0.0.0'), ''
 
         headers = {'Authorization': 'Bearer'}
         response = httpx_client._get('v1/download/cli/presigned', headers=headers)
