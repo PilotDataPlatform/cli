@@ -234,7 +234,7 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add compatible_version.md
-          git commit -m "Updated compatible_version.md with PR #${{ github.event.pull_request.number }}"
+          git add docs/compatible_version.md
+          git commit -m "Updated docs/compatible_version.md with PR #${{ github.event.pull_request.number }}"
           git push
         continue-on-error: true  # Avoid breaking workflow if no changes detected
