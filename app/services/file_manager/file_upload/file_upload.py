@@ -136,6 +136,7 @@ def item_duplication_check(
     '''
 
     # make the file duplication check to allow folde merging
+    logger.info('Start checking file duplication')
     non_duplicate_file_objects = []
     if create_folder_flag is True:
         non_duplicate_file_objects = file_objects

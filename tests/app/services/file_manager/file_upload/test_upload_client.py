@@ -352,7 +352,7 @@ def test_check_upload_duplication_fail_with_500(httpx_mock, mocker, capfd):
         AssertionError('SystemExit not raised')
 
 
-def test_output_manifest_success(mocker, tmp_path):
+def test_output_manifest_success_for_resumable_upload(mocker, tmp_path):
     upload_client = UploadClient('project_code', 'parent_folder_id')
     json_dump_mocker = mocker.patch('json.dump', return_value=None)
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
