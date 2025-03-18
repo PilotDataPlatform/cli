@@ -78,6 +78,11 @@ jobs:
         with:
           name: release-message
 
+      - name: Download Release Message Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-message
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
