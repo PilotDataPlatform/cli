@@ -44,17 +44,11 @@ Command line tool that allows the user to execute data operations on the platfor
 
 ## Compatible versions
 
-| Cli Version | Pilot Release Version | Compatible Version |
-|----------|----------|----------|
-| 3.15.0   | 2.14.2  | 2.14.2   |
-| 3.15.1   | 2.14.2  | 2.14.2   |
-| 3.15.2   | 2.15  | 2.15   |
-
 <!-- COMPATIBLE_VERSIONS_START -->
 
 <!-- COMPATIBLE_VERSIONS_END -->
 
-### Build Instructions
+## Build Instructions
 1. Each system has its own credential, so building should be done after the updated the env file.
 2. Run build commands for your system.
 
