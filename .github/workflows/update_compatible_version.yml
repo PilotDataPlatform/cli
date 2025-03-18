@@ -39,11 +39,27 @@ jobs:
           # Append new entry
           echo "| $LATEST_CLI_VERSION | $CLI_VERSION | $COMPATIBLE_VERSION |" >> docs/compatible_version.md
 
+      - name: Embed Compatible Versions into README
+        run: |
+          # Define markers for replacement
+          START_MARKER="<!-- COMPATIBLE_VERSIONS_START -->"
+          END_MARKER="<!-- COMPATIBLE_VERSIONS_END -->"
+
+          # Extract current README before marker
+          awk -v start="$START_MARKER" -v end="$END_MARKER" '
+            $0 == start {print $0; system("cat docs/compatible_version.md"); next}
+            $0 == end {printed=1}
+            !printed
+          ' README.md > README_UPDATED.md
+
+          # Replace README with updated version
+          mv README_UPDATED.md README.md
+
       - name: Commit and Push Changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/compatible_version.md
+          git add docs/compatible_version.md README.md
           git commit -m "Updated docs/compatible_version.md with PR #${{ github.event.pull_request.number }}"
           git push
         continue-on-error: true  # Avoid breaking workflow if no changes detected
