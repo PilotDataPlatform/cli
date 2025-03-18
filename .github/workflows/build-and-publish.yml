@@ -62,8 +62,8 @@ jobs:
 
 
   push-binary-linux:
-    needs: [ extract-branch-name ]
-    if: ${{ needs.extract-branch-name.outputs.branch == 'testing' || needs.extract-branch-name.outputs.branch == 'develop'}}
+    needs: [ pre-build-setup ]
+    if: ${{ needs.pre-build-setup.outputs.branch == 'testing' || needs.pre-build-setup.outputs.branch == 'develop'}}
     runs-on: ubuntu-20.04
     outputs:
       upload_url: ${{steps.create_release.outputs.upload_url}}
@@ -71,7 +71,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          ref: ${{ needs.extract-branch-name.outputs.branch }}
+          ref: ${{ needs.pre-build-setup.outputs.branch }}
+
+      - name: Download Release Message Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-message
 
       - name: Download Release Message Artifact
         uses: actions/download-artifact@v4
@@ -130,24 +135,24 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
           tag_name: ${{ env.TAG_VERSION }}
-          name: Release ${{ needs.extract-branch-name.outputs.branch }} ${{ env.TAG_VERSION }}
+          name: Release ${{ needs.pre-build-setup.outputs.branch }} ${{ env.TAG_VERSION }}
           body_path: RELEASE_MESSAGE.md
           draft: false
           prerelease: false
-          target_commitish: ${{ needs.extract-branch-name.outputs.branch }}
+          target_commitish: ${{ needs.pre-build-setup.outputs.branch }}
           files: |
             ./app/bundled_app/linux/pilotcli_linux
             ./app/bundled_app/linux/pilotcli_cloud
 
   push-binary-macos:
     needs: [ push-binary-linux ]
-    if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop'}}
+    if: ${{ needs.pre-build-setup.outputs.branch == 'main' || needs.pre-build-setup.outputs.branch == 'develop'}}
     runs-on: macos-13
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          ref: ${{ needs.extract-branch-name.outputs.branch }}
+          ref: ${{ needs.pre-build-setup.outputs.branch }}
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -192,13 +197,13 @@ jobs:
 
   push-binary-windows:
     needs: [ push-binary-linux ]
-    if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop'}}
+    if: ${{ needs.pre-build-setup.outputs.branch == 'main' || needs.pre-build-setup.outputs.branch == 'develop'}}
     runs-on: windows-2022
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          ref: ${{ needs.extract-branch-name.outputs.branch }}
+          ref: ${{ needs.pre-build-setup.outputs.branch }}
 
       - name: Set up Python
         uses: actions/setup-python@v4
