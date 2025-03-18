@@ -41,16 +41,18 @@ jobs:
 
       - name: Embed Compatible Versions into README
         run: |
-          # Define markers for replacement
+          # Extract content before and after markers
           START_MARKER="<!-- COMPATIBLE_VERSIONS_START -->"
           END_MARKER="<!-- COMPATIBLE_VERSIONS_END -->"
+          BEFORE=$(awk "/$START_MARKER/ {print; exit}" README.md)
+          AFTER=$(awk "/$END_MARKER/ {p=1} p" README.md)
 
-          # Extract current README before marker
-          awk -v start="$START_MARKER" -v end="$END_MARKER" '
-            $0 == start {print $0; system("cat docs/compatible_version.md"); next}
-            $0 == end {printed=1}
-            !printed
-          ' README.md > README_UPDATED.md
+          # Rebuild README with updated version table
+          {
+            echo "$BEFORE"
+            cat docs/compatible_version.md
+            echo "$AFTER"
+          } > README_UPDATED.md
 
           # Replace README with updated version
           mv README_UPDATED.md README.md
