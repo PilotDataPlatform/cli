@@ -1,9 +1,14 @@
 name: Update Compatible Versions
 
 on:
-  pull_request:
+  workflow_run:
+    workflows: [ "Build and Publish" ]
     branches:
-      - testing   # Triggers only when PR is merged into `testing`
+      - develop
+    types:
+      - completed
+
+  pull_request:
     types:
       - closed    # Ensures it runs only on PR closure (merge)
 

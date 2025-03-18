@@ -9,12 +9,9 @@ on:
       - completed
   push:
     branches:
-      - testing
       - main
 
   pull_request:
-    branches:
-      - testing   # Triggers only when PR is merged into `testing`
     types:
       - closed
 
@@ -71,7 +68,7 @@ jobs:
 
   push-binary-linux:
     needs: [ pre-build-setup ]
-    if: ${{ needs.pre-build-setup.outputs.branch == 'testing' || needs.pre-build-setup.outputs.branch == 'develop'}}
+    if: ${{ needs.pre-build-setup.outputs.branch == 'main' || needs.pre-build-setup.outputs.branch == 'develop'}}
     runs-on: ubuntu-20.04
     outputs:
       upload_url: ${{steps.create_release.outputs.upload_url}}
