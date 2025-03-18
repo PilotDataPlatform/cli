@@ -12,9 +12,17 @@ on:
       - testing
       - main
 
+  pull_request:
+    branches:
+      - testing   # Triggers only when PR is merged into `testing`
+    types:
+      - closed
+
 jobs:
   pre-build-setup:
     runs-on: ubuntu-20.04
+    if: github.event.pull_request.merged == true  # Runs only if PR is merged
+
     outputs:
       branch: ${{steps.extract_branch.outputs.branch}}
     steps:
