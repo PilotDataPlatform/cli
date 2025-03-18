@@ -1,51 +1,10 @@
-# Pilot CLI
-
-[![Run Tests](https://github.com/PilotDataPlatform/cli/actions/workflows/run-tests.yml/badge.svg?branch=develop)](https://github.com/PilotDataPlatform/cli/actions/workflows/run-tests.yml)
-[![Python](https://img.shields.io/badge/python-3.7-brightgreen.svg)](https://www.python.org/)
-
-## About
-Command line tool that allows the user to execute data operations on the platform.
-### Built With
-- Python
-- [Click](https://click.palletsprojects.com/en/8.0.x/)
-
-## Getting Started
-
-### Prerequisites
-- Python 3.7+
-- [Poetry](https://python-poetry.org/docs/#installation)
-
-#### Run with Python
-1. Install dependencies (optional: run in edit mode).
-    ```
-       poetry install
-       # for windows use poetry install --extras "windows"
-
-       poetry run python app/pilotcli.py --help
-    ```
-2. Add environment variables if needed.
-
-    1. Create a `.env` file in the root directory of the project.
-    2. Sdd following two environmental varibles to the `.env` file.
-        - `api_url`: the url that the api server is hosted on. default is `https://api.pilot.indocresearch.com/pilot`
-        - `keycloak_realm_url`: thr url that the keycloak server is hosted on. default is `https://iam.pilot.indocresearch.com/realms/pilot`
-
-#### Run from bundled application
-1. Navigate to the appropriate directory for your system.
-
-        ./app/bundled_app/linux/
-        ./app/bundled_app/mac/
-        ./app/bundled_app/mac_arm/
-
-## Usage
-
-    ./app/bundled_app/linux/pilotcli --help
-
-
-## Compatible versions
-
 <!-- COMPATIBLE_VERSIONS_START -->
-
+| Cli Version | Pilot Release Version | Compatible Version |
+|----------|----------|----------|
+| 3.15.0   | 2.14.2  | 2.14.2   |
+| 3.15.1   | 2.14.2  | 2.14.2   |
+| 3.15.2   | 2.15  | 2.15   |
+| Unknown | 2.15 | 2.15 |
 <!-- COMPATIBLE_VERSIONS_END -->
 
 ## Build Instructions
