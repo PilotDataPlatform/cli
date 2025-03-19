@@ -189,7 +189,10 @@ def test_resumable_upload_command_success(mocker, cli_runner):
     with runner.isolated_filesystem():
         mocker.patch('os.path.exists', return_value=True)
         with open('test.json', 'w') as f:
-            json.dump({'file_objects': {'test_item_id': {'file_name': 'test.json'}}, 'zone': 1}, f)
+            json.dump(
+                {'registered_items': {'test_item_id': {'file_name': 'test.json'}}, 'unregistered_items': {}, 'zone': 1},
+                f,
+            )
 
         mocker.patch('app.commands.file.resume_upload', return_value=None)
         mocker.patch('os.remove', return_value=None)
@@ -205,7 +208,8 @@ def test_resumable_upload_command_with_file_attribute_success(mocker, cli_runner
         with open('test.json', 'w') as f:
             json.dump(
                 {
-                    'file_objects': {'test_item_id': {'file_name': 'test.json'}},
+                    'registered_items': {'test_item_id': {'file_name': 'test.json'}},
+                    'unregistered_items': {},
                     'zone': 1,
                     'attributes': {'M1': {'attr1': '1'}},
                 },
