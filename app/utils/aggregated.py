@@ -16,7 +16,6 @@ from packaging.version import Version
 
 import app.services.logger_services.log_functions as logger
 from app.configs.app_config import AppConfig
-from app.configs.user_config import UserConfig
 from app.models.item import ItemStatus
 from app.models.item import ItemType
 from app.services.clients.base_auth_client import BaseAuthClient
@@ -234,13 +233,17 @@ def remove_the_output_file(filepath: str) -> None:
 
 
 def get_latest_cli_version() -> Tuple[Version, str]:
+    '''
+    Summary:
+        Get the latest version of the CLI and download link
+        from backend.
+    Returns:
+        - latest_version(Version): the latest version of the CLI
+        - download_url(str): the download link of the CLI
+    '''
 
     try:
         httpx_client = BaseClient(AppConfig.Connections.url_fileops_greenroom)
-        user_config = UserConfig()
-        if not user_config.is_access_token_exists():
-            return Version('0.0.0')
-
         headers = {'Authorization': 'Bearer'}
         response = httpx_client._get('v1/download/cli/presigned', headers=headers)
         result = response.json().get('result', {})
