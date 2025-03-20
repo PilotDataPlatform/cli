@@ -306,6 +306,7 @@ def test_folder_merge_skip_with_all_duplication(mocker, mock_upload_client, capf
         out, _ = capfd.readouterr()
         expect = (
             f'Starting upload of: {file_name}\n'
+            + 'Start checking file duplication\n'
             + 'Checking for file duplication...\n'
             + '\nAll files already exist in the upload destination.\n\n'
             + customized_error_msg(ECustomizedError.UPLOAD_CANCEL)
@@ -328,7 +329,8 @@ def test_resume_upload(mocker):
         'parent_folder_id': 'parent_folder_id',
         'current_folder_node': 'current_folder_node',
         'tags': 'tags',
-        'file_objects': {test_obj.item_id: test_obj.to_dict()},
+        'registered_items': {test_obj.item_id: test_obj.to_dict()},
+        'unregistered_items': {},
         'total_size': 1,
     }
 
@@ -364,7 +366,8 @@ def test_resume_upload_failed_when_REGISTERED_doesnt_exist(mocker, capfd):
         'parent_folder_id': 'parent_folder_id',
         'current_folder_node': 'current_folder_node',
         'tags': 'tags',
-        'file_objects': {test_obj.item_id: test_obj.to_dict()},
+        'registered_items': {test_obj.item_id: test_obj.to_dict()},
+        'unregistered_items': {},
     }
 
     get_return = test_obj.to_dict()
@@ -399,7 +402,8 @@ def test_resume_upload_integrity_check_failed(mocker, capfd):
         'parent_folder_id': 'parent_folder_id',
         'current_folder_node': 'current_folder_node',
         'tags': 'tags',
-        'file_objects': {test_obj.item_id: test_obj.to_dict()},
+        'registered_items': {test_obj.item_id: test_obj.to_dict()},
+        'unregistered_items': {},
         'total_size': 1,
     }
 

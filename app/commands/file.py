@@ -288,7 +288,7 @@ def file_resume(**kwargs):  # noqa: C901
 
     # since only file upload can attach manifest, take the first file object
     srv_manifest = SrvFileManifests()
-    item_id = next(iter(resumable_manifest.get('file_objects')))
+    item_id = next(iter(resumable_manifest.get('registered_items')))
     attribute = resumable_manifest.get('attributes')
     zone = resumable_manifest.get('zone')
     srv_manifest.attach_manifest(attribute, item_id, zone) if attribute else None

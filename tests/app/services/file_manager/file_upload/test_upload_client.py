@@ -352,22 +352,33 @@ def test_check_upload_duplication_fail_with_500(httpx_mock, mocker, capfd):
         AssertionError('SystemExit not raised')
 
 
-def test_output_manifest_success(mocker, tmp_path):
+def test_output_manifest_success_for_resumable_upload(mocker, tmp_path):
     upload_client = UploadClient('project_code', 'parent_folder_id')
     json_dump_mocker = mocker.patch('json.dump', return_value=None)
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
-    test_obj = FileObject('object/path', 'local_path', 'resumable_id', 'job_id', 'item_id')
+    test_obj_registered = FileObject(
+        'object/test_obj_registered', 'local_path_1', 'resumable_id_1', 'job_id_1', 'item_id_1'
+    )
+    test_obj_unregistered = FileObject('object/test_obj_unregistered', 'local_path_2', 'resumable_id_2', 'job_id_2', '')
 
-    res = upload_client.output_manifest([test_obj], output_path=str(tmp_path / 'test'))
+    res = upload_client.output_manifest(
+        [test_obj_registered], [test_obj_unregistered], output_path=str(tmp_path / 'test')
+    )
 
     assert res.get('project_code') == 'project_code'
     assert res.get('parent_folder_id') == 'parent_folder_id'
-    assert len(res.get('file_objects')) == 1
+    assert len(res.get('registered_items')) == 1
 
-    file_item = res.get('file_objects').get('item_id')
-    assert file_item.get('resumable_id') == 'resumable_id'
-    assert file_item.get('local_path') == 'local_path'
-    assert file_item.get('object_path') == 'object/path'
-    assert file_item.get('item_id') == 'item_id'
+    file_item = res.get('registered_items').get('item_id_1')
+    assert file_item.get('resumable_id') == 'resumable_id_1'
+    assert file_item.get('local_path') == 'local_path_1'
+    assert file_item.get('object_path') == 'object/test_obj_registered'
+    assert file_item.get('item_id') == 'item_id_1'
+
+    assert len(res.get('unregistered_items')) == 1
+    file_item = res.get('unregistered_items').get('local_path_2')  # unregistered item dont have id
+    assert file_item.get('resumable_id') == 'resumable_id_2'
+    assert file_item.get('local_path') == 'local_path_2'
+    assert file_item.get('object_path') == 'object/test_obj_unregistered'
 
     json_dump_mocker.assert_called_once()
