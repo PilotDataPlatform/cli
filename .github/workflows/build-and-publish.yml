@@ -11,9 +11,15 @@ on:
     branches:
       - main
 
+  pull_request:
+    types:
+      - closed
+
 jobs:
-  extract-branch-name:
+  pre-build-setup:
     runs-on: ubuntu-20.04
+    if: github.event.pull_request.merged == true  # Runs only if PR is merged
+
     outputs:
       branch: ${{steps.extract_branch.outputs.branch}}
     steps:
@@ -22,9 +28,47 @@ jobs:
         shell: bash
         run: echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
 
+      - name: Extract PR Summary and Versions
+        id: extract_content
+        run: |
+          PR_BODY="${{ github.event.pull_request.body }}"
+
+          # Extract Summary
+          echo "$PR_BODY" | awk '/## Summary/{flag=1; next} /^## /{flag=0} flag' > PR_SUMMARY.md
+          echo "" >> PR_SUMMARY.md
+
+          # Extract Versions
+          echo "$PR_BODY" | awk '/## Versions/{flag=1; next} /^## /{flag=0} flag' > PR_VERSIONS.md
+          echo "" >> PR_VERSIONS.md
+
+          # Read extracted content
+          PILOT_VERSION=$(grep -oP '(?<=- Pilot Release Version: ).*' PR_VERSIONS.md | tr -d '\r')
+          COMPATIBLE_VERSION=$(grep -oP '(?<=- Compatible Version: ).*' PR_VERSIONS.md | tr -d '\r')
+
+          # Handle missing values
+          PILOT_VERSION=${PILOT_VERSION:-"Unknown"}
+          COMPATIBLE_VERSION=${COMPATIBLE_VERSION:-"Unknown"}
+
+          # Create a structured release message
+          echo "## Release Notes" > RELEASE_MESSAGE.md
+          echo "" >> RELEASE_MESSAGE.md
+          echo "### Summary" >> RELEASE_MESSAGE.md
+          cat PR_SUMMARY.md >> RELEASE_MESSAGE.md
+          echo "" >> RELEASE_MESSAGE.md
+          echo "### Versions" >> RELEASE_MESSAGE.md
+          echo "- **Pilot Release Version:** $PILOT_VERSION" >> RELEASE_MESSAGE.md
+          echo "- **Compatible Version:** $COMPATIBLE_VERSION" >> RELEASE_MESSAGE.md
+
+      - name: Upload Release Message as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-message
+          path: RELEASE_MESSAGE.md
+
+
   push-binary-linux:
-    needs: [ extract-branch-name ]
-    if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop'}}
+    needs: [ pre-build-setup ]
+    if: ${{ needs.pre-build-setup.outputs.branch == 'main' || needs.pre-build-setup.outputs.branch == 'develop'}}
     runs-on: ubuntu-20.04
     outputs:
       upload_url: ${{steps.create_release.outputs.upload_url}}
@@ -32,7 +76,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          ref: ${{ needs.extract-branch-name.outputs.branch }}
+          ref: ${{ needs.pre-build-setup.outputs.branch }}
+
+      - name: Download Release Message Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-message
+
+      - name: Download Release Message Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-message
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -86,24 +140,24 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
           tag_name: ${{ env.TAG_VERSION }}
-          name: Release ${{ needs.extract-branch-name.outputs.branch }} ${{ env.TAG_VERSION }}
-          body: ${{ github.event.head_commit.message }}
+          name: Release ${{ needs.pre-build-setup.outputs.branch }} ${{ env.TAG_VERSION }}
+          body_path: RELEASE_MESSAGE.md
           draft: false
           prerelease: false
-          target_commitish: ${{ needs.extract-branch-name.outputs.branch }}
+          target_commitish: ${{ needs.pre-build-setup.outputs.branch }}
           files: |
             ./app/bundled_app/linux/pilotcli_linux
             ./app/bundled_app/linux/pilotcli_cloud
 
   push-binary-macos:
     needs: [ push-binary-linux ]
-    if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop'}}
+    if: ${{ needs.pre-build-setup.outputs.branch == 'main' || needs.pre-build-setup.outputs.branch == 'develop'}}
     runs-on: macos-13
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          ref: ${{ needs.extract-branch-name.outputs.branch }}
+          ref: ${{ needs.pre-build-setup.outputs.branch }}
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -148,13 +202,13 @@ jobs:
 
   push-binary-windows:
     needs: [ push-binary-linux ]
-    if: ${{ needs.extract-branch-name.outputs.branch == 'main' || needs.extract-branch-name.outputs.branch == 'develop'}}
+    if: ${{ needs.pre-build-setup.outputs.branch == 'main' || needs.pre-build-setup.outputs.branch == 'develop'}}
     runs-on: windows-2022
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          ref: ${{ needs.extract-branch-name.outputs.branch }}
+          ref: ${{ needs.pre-build-setup.outputs.branch }}
 
       - name: Set up Python
         uses: actions/setup-python@v4

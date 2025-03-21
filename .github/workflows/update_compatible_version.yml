@@ -1,0 +1,86 @@
+name: Update Compatible Versions
+
+on:
+  workflow_run:
+    workflows: [ "Build and Publish" ]
+    branches:
+      - develop
+    types:
+      - completed
+
+  pull_request:
+    types:
+      - closed    # Ensures it runs only on PR closure (merge)
+
+jobs:
+  update-compatible-versions:
+    if: github.event.pull_request.merged == true  # Runs only if PR is merged
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract Versions from PR
+        id: extract_versions
+        run: |
+          PR_BODY="${{ github.event.pull_request.body }}"
+
+          # Extract the "## Versions" section
+          echo "$PR_BODY" | awk '/## Versions/{flag=1; next} /^## /{flag=0} flag' > PR_VERSIONS.md
+
+          # Read extracted content
+          CLI_VERSION=$(grep -oP '(?<=- Pilot Release Version: ).*' PR_VERSIONS.md | tr -d '\r')
+          COMPATIBLE_VERSION=$(grep -oP '(?<=- Compatible Version: ).*' PR_VERSIONS.md | tr -d '\r')
+
+          # Handle missing values
+          CLI_VERSION=${CLI_VERSION:-"Unknown"}
+          COMPATIBLE_VERSION=${COMPATIBLE_VERSION:-"Unknown"}
+
+          # Get the latest Git tag (assuming it's the CLI version)
+          LATEST_CLI_VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "Unknown")
+
+          # Convert to NDJSON format
+          NEW_ENTRY="{\"Cli Version\": \"$LATEST_CLI_VERSION\", \"Pilot Release Version\": \"$CLI_VERSION\", \"Compatible Version\": \"$COMPATIBLE_VERSION\"}"
+
+          # Ensure file exists before appending
+          touch docs/compatible_version.ndjson
+
+          # Append new entry to NDJSON file
+          echo "$NEW_ENTRY" >> docs/compatible_version.ndjson
+
+      - name: Embed Compatible Versions into README
+        run: |
+          # Define markers
+          START_MARKER="<!-- COMPATIBLE_VERSIONS_START -->"
+          END_MARKER="<!-- COMPATIBLE_VERSIONS_END -->"
+
+          # Extract the content before the marker
+          BEFORE=$(awk "/$START_MARKER/ {exit} {print}" README.md)
+          AFTER=$(awk "/$END_MARKER/ {found=1; next} found {print}" README.md)
+
+          # Convert NDJSON to Markdown Table Format for README
+          echo "| Cli Version | Pilot Release Version | Compatible Version |" > version_table.md
+          echo "|------------|----------------------|---------------------|" >> version_table.md
+          cat docs/compatible_version.ndjson | jq -r '. | "| \(.["Cli Version"]) | \(.["Pilot Release Version"]) | \(.["Compatible Version"]) |"' >> version_table.md
+
+          # Rebuild README with updated version section
+          {
+            echo "$BEFORE"
+            echo "$START_MARKER"
+            cat version_table.md
+            echo "$END_MARKER"
+            echo "$AFTER"
+          } > README_UPDATED.md
+
+          # Replace README with updated version
+          mv README_UPDATED.md README.md
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/compatible_version.ndjson README.md
+          git commit -m "Updated docs/compatible_version.ndjson with PR #${{ github.event.pull_request.number }}"
+          git push
+        continue-on-error: true  # Avoid breaking workflow if no changes detected
