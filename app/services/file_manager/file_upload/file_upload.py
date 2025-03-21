@@ -338,7 +338,6 @@ def resume_get_unfinished_items(
                 ):
                     SrvErrorHandler.customized_handle(
                         ECustomizedError.INVALID_RESUMABLE_FILE_SIZE,
-                        if_exit=True,
                         value=(
                             file_info.get('object_path'),
                             x.get('result').get('size'),
