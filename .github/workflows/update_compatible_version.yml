@@ -39,7 +39,7 @@ jobs:
           COMPATIBLE_VERSION=${COMPATIBLE_VERSION:-"Unknown"}
 
           # Get the latest Git tag (assuming it's the CLI version)
-          LATEST_CLI_VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "Unknown")
+          LATEST_CLI_VERSION=$(poetry version --short || echo "Unknown")
 
           # Convert to NDJSON format
           NEW_ENTRY="{\"Cli Version\": \"$LATEST_CLI_VERSION\", \"Pilot Release Version\": \"$CLI_VERSION\", \"Compatible Version\": \"$COMPATIBLE_VERSION\"}"
