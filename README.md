@@ -44,6 +44,15 @@ Command line tool that allows the user to execute data operations on the platfor
 
 ## Compatible versions
 <!-- COMPATIBLE_VERSIONS_START -->
+| Cli Version | Pilot Release Version | Compatible Version |
+|------------|----------------------|---------------------|
+| 3.15.0 | 2.14.2 | 2.14.2 |
+| 3.15.1 | 2.14.2 | 2.14.2 |
+| 3.15.2 | 2.15 | 2.15 |
+| 3.16.0 | 2.15 | 2.15 |
+| 3.17.0 | 2.15 | 2.15 |
+| Unknown | 2.15 | 2.15 |
+| Unknown | 2.16 | 2.16 |
 <!-- COMPATIBLE_VERSIONS_END -->
 
 ## Build Instructions
