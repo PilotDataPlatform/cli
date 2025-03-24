@@ -5,16 +5,17 @@ on:
     workflows: [ "Run Tests" ]
     branches:
       - develop
+      - testing
     types:
       - completed
   push:
     branches:
-      - testing
       - main
 
   pull_request:
     branches:
-      - testing   # Triggers only when PR is merged into `testing`
+      - develop
+      - testing
     types:
       - closed
 
