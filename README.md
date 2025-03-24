@@ -44,7 +44,6 @@ Command line tool that allows the user to execute data operations on the platfor
 
 ## Compatible versions
 <!-- COMPATIBLE_VERSIONS_START -->
-
 <!-- COMPATIBLE_VERSIONS_END -->
 
 ## Build Instructions
