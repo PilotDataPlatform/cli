@@ -38,7 +38,7 @@ jobs:
           COMPATIBLE_VERSION=${COMPATIBLE_VERSION:-"Unknown"}
 
           # Get the latest Git tag (assuming it's the CLI version)
-          LATEST_CLI_VERSION=$(poetry version --short || echo "Unknown")
+          LATEST_CLI_VERSION=$(grep '^version =' pyproject.toml | sed -E 's/version = "(.*)"/\1/')
 
           # Convert to NDJSON format
           NEW_ENTRY="{\"Cli Version\": \"$LATEST_CLI_VERSION\", \"Pilot Release Version\": \"$CLI_VERSION\", \"Compatible Version\": \"$COMPATIBLE_VERSION\"}"
@@ -78,8 +78,8 @@ jobs:
 
       - name: Commit and Push Changes
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "GitHub Actions"
+          git config user.email "github-actions@users.noreply.indocresearch.org"
           git add docs/compatible_version.ndjson README.md
           git commit -m "Updated docs/compatible_version.ndjson with PR #${{ github.event.pull_request.number }}"
           git push
