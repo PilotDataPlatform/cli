@@ -38,7 +38,7 @@ jobs:
           COMPATIBLE_VERSION=${COMPATIBLE_VERSION:-"Unknown"}
 
           # Get the latest Git tag (assuming it's the CLI version)
-          LATEST_CLI_VERSION=$(poetry version --short || echo "Unknown")
+          LATEST_CLI_VERSION=$(grep '^version =' pyproject.toml | sed -E 's/version = "(.*)"/\1/')
 
           # Convert to NDJSON format
           NEW_ENTRY="{\"Cli Version\": \"$LATEST_CLI_VERSION\", \"Pilot Release Version\": \"$CLI_VERSION\", \"Compatible Version\": \"$COMPATIBLE_VERSION\"}"
