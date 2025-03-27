@@ -119,6 +119,58 @@ def assemble_path(
     return current_folder_node, parent_folder, create_folder_flag, target_folder
 
 
+def item_duplication_check(
+    create_folder_flag: bool, file_objects: List[FileObject], upload_client: UploadClient
+) -> List[FileObject]:
+    '''
+    Summary:
+        The function will check if the file is already uploaded on the platform.
+        If the file is already uploaded, the function will ask if to skip the file.
+        Otherwise, the function will exit
+    Parameter:
+        - create_folder_flag(bool): the flag to indicate if need to create new folder
+        - file_objects(List[FileObject]): the list of file object
+        - upload_client(UploadClient): the upload client object
+    Return:
+        - non_duplicate_file_objects(List[FileObject]): the list of file object that is not duplicated
+    '''
+
+    # make the file duplication check to allow folde merging
+    logger.info('Start checking file duplication')
+    non_duplicate_file_objects = []
+    if create_folder_flag is True:
+        non_duplicate_file_objects = file_objects
+    else:
+        mhandler.SrvOutPutHandler.file_duplication_check()
+        duplicated_file = []
+        debug_logger.debug(f'upload batch size: {AppConfig.Env.upload_batch_size}')
+        for file_batchs in batch_generator(file_objects, batch_size=AppConfig.Env.upload_batch_size):
+            start_time = time.time()
+            non_duplicates, duplicate_path = upload_client.check_upload_duplication(file_batchs)
+            debug_logger.debug(f'Check duplication time: {time.time() - start_time:.2f}s')
+            non_duplicate_file_objects.extend(non_duplicates)
+            duplicated_file.extend(duplicate_path)
+
+        # if all file objects we check are already existed on the platform
+        # then we will exit the upload process
+        if len(non_duplicate_file_objects) == 0 and len(file_objects) != 0:
+            mhandler.SrvOutPutHandler.file_duplication_check_warning_with_all_same()
+            SrvErrorHandler.customized_handle(ECustomizedError.UPLOAD_CANCEL, if_exit=True)
+        elif len(duplicated_file) > 0:
+            mhandler.SrvOutPutHandler.file_duplication_check_success()
+            duplicate_warning_format = '\n'.join(duplicated_file)
+            try:
+                click.confirm(
+                    customized_error_msg(ECustomizedError.UPLOAD_SKIP_DUPLICATION) % (duplicate_warning_format),
+                    abort=True,
+                )
+            except Abort:
+                mhandler.SrvOutPutHandler.cancel_upload()
+                exit(1)
+
+    return non_duplicate_file_objects
+
+
 def simple_upload(  # noqa: C901
     upload_event,
     num_of_thread: int = 1,
@@ -191,35 +243,8 @@ def simple_upload(  # noqa: C901
         else:
             file_objects.append(file_object)
 
-    # make the file duplication check to allow folde merging
-    non_duplicate_file_objects = []
-    if create_folder_flag is True:
-        non_duplicate_file_objects = file_objects
-    else:
-        mhandler.SrvOutPutHandler.file_duplication_check()
-        duplicated_file = []
-        debug_logger.debug(f'upload batch size: {AppConfig.Env.upload_batch_size}')
-        for file_batchs in batch_generator(file_objects, batch_size=AppConfig.Env.upload_batch_size):
-            start_time = time.time()
-            non_duplicates, duplicate_path = upload_client.check_upload_duplication(file_batchs)
-            debug_logger.debug(f'Check duplication time: {time.time() - start_time:.2f}s')
-            non_duplicate_file_objects.extend(non_duplicates)
-            duplicated_file.extend(duplicate_path)
-
-        if len(non_duplicate_file_objects) == 0:
-            mhandler.SrvOutPutHandler.file_duplication_check_warning_with_all_same()
-            SrvErrorHandler.customized_handle(ECustomizedError.UPLOAD_CANCEL, if_exit=True)
-        elif len(duplicated_file) > 0:
-            mhandler.SrvOutPutHandler.file_duplication_check_success()
-            duplicate_warning_format = '\n'.join(duplicated_file)
-            try:
-                click.confirm(
-                    customized_error_msg(ECustomizedError.UPLOAD_SKIP_DUPLICATION) % (duplicate_warning_format),
-                    abort=True,
-                )
-            except Abort:
-                mhandler.SrvOutPutHandler.cancel_upload()
-                exit(1)
+    # make the file duplication check to allow folder merging
+    non_duplicate_file_objects = item_duplication_check(create_folder_flag, file_objects, upload_client)
 
     # here is list of pre upload result. We decided to call pre upload api by batch
     pre_upload_infos = []
@@ -228,8 +253,11 @@ def simple_upload(  # noqa: C901
         # the placeholder in object storage
         pre_upload_infos.extend(upload_client.pre_upload(file_batchs, output_path))
 
-    # then output manifest file to the output path
-    upload_client.output_manifest(pre_upload_infos, output_path)
+        # then output manifest file to the output path AFTER EACH BATCH
+        # which will include unfinished objects
+        upload_client.output_manifest(
+            pre_upload_infos, non_duplicate_file_objects[len(pre_upload_infos) + 1 :], output_path
+        )
 
     # now loop over each file under the folder and start
     # the chunk upload
@@ -299,12 +327,12 @@ def resume_get_unfinished_items(
             elif x.get('result').get('status') == ItemStatus.REGISTERED:
                 file_info = all_files.get(file_meta.get('id'))
                 # check if size is matched during resume vs preupload
+                local_file_size = os.path.getsize(file_info.get('local_path'))
                 logger.info(
                     f'Check file size: {file_info.get("object_path")}, '
-                    f'expected size: {file_info.get("total_size")}, '
-                    f'actual size: {x.get("result").get("size")}'
+                    f'expected size: {x.get("result").get("size")}, '
+                    f'actual size: {local_file_size}'
                 )
-                local_file_size = os.path.getsize(file_info.get('local_path'))
                 if file_info.get('total_size') != x.get('result').get('size') or local_file_size != x.get('result').get(
                     'size'
                 ):
@@ -359,9 +387,33 @@ def resume_upload(
     )
 
     # check files in manifest if some of them are already uploaded
-    all_files = manifest_json.get('file_objects')
-    item_ids = list(all_files.keys())
-    unfinished_items = resume_get_unfinished_items(upload_client, all_files, item_ids)
+    registered_items = manifest_json.get('registered_items')
+    item_ids = list(registered_items.keys())
+    unfinished_items = resume_get_unfinished_items(upload_client, registered_items, item_ids)
+    logger.info(f'Registered items: {len(unfinished_items)}')
+
+    # make the file duplication check to allow folder merging
+    unregistered_items = manifest_json.get('unregistered_items')
+    unregistered_items = [
+        FileObject(
+            object_path=value.get('object_path'),
+            local_path=value.get('local_path'),
+            resumable_id=value.get('resumable_id'),
+            job_id=value.get('job_id'),
+            item_id=value.get('item_id'),
+        )
+        for _, value in unregistered_items.items()
+    ]
+    unregistered_items = item_duplication_check(False, unregistered_items, upload_client)
+    logger.info(f'Unregistered items: {len(unregistered_items)}')
+
+    # redo preupload again
+    batch_count = 1
+    resumable_manifest_file = manifest_json.get('resumable_manifest_file')
+    for file_batchs in batch_generator(unregistered_items, batch_size=AppConfig.Env.upload_batch_size):
+        unfinished_items.extend(upload_client.pre_upload(file_batchs, resumable_manifest_file))
+        upload_client.output_manifest(unfinished_items, unregistered_items[batch_count + 1 :], resumable_manifest_file)
+        batch_count += 1
 
     mhandler.SrvOutPutHandler.resume_warning(len(unfinished_items))
     mhandler.SrvOutPutHandler.resume_check_success()
