@@ -5,6 +5,7 @@ on:
     workflows: [ "Build and Publish" ]
     branches:
       - develop
+      - testing
     types:
       - completed
 

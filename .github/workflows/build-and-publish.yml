@@ -5,6 +5,7 @@ on:
     workflows: [ "Run Tests" ]
     branches:
       - develop
+      - testing
     types:
       - completed
   push:
@@ -12,6 +13,9 @@ on:
       - main
 
   pull_request:
+    branches:
+      - develop
+      - testing
     types:
       - closed
 
@@ -68,7 +72,7 @@ jobs:
 
   push-binary-linux:
     needs: [ pre-build-setup ]
-    if: ${{ needs.pre-build-setup.outputs.branch == 'main' || needs.pre-build-setup.outputs.branch == 'develop'}}
+    if: ${{ needs.pre-build-setup.outputs.branch == 'testing' || needs.pre-build-setup.outputs.branch == 'develop'}}
     runs-on: ubuntu-20.04
     outputs:
       upload_url: ${{steps.create_release.outputs.upload_url}}
