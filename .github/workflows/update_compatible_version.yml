@@ -5,7 +5,6 @@ on:
     branches:
       - main
       - develop
-      - patch20250327
 
 jobs:
   update-compatible-versions:
@@ -82,4 +81,4 @@ jobs:
 
       - name: Push change to feature branch
         run: |
-          git push origin HEAD:${{ github.head_ref }}
+          git push origin HEAD:${{ github.head_ref }} -f
