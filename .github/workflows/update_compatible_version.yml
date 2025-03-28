@@ -6,6 +6,11 @@ on:
     types:
       - completed
 
+  pull_request:
+    branches:
+      - main
+      - develop
+
 jobs:
   update-compatible-versions:
     runs-on: ubuntu-latest
