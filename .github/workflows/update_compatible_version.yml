@@ -35,9 +35,9 @@ jobs:
         if: ${{ steps.check_version.outputs.current == steps.check_version.outputs.last }}
         run: |
           echo "This version was already recorded. Skipping update."
-          exit 0
 
       - name: Extract Versions from PR
+        if: ${{ steps.check_version.outputs.current != steps.check_version.outputs.last }}
         id: extract_versions
         run: |
           PR_BODY="${{ github.event.pull_request.body }}"
@@ -66,6 +66,7 @@ jobs:
           echo "$NEW_ENTRY" >> docs/compatible_version.ndjson
 
       - name: Embed Compatible Versions into README
+        if: ${{ steps.check_version.outputs.current != steps.check_version.outputs.last }}
         run: |
           # Define markers
           START_MARKER="<!-- COMPATIBLE_VERSIONS_START -->"
@@ -93,6 +94,7 @@ jobs:
           mv README_UPDATED.md README.md
 
       - name: Commit and Push Changes
+        if: ${{ steps.check_version.outputs.current != steps.check_version.outputs.last }}
         run: |
           git config user.name "GitHub Actions"
           git config user.email "github-actions@users.noreply.indocresearch.org"
@@ -101,5 +103,6 @@ jobs:
           git commit -m "Updated docs/compatible_version.ndjson with PR #${{ github.event.pull_request.number }}"
 
       - name: Push change to feature branch
+        if: ${{ steps.check_version.outputs.current != steps.check_version.outputs.last }}
         run: |
           git push origin HEAD:${{ github.head_ref }} -f
