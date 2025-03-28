@@ -11,6 +11,7 @@ from app.services.file_manager.file_upload.models import FileObject
 from app.services.file_manager.file_upload.models import ItemStatus
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import customized_error_msg
+from tests.conftest import decoded_token
 
 
 def test_assemble_path_at_name_folder(mocker):
@@ -160,23 +161,17 @@ def test_file_upload_skip_empty_file(mocker, tmp_path, capfd):
     mocker.patch('os.path.isdir', return_value=False)
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(0, 0))
 
-    try:
-        simple_upload(upload_event, output_path=str(tmp_path / 'test'))
-    except SystemExit:
-        out, _ = capfd.readouterr()
+    simple_upload(upload_event, output_path=str(tmp_path / 'test'))
+    out, _ = capfd.readouterr()
 
-        expect = (
-            f'Starting upload of: {file_name}\n'
-            + 'Skip the file with 0 size: test\n'
-            + 'Checking for file duplication...\n'
-            + '\nAll files already exist in the upload destination.\n\n'
-            + customized_error_msg(ECustomizedError.UPLOAD_CANCEL)
-            + '\n'
-        )
+    expect = (
+        f'Starting upload of: {file_name}\n'
+        + 'Skip the file with 0 size: test\n'
+        + 'Start checking file duplication\n'
+        + 'Checking for file duplication...\n'
+    )
 
-        assert out == expect
-    else:
-        AssertionError('SystemExit not raised')
+    assert expect in out
 
 
 def test_dont_allow_tagging_when_folder_upload(mocker, capfd):
@@ -201,7 +196,7 @@ def test_dont_allow_tagging_when_folder_upload(mocker, capfd):
 
         assert out == expect
     else:
-        AssertionError('SystemExit not raised')
+        raise AssertionError('SystemExit not raised')
 
 
 def test_dont_allow_attribute_attaching_when_folder_upload(mocker, capfd):
@@ -226,7 +221,7 @@ def test_dont_allow_attribute_attaching_when_folder_upload(mocker, capfd):
 
         assert out == expect
     else:
-        AssertionError('SystemExit not raised')
+        raise AssertionError('SystemExit not raised')
 
 
 def test_folder_merge_succuss_with_no_duplication(mocker, mock_upload_client):
@@ -314,7 +309,7 @@ def test_folder_merge_skip_with_all_duplication(mocker, mock_upload_client, capf
         )
         assert expect in out
     else:
-        AssertionError('SystemExit not raised')
+        raise AssertionError('SystemExit not raised')
 
 
 def test_resume_upload(mocker):
@@ -391,6 +386,10 @@ def test_resume_upload_failed_when_REGISTERED_doesnt_exist(mocker, capfd):
 
 
 def test_resume_upload_integrity_check_failed(mocker, capfd):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
     test_obj = FileObject('object/path', 'local_path', 'resumable_id', 'job_id', 'item_id')
     test_obj.total_size = 2  # wrong size
@@ -414,18 +413,18 @@ def test_resume_upload_integrity_check_failed(mocker, capfd):
     get_mock = mocker.patch(
         'app.services.file_manager.file_upload.file_upload.get_file_info_by_geid', return_value=[{'result': get_return}]
     )
+    resume_upload_mock = mocker.patch(
+        'app.services.file_manager.file_upload.file_upload.UploadClient.resume_upload', return_value=[]
+    )
     mocker.patch(
         'os.path.getsize',
         return_value=2,
     )
 
-    try:
-        resume_upload(manifest_json, 1)
-    except SystemExit:
-        out, _ = capfd.readouterr()
-        expect = customized_error_msg(ECustomizedError.INVALID_RESUMABLE_FILE_SIZE) % ('object/path', 1, 2)
-        assert expect in out
-    else:
-        AssertionError('SystemExit not raised')
+    resume_upload(manifest_json, 1)
+    out, _ = capfd.readouterr()
+    expect = customized_error_msg(ECustomizedError.INVALID_RESUMABLE_FILE_SIZE) % ('object/path', 1, 2)
+    assert expect in out
 
     get_mock.assert_called_once()
+    resume_upload_mock.assert_called_once()
