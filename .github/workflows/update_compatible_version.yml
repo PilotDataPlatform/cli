@@ -20,6 +20,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
       - name: Extract Versions from PR
         id: extract_versions
@@ -80,6 +83,7 @@ jobs:
         run: |
           git config user.name "GitHub Actions"
           git config user.email "github-actions@users.noreply.indocresearch.org"
+          git pull origin ${{ github.head_ref }}
           git add docs/compatible_version.ndjson README.md
           git commit -m "Updated docs/compatible_version.ndjson with PR #${{ github.event.pull_request.number }}"
 
