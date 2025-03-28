@@ -2,16 +2,9 @@ name: Update Compatible Versions
 
 on:
   workflow_run:
-    workflows: [ "Run Tests" ]
-    branches:
-      - develop
+    workflows: ["Run Tests"]
     types:
       - completed
-
-  pull_request:
-    branches:
-      - main
-      - develop
 
 jobs:
   update-compatible-versions:
@@ -22,7 +15,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
-          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
       - name: Extract Versions from PR
         id: extract_versions
@@ -90,5 +82,3 @@ jobs:
       - name: Push change to feature branch
         run: |
           git push origin HEAD:${{ github.head_ref }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
