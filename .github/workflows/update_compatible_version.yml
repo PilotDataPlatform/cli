@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - develop
+      - patch20250327
 
 jobs:
   update-compatible-versions:
