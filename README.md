@@ -52,6 +52,7 @@ Command line tool that allows the user to execute data operations on the platfor
 | 3.16.0 | 2.15 | 2.15 |
 | 3.17.0 | 2.15 | 2.15 |
 | 3.17.1 | 2.15 | 2.15 |
+| 3.17.1 | 2.15 | 2.15 |
 <!-- COMPATIBLE_VERSIONS_END -->
 
 ## Build Instructions
