@@ -2,19 +2,19 @@ name: Update Compatible Versions
 
 on:
   workflow_run:
-    workflows: [ "Build and Publish" ]
+    workflows: [ "Run Tests" ]
     branches:
       - develop
     types:
       - completed
 
   pull_request:
-    types:
-      - closed    # Ensures it runs only on PR closure (merge)
+    branches:
+      - main
+      - develop
 
 jobs:
   update-compatible-versions:
-    if: github.event.pull_request.merged == true  # Runs only if PR is merged
     runs-on: ubuntu-latest
 
     steps:
@@ -82,5 +82,9 @@ jobs:
           git config user.email "github-actions@users.noreply.indocresearch.org"
           git add docs/compatible_version.ndjson README.md
           git commit -m "Updated docs/compatible_version.ndjson with PR #${{ github.event.pull_request.number }}"
-          git push
-        continue-on-error: true  # Avoid breaking workflow if no changes detected
+
+      - name: Push change to feature branch
+        run: |
+          git push origin HEAD:${{ github.head_ref }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
