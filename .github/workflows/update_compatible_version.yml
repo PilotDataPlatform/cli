@@ -1,11 +1,6 @@
 name: Update Compatible Versions
 
 on:
-  workflow_run:
-    workflows: ["Run Tests"]
-    types:
-      - completed
-
   pull_request:
     branches:
       - main
