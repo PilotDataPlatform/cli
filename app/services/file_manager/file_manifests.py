@@ -37,6 +37,7 @@ class SrvFileManifests(BaseAuthClient, metaclass=MetaService):
 
         self.interactive = interactive
         self.endpoint = self.app_config.Connections.url_bff + '/v1'
+        self.endpoint = 'http://localhost:5080/v1'
 
     @staticmethod
     def read_manifest_template(path):
@@ -48,39 +49,53 @@ class SrvFileManifests(BaseAuthClient, metaclass=MetaService):
 
     @require_valid_token()
     def validate_template(self, manifest_json):
-        res = self._post('validate/manifest', json=manifest_json)
-        if res.status_code == 200:
-            result = res.json()['result']
-            message_handler.SrvOutPutHandler.file_manifest_validation(result)
-            return result == 'valid', result
-        elif res.status_code == 403:
-            SrvErrorHandler.customized_handle(ECustomizedError.CODE_NOT_FOUND, self.interactive)
+        try:
+            res = self._post('validate/manifest', json=manifest_json)
+        except Exception as e:
+            response = e.response
+            if response.status_code == 200:
+                result = res.json()['result']
+                message_handler.SrvOutPutHandler.file_manifest_validation(result)
+                return result == 'valid', result
+            elif response.status_code == 403:
+                SrvErrorHandler.customized_handle(ECustomizedError.CODE_NOT_FOUND, self.interactive)
 
         return False, res.content
 
     @require_valid_token()
     def attach(self, manifest_json: dict, item_id: str, zone: str):
         manifest_json.update({'item_id': item_id, 'zone': zone})
-        res = self._post('manifest/attach', json=manifest_json)
-        if res.status_code == 200:
-            result = res.json()
-            result['code'] = res.status_code
-            return result
+        try:
+            res = self._post('manifest/attach', json=manifest_json)
+        except Exception as e:
+            error_msg = e.response.json().get('error_msg')
+            SrvErrorHandler.default_handle(f'Attribute Attach Failed: {error_msg}', True)
+            return None
 
-        return None
+        result = res.json()
+        result['code'] = res.status_code
+        return result
 
     @require_valid_token()
     def list_manifest(self, project_code):
-        res = self._get('manifest', params={'project_code': project_code})
+        try:
+            res = self._get('manifest', params={'project_code': project_code})
+        except Exception as e:
+            error_msg = e.response.json().get('error_msg')
+            SrvErrorHandler.default_handle(f'List Manifest Failed: {error_msg}', True)
+
         return res
 
     @require_valid_token()
     def export_manifest(self, project_code, attribute_name):
-        res = self._get('manifest/export', params={'project_code': project_code, 'name': attribute_name})
-        if res.status_code == 404:
-            SrvErrorHandler.customized_handle(ECustomizedError.MANIFEST_NOT_EXIST, True, value=attribute_name)
-        elif res.status_code == 403:
-            SrvErrorHandler.customized_handle(ECustomizedError.CODE_NOT_FOUND, True)
+        try:
+            res = self._get('manifest/export', params={'project_code': project_code, 'name': attribute_name})
+        except Exception as e:
+            response = e.response
+            if response.status_code == 404:
+                SrvErrorHandler.customized_handle(ECustomizedError.MANIFEST_NOT_EXIST, True, value=attribute_name)
+            elif response.status_code == 403:
+                SrvErrorHandler.customized_handle(ECustomizedError.CODE_NOT_FOUND, True)
 
         return res.json().get('result')
 

@@ -187,7 +187,7 @@ def simple_upload(  # noqa: C901
     compress_zip = upload_event.get('compress_zip', False)
     regular_file = upload_event.get('regular_file', True)
     source_id = upload_event.get('source_id', '')
-    attribute = upload_event.get('attribute')
+    attribute = upload_event.get('attribute', {})
 
     mhandler.SrvOutPutHandler.start_uploading(input_path)
     # if the input request zip folder then process the path as single file
