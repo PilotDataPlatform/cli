@@ -1,27 +1,43 @@
 name: Update Compatible Versions
 
 on:
-  workflow_run:
-    workflows: [ "Build and Publish" ]
-    branches:
-      - develop
-    types:
-      - completed
-
   pull_request:
-    types:
-      - closed    # Ensures it runs only on PR closure (merge)
+    types: [opened, synchronize, reopened] # dont trigger on closed
+    branches:
+      - main
+      - develop
 
 jobs:
   update-compatible-versions:
-    if: github.event.pull_request.merged == true  # Runs only if PR is merged
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Check if CLI version was already updated
+        id: check_version
+        run: |
+          # Extract current version from pyproject.toml
+          CURRENT_VERSION=$(grep '^version =' pyproject.toml | sed -E 's/version = "(.*)"/\1/')
+          echo "Current version: $CURRENT_VERSION"
+
+          # Read the last entry from NDJSON file (if it exists)
+          LAST_VERSION=$(tail -n 1 docs/compatible_version.ndjson 2>/dev/null | jq -r '."Cli Version"')
+
+          echo "Last updated version: $LAST_VERSION"
+          echo "current=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+          echo "last=$LAST_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Exit if already updated
+        if: ${{ steps.check_version.outputs.current == steps.check_version.outputs.last }}
+        run: |
+          echo "This version was already recorded. Skipping update."
 
       - name: Extract Versions from PR
+        if: ${{ steps.check_version.outputs.current != steps.check_version.outputs.last }}
         id: extract_versions
         run: |
           PR_BODY="${{ github.event.pull_request.body }}"
@@ -50,6 +66,7 @@ jobs:
           echo "$NEW_ENTRY" >> docs/compatible_version.ndjson
 
       - name: Embed Compatible Versions into README
+        if: ${{ steps.check_version.outputs.current != steps.check_version.outputs.last }}
         run: |
           # Define markers
           START_MARKER="<!-- COMPATIBLE_VERSIONS_START -->"
@@ -77,10 +94,15 @@ jobs:
           mv README_UPDATED.md README.md
 
       - name: Commit and Push Changes
+        if: ${{ steps.check_version.outputs.current != steps.check_version.outputs.last }}
         run: |
           git config user.name "GitHub Actions"
           git config user.email "github-actions@users.noreply.indocresearch.org"
+          git pull origin ${{ github.head_ref }}
           git add docs/compatible_version.ndjson README.md
           git commit -m "Updated docs/compatible_version.ndjson with PR #${{ github.event.pull_request.number }}"
-          git push
-        continue-on-error: true  # Avoid breaking workflow if no changes detected
+
+      - name: Push change to feature branch
+        if: ${{ steps.check_version.outputs.current != steps.check_version.outputs.last }}
+        run: |
+          git push origin HEAD:${{ github.head_ref }} -f
