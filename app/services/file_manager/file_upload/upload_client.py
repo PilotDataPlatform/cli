@@ -203,13 +203,12 @@ class UploadClient(BaseAuthClient):
         return list(object_path_file_object_map.values()), exist_files
 
     @require_valid_token()
-    def pre_upload(self, file_objects: List[FileObject], output_path: str) -> List[FileObject]:
+    def pre_upload(self, file_objects: List[FileObject]) -> List[FileObject]:
         """
         Summary:
             The function is to initiate all the multipart upload.
         Parameter:
             - local_file_paths(list of str): the local path of files to be uploaded.
-            - output_path(str): the output path of manifest.
         return:
             - list of FileObject: the infomation retrieved from backend.
                 - resumable_id(str): the unique identifier for multipart upload.
@@ -233,22 +232,24 @@ class UploadClient(BaseAuthClient):
         }
         if self.source_id:
             payload.update({'source_id': self.source_id})
+        if self.attributes:
+            payload.update({'attributes_template': self.attributes})
 
         try:
-            self.endpoint = AppConfig.Connections.url_bff + '/v1'
+            # self.endpoint = AppConfig.Connections.url_bff + '/v1'
+            self.endpoint = 'http://localhost:5080/v1'
             response = self._post(f'project/{self.project_code}/files', json=payload)
         except HTTPStatusError as e:
             response = e.response
             if response.status_code == 403:
                 SrvErrorHandler.customized_handle(ECustomizedError.PERMISSION_DENIED, self.regular_file)
-            elif response.status_code == 401:
-                SrvErrorHandler.customized_handle(ECustomizedError.PROJECT_DENIED, self.regular_file)
             elif response.status_code == 409:
                 SrvErrorHandler.customized_handle(ECustomizedError.FILE_EXIST, self.regular_file)
             elif response.status_code == 400:
                 SrvErrorHandler.customized_handle(ECustomizedError.FILE_LOCKED, True)
-            elif response.status_code == 500:
-                SrvErrorHandler.customized_handle(ECustomizedError.FILE_LOCKED, True)
+            elif response.status_code == 422:
+                error_message = response.json().get('error_msg', {}).get('details')
+                SrvErrorHandler.customized_handle(ECustomizedError.INVALID_ATTRIBUTE, True, value=error_message)
             else:
                 SrvErrorHandler.default_handle(response.content, True)
 

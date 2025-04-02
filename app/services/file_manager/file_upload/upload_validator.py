@@ -43,10 +43,23 @@ class UploadEventValidator:
         return source_ids
 
     def validate_attribute(self):
+        '''
+        Summary:
+            function will check if the attribute exists. And parse the
+            attribute to the correct format with manifest id.
+        Return:
+            attribute: dict, the attribute with manifest id
+            id: str, the manifest id
+        '''
         srv_manifest = SrvFileManifests()
         try:
-            attribute = srv_manifest.convert_import(self.attribute, self.project_code)
-            srv_manifest.validate_manifest(attribute)
+            manifest = srv_manifest.convert_import(self.attribute, self.project_code)
+            res = srv_manifest.list_manifest(self.project_code, manifest.get('manifest_name'))
+            manifest_id = res.json().get('result')[0].get('id')
+            attribute = {
+                'id': manifest_id,
+                'attributes': manifest.get('attributes'),
+            }
             return attribute
         except Exception:
             SrvErrorHandler.customized_handle(ECustomizedError.INVALID_TEMPLATE, True)

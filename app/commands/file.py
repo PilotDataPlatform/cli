@@ -176,7 +176,6 @@ def file_put(**kwargs):  # noqa: C901
         exit(1)
 
     project_code, folder_type, target_folder = identify_target_folder(project_path)
-    srv_manifest = SrvFileManifests()
     upload_val_event = {
         'zone': zone,
         'source': source_files,
@@ -234,10 +233,10 @@ def file_put(**kwargs):  # noqa: C901
         if source_file:
             upload_event['source_id'] = src_file_info
 
-        item_ids = simple_upload(upload_event, num_of_thread=thread, output_path=output_path)
+        _ = simple_upload(upload_event, num_of_thread=thread, output_path=output_path)
 
         # since only file upload can attach manifest, take the first file object
-        srv_manifest.attach_manifest(attribute, item_ids[0], zone) if attribute else None
+        # srv_manifest.attach_manifest(attribute, item_ids[0], zone) if attribute else None
         message_handler.SrvOutPutHandler.all_file_uploaded()
 
         remove_the_output_file(output_path)
@@ -287,11 +286,11 @@ def file_resume(**kwargs):  # noqa: C901
     resume_upload(resumable_manifest, thread)
 
     # since only file upload can attach manifest, take the first file object
-    srv_manifest = SrvFileManifests()
-    item_id = next(iter(resumable_manifest.get('registered_items')))
-    attribute = resumable_manifest.get('attributes')
-    zone = resumable_manifest.get('zone')
-    srv_manifest.attach_manifest(attribute, item_id, zone) if attribute else None
+    # srv_manifest = SrvFileManifests()
+    # item_id = next(iter(resumable_manifest.get('registered_items')))
+    # attribute = resumable_manifest.get('attributes')
+    # zone = resumable_manifest.get('zone')
+    # srv_manifest.attach_manifest(attribute, item_id, zone) if attribute else None
     message_handler.SrvOutPutHandler.all_file_uploaded()
 
     remove_the_output_file(resumable_manifest_file)

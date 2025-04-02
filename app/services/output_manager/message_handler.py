@@ -120,7 +120,7 @@ class SrvOutPutHandler(metaclass=MetaService):
     @staticmethod
     def file_manifest_validation(post_result):
         """e.g. File attribute validated: True."""
-        return logger.info(f'File attribute validation passed: {post_result == "valid"}')
+        return logger.info(f'File attribute validation passed: {post_result}')
 
     @staticmethod
     def uploading_files(uploader, project_code, resumable_total_size, resumable_total_chunks, resumable_relative_path):
