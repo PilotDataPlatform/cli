@@ -46,20 +46,6 @@ class SrvFileManifests(BaseAuthClient, metaclass=MetaService):
         obj = json.loads(data)
         return obj
 
-    def validate_template(self, manifest_json):
-        try:
-            res = self._post('validate/manifest', json=manifest_json)
-        except Exception as e:
-            response = e.response
-            if response.status_code == 200:
-                result = res.json()['result']
-                message_handler.SrvOutPutHandler.file_manifest_validation(result)
-                return result == 'valid', result
-            elif response.status_code == 403:
-                SrvErrorHandler.customized_handle(ECustomizedError.CODE_NOT_FOUND, self.interactive)
-
-        return False, res.content
-
     def attach(self, manifest_json: dict, item_id: str, zone: str):
         manifest_json.update({'item_id': item_id, 'zone': zone})
         try:
@@ -110,7 +96,27 @@ class SrvFileManifests(BaseAuthClient, metaclass=MetaService):
 
     @staticmethod
     def convert_import(user_defined: dict, project_code):
-        # convert the user defined json file to attach post json
+        '''
+        Summary:
+            convert the user defined json file to attach post json
+        Args:
+            user_defined: dict, the user defined json file. Example:
+                {
+                    "manifest_name": {
+                        "attribute_name": "value"
+                    }
+                }
+            project_code: str, the project code
+        Return:
+            dict, the attach post json. Example：
+                {
+                    "manifest_name": "manifest_name",
+                    "project_code": "project_code",
+                    "attributes": {
+                        "attribute_name": "value"
+                    }
+                }
+        '''
         converted_attrs = {}
         keys = list(user_defined.keys())
         mani_name = keys[0]
@@ -121,7 +127,35 @@ class SrvFileManifests(BaseAuthClient, metaclass=MetaService):
 
     @staticmethod
     def convert_export(attach_post: dict):
-        # convert the attach post json to user defined json
+        ''' '
+        Summary:
+            convert the attach post json to user defined json file'
+        Args:
+            attach_post: dict, the attach post json. Example:
+            {
+                "id": "0ed17361-01a8-4a1b-9810-fcecf07ddad4",
+                "name": "test123",
+                "project_code": "tp01",
+                "attributes": [
+                    {
+                        "name": "regex",
+                        "optional": true,
+                        "type": "regex",
+                        "options": null,
+                        "pattern": "[A-Z]",
+                        "sample": "ABC",
+                        "description": "Capitalized word only"
+                    }
+                ]
+            }
+        Return:
+            dict, the user defined json file. Example:
+                {
+                    "manifest_name": {
+                        "attribute_name": "" # empty string
+                    }
+                }
+        '''
         converted = {}
         name = attach_post['name']
         converted[name] = {}

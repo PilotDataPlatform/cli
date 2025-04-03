@@ -3,6 +3,7 @@
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
 import json
+import os
 
 import click
 import pytest
@@ -137,3 +138,43 @@ def test_manifest_export_failure(httpx_mock, capfd, error_code, error_msg):
     except SystemExit:
         out, _ = capfd.readouterr()
         assert error_msg in out
+
+
+def test_export_template_success():
+    manifest = {
+        'name': 'test_manifest',
+        'project_code': 'test_project',
+        'attributes': [{'name': 'attribute1', 'value': 'value1'}],
+    }
+    runner = click.testing.CliRunner()
+    with runner.isolated_filesystem():
+        srv_manifest = SrvFileManifests()
+        template_file, def_file = srv_manifest.export_template(manifest['project_code'], manifest)
+
+        # check if files are created
+        assert def_file == f'{manifest["project_code"]}_{manifest["name"]}_definition.json'
+        assert template_file == f'{manifest["project_code"]}_{manifest["name"]}_template.json'
+        assert os.path.exists(def_file)
+        assert os.path.exists(template_file)
+
+
+def test_convert_import():
+    srv_manifest = SrvFileManifests()
+    manifest = {
+        'test_manifest': {'attribute1': 'value1', 'attribute2': 'value2'},
+    }
+    converted = srv_manifest.convert_import(manifest, 'test_project')
+    assert converted['manifest_name'] == 'test_manifest'
+    assert converted['project_code'] == 'test_project'
+    assert converted['attributes']['attribute1'] == 'value1'
+
+
+def test_convert_export():
+    srv_manifest = SrvFileManifests()
+    attach_post = {
+        'name': 'test_manifest',
+        'project_code': 'test_project',
+        'attributes': [{'name': 'attribute1', 'value': 'value1'}],
+    }
+    converted = srv_manifest.convert_export(attach_post)
+    assert converted['test_manifest']['attribute1'] == ''
