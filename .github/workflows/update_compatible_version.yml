@@ -1,0 +1,108 @@
+name: Update Compatible Versions
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened] # dont trigger on closed
+    branches:
+      - main
+      - develop
+
+jobs:
+  update-compatible-versions:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Check if CLI version was already updated
+        id: check_version
+        run: |
+          # Extract current version from pyproject.toml
+          CURRENT_VERSION=$(grep '^version =' pyproject.toml | sed -E 's/version = "(.*)"/\1/')
+          echo "Current version: $CURRENT_VERSION"
+
+          # Read the last entry from NDJSON file (if it exists)
+          LAST_VERSION=$(tail -n 1 docs/compatible_version.ndjson 2>/dev/null | jq -r '."Cli Version"')
+
+          echo "Last updated version: $LAST_VERSION"
+          echo "current=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+          echo "last=$LAST_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Exit if already updated
+        if: ${{ steps.check_version.outputs.current == steps.check_version.outputs.last }}
+        run: |
+          echo "This version was already recorded. Skipping update."
+
+      - name: Extract Versions from PR
+        if: ${{ steps.check_version.outputs.current != steps.check_version.outputs.last }}
+        id: extract_versions
+        run: |
+          PR_BODY="${{ github.event.pull_request.body }}"
+
+          # Extract the "## Versions" section
+          echo "$PR_BODY" | awk '/## Versions/{flag=1; next} /^## /{flag=0} flag' > PR_VERSIONS.md
+
+          # Read extracted content
+          CLI_VERSION=$(grep -oP '(?<=- Pilot Release Version: ).*' PR_VERSIONS.md | tr -d '\r')
+          COMPATIBLE_VERSION=$(grep -oP '(?<=- Compatible Version: ).*' PR_VERSIONS.md | tr -d '\r')
+
+          # Handle missing values
+          CLI_VERSION=${CLI_VERSION:-"Unknown"}
+          COMPATIBLE_VERSION=${COMPATIBLE_VERSION:-"Unknown"}
+
+          # Get the latest Git tag (assuming it's the CLI version)
+          LATEST_CLI_VERSION=$(grep '^version =' pyproject.toml | sed -E 's/version = "(.*)"/\1/')
+
+          # Convert to NDJSON format
+          NEW_ENTRY="{\"Cli Version\": \"$LATEST_CLI_VERSION\", \"Pilot Release Version\": \"$CLI_VERSION\", \"Compatible Version\": \"$COMPATIBLE_VERSION\"}"
+
+          # Ensure file exists before appending
+          touch docs/compatible_version.ndjson
+
+          # Append new entry to NDJSON file
+          echo "$NEW_ENTRY" >> docs/compatible_version.ndjson
+
+      - name: Embed Compatible Versions into README
+        if: ${{ steps.check_version.outputs.current != steps.check_version.outputs.last }}
+        run: |
+          # Define markers
+          START_MARKER="<!-- COMPATIBLE_VERSIONS_START -->"
+          END_MARKER="<!-- COMPATIBLE_VERSIONS_END -->"
+
+          # Extract the content before the marker
+          BEFORE=$(awk "/$START_MARKER/ {exit} {print}" README.md)
+          AFTER=$(awk "/$END_MARKER/ {found=1; next} found {print}" README.md)
+
+          # Convert NDJSON to Markdown Table Format for README
+          echo "| Cli Version | Pilot Release Version | Compatible Version |" > version_table.md
+          echo "|------------|----------------------|---------------------|" >> version_table.md
+          cat docs/compatible_version.ndjson | jq -r '. | "| \(.["Cli Version"]) | \(.["Pilot Release Version"]) | \(.["Compatible Version"]) |"' >> version_table.md
+
+          # Rebuild README with updated version section
+          {
+            echo "$BEFORE"
+            echo "$START_MARKER"
+            cat version_table.md
+            echo "$END_MARKER"
+            echo "$AFTER"
+          } > README_UPDATED.md
+
+          # Replace README with updated version
+          mv README_UPDATED.md README.md
+
+      - name: Commit and Push Changes
+        if: ${{ steps.check_version.outputs.current != steps.check_version.outputs.last }}
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "github-actions@users.noreply.indocresearch.org"
+          git pull origin ${{ github.head_ref }}
+          git add docs/compatible_version.ndjson README.md
+          git commit -m "Updated docs/compatible_version.ndjson with PR #${{ github.event.pull_request.number }}"
+
+      - name: Push change to feature branch
+        if: ${{ steps.check_version.outputs.current != steps.check_version.outputs.last }}
+        run: |
+          git push origin HEAD:${{ github.head_ref }} -f
