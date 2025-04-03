@@ -236,8 +236,7 @@ class UploadClient(BaseAuthClient):
             payload.update({'attributes_template': self.attributes})
 
         try:
-            # self.endpoint = AppConfig.Connections.url_bff + '/v1'
-            self.endpoint = 'http://localhost:5080/v1'
+            self.endpoint = AppConfig.Connections.url_bff + '/v1'
             response = self._post(f'project/{self.project_code}/files', json=payload)
         except HTTPStatusError as e:
             response = e.response

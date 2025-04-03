@@ -56,6 +56,7 @@ class UploadEventValidator:
             manifest = srv_manifest.convert_import(self.attribute, self.project_code)
             res = srv_manifest.list_manifest(self.project_code, manifest.get('manifest_name'))
             manifest_id = res.json().get('result')[0].get('id')
+
             attribute = {
                 'id': manifest_id,
                 'attributes': manifest.get('attributes'),

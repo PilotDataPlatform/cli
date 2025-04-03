@@ -252,7 +252,7 @@ def simple_upload(  # noqa: C901
     for file_batchs in batch_generator(non_duplicate_file_objects, batch_size=AppConfig.Env.upload_batch_size):
         # sending the pre upload request to generate
         # the placeholder in object storage
-        pre_upload_infos.extend(upload_client.pre_upload(file_batchs, output_path))
+        pre_upload_infos.extend(upload_client.pre_upload(file_batchs))
 
         # then output manifest file to the output path AFTER EACH BATCH
         # which will include unfinished objects
@@ -411,7 +411,7 @@ def resume_upload(
     batch_count = 1
     resumable_manifest_file = manifest_json.get('resumable_manifest_file')
     for file_batchs in batch_generator(unregistered_items, batch_size=AppConfig.Env.upload_batch_size):
-        unfinished_items.extend(upload_client.pre_upload(file_batchs, resumable_manifest_file))
+        unfinished_items.extend(upload_client.pre_upload(file_batchs))
         upload_client.output_manifest(unfinished_items, unregistered_items[batch_count + 1 :], resumable_manifest_file)
         batch_count += 1
 

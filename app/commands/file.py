@@ -234,11 +234,7 @@ def file_put(**kwargs):  # noqa: C901
             upload_event['source_id'] = src_file_info
 
         _ = simple_upload(upload_event, num_of_thread=thread, output_path=output_path)
-
-        # since only file upload can attach manifest, take the first file object
-        # srv_manifest.attach_manifest(attribute, item_ids[0], zone) if attribute else None
         message_handler.SrvOutPutHandler.all_file_uploaded()
-
         remove_the_output_file(output_path)
 
 
@@ -284,13 +280,6 @@ def file_resume(**kwargs):  # noqa: C901
         validate_upload_event(resumable_manifest)
 
     resume_upload(resumable_manifest, thread)
-
-    # since only file upload can attach manifest, take the first file object
-    # srv_manifest = SrvFileManifests()
-    # item_id = next(iter(resumable_manifest.get('registered_items')))
-    # attribute = resumable_manifest.get('attributes')
-    # zone = resumable_manifest.get('zone')
-    # srv_manifest.attach_manifest(attribute, item_id, zone) if attribute else None
     message_handler.SrvOutPutHandler.all_file_uploaded()
 
     remove_the_output_file(resumable_manifest_file)
