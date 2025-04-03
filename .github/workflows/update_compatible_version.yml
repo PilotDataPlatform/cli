@@ -40,6 +40,7 @@ jobs:
         if: ${{ steps.check_version.outputs.current != steps.check_version.outputs.last }}
         id: extract_versions
         run: |
+
           PR_BODY="${{ github.event.pull_request.body }}"
 
           # Extract the "## Versions" section
