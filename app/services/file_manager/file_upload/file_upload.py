@@ -34,7 +34,7 @@ from app.utils.aggregated import normalize_join
 from app.utils.aggregated import search_item
 
 
-def compress_folder_to_zip(path):
+def compress_folder_to_zip(path: str) -> str:
     path = path.rstrip('/').lstrip()
     zipfile_path = path + '.zip'
     mhandler.SrvOutPutHandler.start_zipping_file()
@@ -43,6 +43,7 @@ def compress_folder_to_zip(path):
         for file in files:
             zipf.write(os.path.join(root, file))
     zipf.close()
+    return zipfile_path
 
 
 def assemble_path(
