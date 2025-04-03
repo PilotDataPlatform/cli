@@ -94,7 +94,7 @@ def test_check_upload_status_with_timeout(httpx_mock, mocker, capfd):
         expect_out = 'Upload task was timeout. Please check the portal for the upload status.\n'
         assert expect_out in out
     else:
-        AssertionError('SystemExit not raised')
+        raise AssertionError('SystemExit not raised')
 
 
 def test_chunk_upload(httpx_mock, mocker):
@@ -300,7 +300,7 @@ def test_resumable_pre_upload_failed_with_404(httpx_mock, mocker):
     except SystemExit:
         pass
     else:
-        AssertionError('SystemExit not raised')
+        raise AssertionError('SystemExit not raised')
 
 
 @pytest.mark.parametrize('case_insensitive', [True, False])
@@ -349,7 +349,7 @@ def test_check_upload_duplication_fail_with_500(httpx_mock, mocker, capfd):
         expect = 'Error when checking file duplication\n'
         assert out == expect
     else:
-        AssertionError('SystemExit not raised')
+        raise AssertionError('SystemExit not raised')
 
 
 def test_output_manifest_success_for_resumable_upload(mocker, tmp_path):

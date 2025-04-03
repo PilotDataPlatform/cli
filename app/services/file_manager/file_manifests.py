@@ -46,6 +46,20 @@ class SrvFileManifests(BaseAuthClient, metaclass=MetaService):
         obj = json.loads(data)
         return obj
 
+    def validate_template(self, manifest_json):
+        try:
+            res = self._post('validate/manifest', json=manifest_json)
+        except Exception as e:
+            response = e.response
+            if response.status_code == 200:
+                result = res.json()['result']
+                message_handler.SrvOutPutHandler.file_manifest_validation(result)
+                return result == 'valid', result
+            elif response.status_code == 403:
+                SrvErrorHandler.customized_handle(ECustomizedError.CODE_NOT_FOUND, self.interactive)
+
+        return False, res.content
+
     def attach(self, manifest_json: dict, item_id: str, zone: str):
         manifest_json.update({'item_id': item_id, 'zone': zone})
         try:
