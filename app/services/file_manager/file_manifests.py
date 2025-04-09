@@ -45,7 +45,22 @@ class SrvFileManifests(BaseAuthClient, metaclass=MetaService):
         obj = json.loads(data)
         return obj
 
-    def attach(self, manifest_json: dict, item_id: str, zone: str):
+    def attach(self, manifest_json: dict, item_id: str, zone: str) -> dict[str, str]:
+        '''
+        Summary:
+            function will call to attach the manifest to the item
+        Args:
+            manifest_json: dict, the manifest json file. Example:
+                {
+                    "manifest_name": {
+                        "attribute_name": "value"
+                    }
+                }
+            item_id: str, the item id
+            zone: str, the zone name
+        Return:
+            dict, the attach post json. Example：
+        '''
         manifest_json.update({'item_id': item_id, 'zone': zone})
         try:
             res = self._post('manifest/attach', json=manifest_json)
