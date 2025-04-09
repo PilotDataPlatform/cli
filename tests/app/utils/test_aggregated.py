@@ -7,6 +7,7 @@ import pytest
 from app.configs.app_config import AppConfig
 from app.models.item import ItemType
 from app.utils.aggregated import check_item_duplication
+from app.utils.aggregated import get_version_compatibility
 from app.utils.aggregated import identify_target_folder
 from app.utils.aggregated import normalize_input_paths
 from app.utils.aggregated import normalize_join
@@ -199,3 +200,54 @@ def test_normalize_join():
     expected_result = 'project_code/folder1/folder2/test.txt'
     result = normalize_join(input_paths[0], input_paths[1])
     assert result == expected_result
+
+
+def test_get_version_compatibility_pass(httpx_mock):
+    httpx_mock.add_response(
+        url=AppConfig.Connections.url_bff + '/v1/validate/cli/version?version=1.0.0',
+        method='GET',
+        json={
+            'result': {
+                'minimum_cli_version': '1.0.0',
+                'minimum_server_version': '1.0.0',
+            }
+        },
+        status_code=200,
+    )
+    get_version_compatibility('1.0.0')
+
+
+def test_get_version_compatibility_fail_with_version_not_found(httpx_mock, capsys):
+    httpx_mock.add_response(
+        url=AppConfig.Connections.url_bff + '/v1/validate/cli/version?version=1.0.0',
+        method='GET',
+        json={'result': {}},
+        status_code=200,
+    )
+    with pytest.raises(SystemExit):
+        get_version_compatibility('1.0.0')
+    out, _ = capsys.readouterr()
+    assert 'CLI version is not found. Please use the correct cli version.' in out.rstrip()
+
+
+def test_get_version_compatibility_fail_with_version_incompatible(httpx_mock, capsys):
+    min_cli_version = '1.1.0'
+    min_server_version = '1.2.0'
+    httpx_mock.add_response(
+        url=AppConfig.Connections.url_bff + '/v1/validate/cli/version?version=1.0.0',
+        method='GET',
+        json={
+            'result': {
+                'minimum_cli_version': min_cli_version,
+                'minimum_server_version': min_server_version,
+            }
+        },
+        status_code=200,
+    )
+    with pytest.raises(SystemExit):
+        get_version_compatibility('1.0.0')
+    out, _ = capsys.readouterr()
+    assert (
+        f'CLI version is incompatible with server version. Please update the CLI to version {min_cli_version} or later,'
+        f'and minimum server version is {min_server_version}.' in out.rstrip()
+    )

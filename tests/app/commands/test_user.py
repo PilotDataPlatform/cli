@@ -27,6 +27,7 @@ def test_login_command_with_api_key_option_calls_keycloak_and_stores_response_in
         json={'access_token': access_token, 'refresh_token': refresh_token},
     )
     mocker.patch('app.commands.user.get_latest_cli_version', return_value=(Version('1.0.0'), ''))
+    mocker.patch('app.commands.user.get_version_compatibility', return_value=None)
 
     result = cli_runner.invoke(login, ['--api-key', api_key])
 
@@ -46,11 +47,11 @@ def test_login_command_without_api_key_option_takes_value_from_environment_varia
     monkeypatch.setenv('PILOT_API_KEY', api_key)
     login_using_api_key_mock = mocker.patch('app.commands.user.login_using_api_key', return_value=True)
     mocker.patch('app.commands.user.get_latest_cli_version', return_value=(Version('1.0.0'), ''))
+    mocker.patch('app.commands.user.get_version_compatibility', return_value=None)
 
     result = cli_runner.invoke(login)
 
     assert result.exit_code == 0
-
     login_using_api_key_mock.assert_called_once_with(api_key)
 
 
@@ -64,6 +65,7 @@ def test_login_command_without_api_key_option_falls_back_to_device_code_method(m
     user_device_id_login_mock = mocker.patch('app.commands.user.user_device_id_login', return_value=device_login)
     validate_user_device_login_mock = mocker.patch('app.commands.user.validate_user_device_login', return_value=True)
     mocker.patch('app.commands.user.get_latest_cli_version', return_value=(Version('1.0.0'), ''))
+    mocker.patch('app.commands.user.get_version_compatibility', return_value=None)
 
     result = cli_runner.invoke(login)
 
@@ -93,6 +95,7 @@ def test_login_command_with_newer_version_available_message(
     api_key = fake.pystr(20)
     monkeypatch.setenv('PILOT_API_KEY', api_key)
     login_using_api_key_mock = mocker.patch('app.commands.user.login_using_api_key', return_value=True)
+    mocker.patch('app.commands.user.get_version_compatibility', return_value=None)
 
     download_url = fake.url()
     httpx_mock.add_response(
@@ -119,6 +122,7 @@ def test_login_command_when_url_link_fails(mocker, cli_runner, fake, monkeypatch
     api_key = fake.pystr(20)
     monkeypatch.setenv('PILOT_API_KEY', api_key)
     mocker.patch('app.commands.user.login_using_api_key', return_value=True)
+    mocker.patch('app.commands.user.get_version_compatibility', return_value=None)
 
     httpx_mock.add_response(
         url=AppConfig.Connections.url_fileops_greenroom + '/v1/download/cli/presigned',
@@ -137,6 +141,7 @@ def test_help_command_without_login(mocker, cli_runner, fake, monkeypatch, httpx
     monkeypatch.setenv('PILOT_API_KEY', api_key)
     mocker.patch('app.commands.user.login_using_api_key', return_value=True)
     mocker.patch('pkg_resources.get_distribution', return_value=mocker.Mock(version='1.0.0'))
+    mocker.patch('app.commands.user.get_version_compatibility', return_value=None)
 
     result = cli_runner.invoke(login)
     assert result.exit_code == 0

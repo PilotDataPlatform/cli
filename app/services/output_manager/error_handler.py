@@ -100,6 +100,10 @@ class ECustomizedError(enum.Enum):
 
     INVALID_FOLDER_PATH = 'INVALID_FOLDER_PATH'
 
+    # CLI version compatibility
+    VERSION_INCOMPATIBLE = 'VERSION_INCOMPATIBLE'
+    VERSION_NOT_FOUND = 'VERSION_NOT_FOUND'
+
 
 def customized_error_msg(customized_error: ECustomizedError):
     if customized_error.name == 'TOU_CONTENT':

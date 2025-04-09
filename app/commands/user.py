@@ -19,6 +19,7 @@ from app.services.user_authentication.user_login_logout import user_logout
 from app.services.user_authentication.user_login_logout import validate_user_device_login
 from app.utils.aggregated import doc
 from app.utils.aggregated import get_latest_cli_version
+from app.utils.aggregated import get_version_compatibility
 
 
 @click.command()
@@ -35,6 +36,11 @@ def cli():
 )
 @doc(user_help.user_help_page(user_help.UserHELP.USER_LOGIN))
 def login(api_key: Union[str, None]):
+    # check cli version compatibility at the beginning
+    # if the version is not compatible, exit the program
+    current_version = pkg_resources.get_distribution('app').version
+    get_version_compatibility(current_version)
+
     if api_key:
         mhandler.SrvOutPutHandler.login_using_method(LoginMethod.API_KEY)
         is_valid = login_using_api_key(api_key)
