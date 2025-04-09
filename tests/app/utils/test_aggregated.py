@@ -248,6 +248,6 @@ def test_get_version_compatibility_fail_with_version_incompatible(httpx_mock, ca
         get_version_compatibility('1.0.0')
     out, _ = capsys.readouterr()
     assert (
-        f'CLI version is incompatible with server version. Please update the CLI to version {min_cli_version} or later,'
-        f'and minimum server version is {min_server_version}.' in out.rstrip()
-    )
+        f'CLI version is incompatible with server version. Please update the CLI to version {min_cli_version}'
+        + f' or later, and minimum server version is {min_server_version}.'
+    ) in out.rstrip()
