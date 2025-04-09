@@ -233,7 +233,7 @@ def file_put(**kwargs):  # noqa: C901
         if source_file:
             upload_event['source_id'] = src_file_info
 
-        _ = simple_upload(upload_event, num_of_thread=thread, output_path=output_path)
+        simple_upload(upload_event, num_of_thread=thread, output_path=output_path)
         message_handler.SrvOutPutHandler.all_file_uploaded()
         remove_the_output_file(output_path)
 
