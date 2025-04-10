@@ -11,7 +11,6 @@ from app.models.service_meta_class import MetaService
 from app.services.clients.base_auth_client import BaseAuthClient
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import SrvErrorHandler
-from app.services.user_authentication.decorator import require_valid_token
 
 
 def dupe_checking_hook(pairs):
@@ -47,23 +46,22 @@ class SrvFileManifests(BaseAuthClient, metaclass=MetaService):
         obj = json.loads(data)
         return obj
 
-    @require_valid_token()
-    def validate_template(self, manifest_json):
-        try:
-            res = self._post('validate/manifest', json=manifest_json)
-        except Exception as e:
-            response = e.response
-            if response.status_code == 200:
-                result = res.json()['result']
-                message_handler.SrvOutPutHandler.file_manifest_validation(result)
-                return result == 'valid', result
-            elif response.status_code == 403:
-                SrvErrorHandler.customized_handle(ECustomizedError.CODE_NOT_FOUND, self.interactive)
-
-        return False, res.content
-
-    @require_valid_token()
-    def attach(self, manifest_json: dict, item_id: str, zone: str):
+    def attach(self, manifest_json: dict, item_id: str, zone: str) -> dict[str, str]:
+        '''
+        Summary:
+            function will call to attach the manifest to the item
+        Args:
+            manifest_json: dict, the manifest json file. Example:
+                {
+                    "manifest_name": {
+                        "attribute_name": "value"
+                    }
+                }
+            item_id: str, the item id
+            zone: str, the zone name
+        Return:
+            dict, the attach post json. Example：
+        '''
         manifest_json.update({'item_id': item_id, 'zone': zone})
         try:
             res = self._post('manifest/attach', json=manifest_json)
@@ -76,17 +74,15 @@ class SrvFileManifests(BaseAuthClient, metaclass=MetaService):
         result['code'] = res.status_code
         return result
 
-    @require_valid_token()
-    def list_manifest(self, project_code):
+    def list_manifest(self, project_code, manifest_name=None):
         try:
-            res = self._get('manifest', params={'project_code': project_code})
+            res = self._get('manifest', params={'project_code': project_code, 'manifest_name': manifest_name})
         except Exception as e:
             error_msg = e.response.json().get('error_msg')
             SrvErrorHandler.default_handle(f'List Manifest Failed: {error_msg}', True)
 
         return res
 
-    @require_valid_token()
     def export_manifest(self, project_code, attribute_name):
         try:
             res = self._get('manifest/export', params={'project_code': project_code, 'name': attribute_name})
@@ -115,7 +111,27 @@ class SrvFileManifests(BaseAuthClient, metaclass=MetaService):
 
     @staticmethod
     def convert_import(user_defined: dict, project_code):
-        # convert the user defined json file to attach post json
+        '''
+        Summary:
+            convert the user defined json file to attach post json
+        Args:
+            user_defined: dict, the user defined json file. Example:
+                {
+                    "manifest_name": {
+                        "attribute_name": "value"
+                    }
+                }
+            project_code: str, the project code
+        Return:
+            dict, the attach post json. Example：
+                {
+                    "manifest_name": "manifest_name",
+                    "project_code": "project_code",
+                    "attributes": {
+                        "attribute_name": "value"
+                    }
+                }
+        '''
         converted_attrs = {}
         keys = list(user_defined.keys())
         mani_name = keys[0]
@@ -126,7 +142,35 @@ class SrvFileManifests(BaseAuthClient, metaclass=MetaService):
 
     @staticmethod
     def convert_export(attach_post: dict):
-        # convert the attach post json to user defined json
+        ''' '
+        Summary:
+            convert the attach post json to user defined json file'
+        Args:
+            attach_post: dict, the attach post json. Example:
+            {
+                "id": "0ed17361-01a8-4a1b-9810-fcecf07ddad4",
+                "name": "test123",
+                "project_code": "tp01",
+                "attributes": [
+                    {
+                        "name": "regex",
+                        "optional": true,
+                        "type": "regex",
+                        "options": null,
+                        "pattern": "[A-Z]",
+                        "sample": "ABC",
+                        "description": "Capitalized word only"
+                    }
+                ]
+            }
+        Return:
+            dict, the user defined json file. Example:
+                {
+                    "manifest_name": {
+                        "attribute_name": "" # empty string
+                    }
+                }
+        '''
         converted = {}
         name = attach_post['name']
         converted[name] = {}
@@ -136,16 +180,22 @@ class SrvFileManifests(BaseAuthClient, metaclass=MetaService):
 
     def validate_manifest(self, manifest, raise_error=True):
         manifest_validation_event = {'manifest_json': manifest}
-        validation = self.validate_template(manifest_validation_event)
-        if not validation[0]:
-            validation_result = validation[1].get('error_msg').split(' ')
-            error_attr = '_'.join(validation_result[:-1]).upper()
-            validation_error = getattr(ECustomizedError, error_attr)
-            SrvErrorHandler.customized_handle(validation_error, raise_error, validation_result[-1])
-        else:
-            validation = [True]
-            validation_error = ''
-        return validation, validation_error
+        result, validation_error = '', None
+        try:
+            res = self._post('validate/manifest', json=manifest_validation_event)
+            message_handler.SrvOutPutHandler.file_manifest_validation(res.status_code == 200)
+            result = res.json()
+        except Exception as e:
+            response = e.response
+            if response.status_code == 403:
+                SrvErrorHandler.customized_handle(ECustomizedError.CODE_NOT_FOUND, self.interactive)
+            elif response.status_code == 400:
+                validation_result = response.json.get('error_msg').split(' ')
+                error_attr = '_'.join(validation_result[:-1]).upper()
+                validation_error = getattr(ECustomizedError, error_attr)
+                SrvErrorHandler.customized_handle(validation_error, raise_error, validation_result[-1])
+
+        return result, validation_error
 
     def attach_manifest(self, manifest: dict, item_id: str, zone: str):
         res = self.attach(manifest, item_id, zone)

@@ -2,9 +2,14 @@
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
+import os
+
+import click
+
 from app.configs.app_config import AppConfig
 from app.models.item import ItemType
 from app.services.file_manager.file_upload.file_upload import assemble_path
+from app.services.file_manager.file_upload.file_upload import compress_folder_to_zip
 from app.services.file_manager.file_upload.file_upload import resume_upload
 from app.services.file_manager.file_upload.file_upload import simple_upload
 from app.services.file_manager.file_upload.models import FileObject
@@ -12,6 +17,38 @@ from app.services.file_manager.file_upload.models import ItemStatus
 from app.services.output_manager.error_handler import ECustomizedError
 from app.services.output_manager.error_handler import customized_error_msg
 from tests.conftest import decoded_token
+
+
+def test_compress_to_zip(mocker):
+    runner = click.testing.CliRunner()
+    with runner.isolated_filesystem():
+        # create a test folder and file
+        test_folder = 'test_folder'
+        test_file_content = 'This is a test file.'
+        os.makedirs(test_folder, exist_ok=True)
+        for i in range(3):
+            with open(os.path.join(test_folder, f'test_file_{i}.txt'), 'w') as f:
+                f.write(test_file_content)
+
+        # compress the folder
+        zip_file_path = compress_folder_to_zip(test_folder)
+        assert os.path.exists(zip_file_path)
+        assert zip_file_path.endswith('.zip')
+
+        # check the content of the zip file
+        import zipfile
+
+        with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+            zip_content = zip_ref.namelist()
+            assert len(zip_content) == 3
+            for i in range(3):
+                assert f'{test_folder}/test_file_{i}.txt' in zip_content
+        # check the content of the files in the zip
+        for i in range(3):
+            with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+                with zip_ref.open(f'{test_folder}/test_file_{i}.txt') as f:
+                    content = f.read().decode('utf-8')
+                    assert content == test_file_content
 
 
 def test_assemble_path_at_name_folder(mocker):
