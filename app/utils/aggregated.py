@@ -265,7 +265,7 @@ def get_version_compatibility(version: str):
     """
     result = {}
     try:
-        httpx_client = BaseAuthClient(AppConfig.Connections.url_bff)
+        httpx_client = BaseClient(AppConfig.Connections.url_bff)
         response = httpx_client._get('v1/validate/cli/version', params={'version': version})
         result = response.json().get('result', {})
     except Exception:
