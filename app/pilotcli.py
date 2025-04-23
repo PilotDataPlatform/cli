@@ -16,6 +16,7 @@ from app.commands.entry_point import entry_point
 from app.services.output_manager.help_page import get_cli_help_message
 from app.utils.aggregated import doc
 from app.utils.aggregated import get_latest_cli_version
+from app.utils.aggregated import get_version_compatibility
 
 
 class CustomHelpFormatter(HelpFormatter):
@@ -53,8 +54,10 @@ click.Context.formatter_class = CustomHelpFormatter
 class ComplexCLI(click.MultiCommand):
     def format_help_text(self, ctx, formatter):
         latest_version, download_url = get_latest_cli_version()
-        if Version(pkg_resources.get_distribution('app').version) < latest_version:
+        current_version = pkg_resources.get_distribution('app').version
+        if Version(current_version) < latest_version:
             mhandler.SrvOutPutHandler.newer_version_available(latest_version, download_url)
+        get_version_compatibility(current_version)
 
         click.MultiCommand.format_help_text(self, ctx, formatter)
 

@@ -147,4 +147,10 @@ class Error:
         ),
         # folder related error
         'INVALID_FOLDER_PATH': 'Invalid folder path: cannot create name folder or shared folder in cli',
+        # cli version compatibility
+        'VERSION_INCOMPATIBLE': (
+            'CLI version is incompatible with server version. Please update the CLI to version %s or later, '
+            'and minimum server version is %s.'
+        ),
+        'VERSION_NOT_FOUND': ('CLI version is not found. Please use the correct cli version.'),
     }

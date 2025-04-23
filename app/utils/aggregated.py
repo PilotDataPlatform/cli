@@ -255,6 +255,35 @@ def get_latest_cli_version() -> Tuple[Version, str]:
         return Version('0.0.0'), ''
 
 
+def get_version_compatibility(version: str):
+    """
+    Get the version compatibility matrix from the backend.
+    Args:
+        version (str): The version to check.
+    Returns:
+        no return, will raise exception if the version is not compatible.
+    """
+    result = {}
+    try:
+        httpx_client = BaseClient(AppConfig.Connections.url_bff)
+        response = httpx_client._get('v1/validate/cli/version', params={'version': version})
+        result = response.json().get('result', {})
+    except Exception:
+        pass
+
+    if not result:
+        SrvErrorHandler.customized_handle(ECustomizedError.VERSION_NOT_FOUND, True)
+    if Version(result.get('minimum_cli_version')) > Version(version):
+        SrvErrorHandler.customized_handle(
+            ECustomizedError.VERSION_INCOMPATIBLE,
+            True,
+            value=(
+                result.get('minimum_cli_version'),
+                result.get('minimum_server_version'),
+            ),
+        )
+
+
 def normalize_input_paths(options: list[str]):
     """the decorator to process windows file path into linux like path in windows all input is seperated by `\\` eg.
 
