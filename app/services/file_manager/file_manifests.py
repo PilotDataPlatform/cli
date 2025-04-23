@@ -36,7 +36,6 @@ class SrvFileManifests(BaseAuthClient, metaclass=MetaService):
 
         self.interactive = interactive
         self.endpoint = self.app_config.Connections.url_bff + '/v1'
-        self.endpoint = 'http://localhost:5080/v1'
 
     @staticmethod
     def read_manifest_template(path):
