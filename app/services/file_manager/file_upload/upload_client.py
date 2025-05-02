@@ -186,7 +186,10 @@ class UploadClient(BaseAuthClient):
             response = self._post('files/exists', json=payload)
         except HTTPStatusError as e:
             response = e.response
-            SrvErrorHandler.default_handle('Error when checking file duplication', True)
+            if response.status_code == 403:
+                SrvErrorHandler.customized_handle(ECustomizedError.PERMISSION_DENIED, self.regular_file)
+            else:
+                SrvErrorHandler.default_handle('Error when checking file duplication', True)
 
         # pop the file object if the file has been uploaded
         # return the file objects that need to be uploaded
