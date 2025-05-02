@@ -204,7 +204,7 @@ def test_normalize_join():
 
 def test_get_version_compatibility_pass(httpx_mock):
     httpx_mock.add_response(
-        url=AppConfig.Connections.url_bff + '/v1/validate/cli/version?version=1.0.0',
+        url=AppConfig.Connections.url_bff + '/public/v1/validate/cli/version?version=1.0.0',
         method='GET',
         json={
             'result': {
@@ -219,7 +219,7 @@ def test_get_version_compatibility_pass(httpx_mock):
 
 def test_get_version_compatibility_fail_with_version_not_found(httpx_mock, capsys):
     httpx_mock.add_response(
-        url=AppConfig.Connections.url_bff + '/v1/validate/cli/version?version=1.0.0',
+        url=AppConfig.Connections.url_bff + '/public/v1/validate/cli/version?version=1.0.0',
         method='GET',
         json={'result': {}},
         status_code=200,
@@ -234,7 +234,7 @@ def test_get_version_compatibility_fail_with_version_incompatible(httpx_mock, ca
     min_cli_version = '1.1.0'
     min_server_version = '1.2.0'
     httpx_mock.add_response(
-        url=AppConfig.Connections.url_bff + '/v1/validate/cli/version?version=1.0.0',
+        url=AppConfig.Connections.url_bff + '/public/v1/validate/cli/version?version=1.0.0',
         method='GET',
         json={
             'result': {
