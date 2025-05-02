@@ -348,6 +348,7 @@ def test_check_upload_duplication_fail_with_403(httpx_mock, mocker, capfd):
 
         expect = 'Permission denied. Please verify your role in the Project has permission to perform this action.\n'
         assert out == expect
+
     else:
         raise AssertionError('SystemExit not raised')
 
