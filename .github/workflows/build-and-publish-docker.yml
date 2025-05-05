@@ -106,7 +106,7 @@ jobs:
             max_days=90
             max_days_seconds=$((max_days * 24 * 60 * 60))
             max_future_timestamp=$((current_timestamp + max_days_seconds))
-            
+
             # Temp file to store error messages
             error_report=$(mktemp)
 
@@ -120,7 +120,7 @@ jobs:
                 exp_year="${BASH_REMATCH[2]}"
                 exp_month="${BASH_REMATCH[3]}"
                 exp_day="${BASH_REMATCH[4]}"
-                
+
                 # Validate date components
                 if [ "$exp_month" -lt 1 ] || [ "$exp_month" -gt 12 ] || \
                     [ "$exp_day" -lt 1 ] || [ "$exp_day" -gt 31 ]; then
@@ -132,7 +132,7 @@ jobs:
 
                 # Convert expiration date to timestamp
                 exp_timestamp=$(date -d "$exp_year-$exp_month-$exp_day" +%s)
-                
+
                 # Check if date is within $max_days days
                 if [ "$exp_timestamp" -gt "$max_future_timestamp" ]; then
                   error_msg="Error: Expiration date for $cve is more than $max_days days in the future"
@@ -156,7 +156,7 @@ jobs:
                 all_valid=false
               fi
             done < ".github/.trivyignore"
-            
+
             # Add report to GitHub step summary if there are errors
             if [ "$all_valid" = false ]; then
               {
@@ -172,7 +172,7 @@ jobs:
                 echo ""
                 echo "Expected format: CVE-YYYY-XXXXX exp:YYYY-MM-DD"
               } >> $GITHUB_STEP_SUMMARY
-              
+
               echo "One or more exceptions are invalid. Please ensure all expiration dates are specified and within $max_days days"
               echo "----------------------------------------------"
               echo "Expected format: CVE-YYYY-XXXXX exp:YYYY-MM-DD"
