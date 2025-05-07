@@ -326,6 +326,33 @@ def test_check_upload_duplication_success(httpx_mock, mocker, case_insensitive):
     assert dup_list == [dup_obj.object_path.upper() if case_insensitive else dup_obj.object_path]
 
 
+def test_check_upload_duplication_fail_with_403(httpx_mock, mocker, capfd):
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+    upload_client = UploadClient('project_code', 'parent_folder_id')
+
+    url = AppConfig.Connections.url_base + '/portal/v1/files/exists'
+    httpx_mock.add_response(
+        method='POST',
+        url=url,
+        json={'result': []},
+        status_code=403,
+    )
+
+    try:
+        upload_client.check_upload_duplication([])
+    except SystemExit:
+        out, _ = capfd.readouterr()
+
+        expect = 'Permission denied. Please verify your role in the Project has permission to perform this action.\n'
+        assert out == expect
+
+    else:
+        raise AssertionError('SystemExit not raised')
+
+
 def test_check_upload_duplication_fail_with_500(httpx_mock, mocker, capfd):
     mocker.patch(
         'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
