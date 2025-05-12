@@ -209,11 +209,7 @@ def simple_upload(  # noqa: C901
             upload_file_path = get_file_in_folder(input_path)
     else:
         upload_file_path = [input_path]
-
-        if create_folder_flag:
-            job_type = UploadType.AS_FOLDER
-        else:
-            job_type = UploadType.AS_FILE
+        job_type = UploadType.AS_FILE
 
     upload_client = UploadClient(
         project_code=project_code,
