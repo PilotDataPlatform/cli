@@ -20,8 +20,8 @@ requests = "^2.32.3"
 click = "^8.1.8"
 urllib3 = "^2.3.0"
 cffi = "^1.17.1"
-charset-normalizer = "3.4.2"
 pyinstaller = "^6.11.1"
+charset-normalizer = "^3.4.2"
 
 
 [tool.poetry.extras]
