@@ -202,6 +202,7 @@ class SrvFileDownload(BaseAuthClient, metaclass=MetaService):
 
     def check_download_preparing_status(self):
         executor = None
+        not_done = []
         try:
             executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
             f1 = executor.submit(self.print_prepare_msg, 'checking status')
