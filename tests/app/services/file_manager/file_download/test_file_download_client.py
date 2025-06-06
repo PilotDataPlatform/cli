@@ -2,6 +2,9 @@
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
+import concurrent
+import time
+
 import click
 import jwt
 import pytest
@@ -275,3 +278,40 @@ def test_simple_download_with_folder(mocker, zone):
     predownload_mock.assert_called_once()
     status_check_mock.assert_called_once()
     download_mock.assert_called_once_with(f'{download_service_url}/v1/download/{test_client.hash_code}', './test_file')
+
+
+def test_check_download_preparing_status_timeout(mocker):
+    """Test that download status check properly handles timeouts."""
+    test_client = SrvFileDownload(ItemZone.GREENROOM.value, True)
+    test_client.hash_code = 'test_hash_code'
+
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+
+    def mock_long_running_task():
+        # This sleep will exceed the timeout in check_download_preparing_status
+        time.sleep(10)
+        return EFileStatus.SUCCEED
+
+    mocker.patch(
+        'app.services.file_manager.file_download.download_client.SrvFileDownload.print_prepare_msg',
+    )
+    mocker.patch(
+        'app.services.file_manager.file_download.download_client.SrvFileDownload.get_download_preparing_status',
+        side_effect=mock_long_running_task,
+    )
+    error_handler_mock = mocker.patch(
+        'app.services.output_manager.error_handler.SrvErrorHandler.customized_handle',
+    )
+
+    mocker.patch('app.services.logger_services.log_functions.error')
+
+    mocker.patch('concurrent.futures.Future.result', side_effect=concurrent.futures.TimeoutError)
+
+    result = test_client.check_download_preparing_status()
+
+    assert result == EFileStatus.FAILED
+    assert test_client.check_point is True
+    error_handler_mock.assert_called_once_with(ECustomizedError.DOWNLOAD_STATUS_CHECK_FAILED, if_exit=True)

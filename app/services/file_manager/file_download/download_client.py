@@ -4,6 +4,7 @@
 
 import concurrent.futures
 import os
+import random
 import time
 
 import click
@@ -150,24 +151,96 @@ class SrvFileDownload(BaseAuthClient, metaclass=MetaService):
         return filename
 
     def get_download_preparing_status(self):
+        max_retries = 3
+        retry_count = 0
+        base_interval = 1
+        max_backoff = 10
+
         while True:
-            time.sleep(1)
-            status = self.download_status()
-            if status == EFileStatus.SUCCEED:
-                self.check_point = True
-                break
-            elif status == EFileStatus.FAILED:
-                self.check_point = True
-                SrvErrorHandler.customized_handle(ECustomizedError.DOWNLOAD_FAIL, self.interactive)
-        return status
+            try:
+                time.sleep(1)
+                status = self.download_status()
+
+                if status == EFileStatus.SUCCEED:
+                    self.check_point = True
+                    return status
+                elif status == EFileStatus.FAILED:
+                    self.check_point = True
+                    SrvErrorHandler.customized_handle(
+                        ECustomizedError.DOWNLOAD_PREPARING_FAILED, if_exit=self.interactive
+                    )
+                    return status
+
+            except Exception as e:
+                retry_count += 1
+
+                if retry_count >= max_retries:
+                    error_msg = f'Failed to check download status after {max_retries} attempts: {str(e)}'
+                    logger.error(error_msg)
+
+                    # IMPORTANT: Set checkpoint to true BEFORE handling the error
+                    self.check_point = True
+
+                    SrvErrorHandler.customized_handle(
+                        ECustomizedError.DOWNLOAD_STATUS_CHECK_FAILED, if_exit=self.interactive
+                    )
+                    return EFileStatus.FAILED
+
+                # Calculate backoff with exponential increase
+                # 1st retry: ~1s, 2nd retry: ~2s, 3rd retry: ~4s, etc.
+                retry_interval = min(base_interval * (2 ** (retry_count - 1)), max_backoff)
+
+                # Add jitter (±20%) for thundering herd
+                jitter = retry_interval * 0.2 * (random.random() * 2 - 1)
+                retry_interval = max(0.1, retry_interval + jitter)
+
+                logger.warning(
+                    f'Error checking status (attempt {retry_count}/{max_retries}). Retrying in {retry_interval:.1f}s.'
+                )
+
+                time.sleep(retry_interval)
 
     def check_download_preparing_status(self):
-        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        executor = None
+        try:
+            executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
             f1 = executor.submit(self.print_prepare_msg, 'checking status')
             f2 = executor.submit(self.get_download_preparing_status)
-            for _ in concurrent.futures.wait([f1, f2], return_when='FIRST_COMPLETED'):
+
+            done, not_done = concurrent.futures.wait([f1, f2], return_when=concurrent.futures.FIRST_COMPLETED)
+
+            # If status thread finished first, get its result
+            if f2 in done:
                 status = f2.result()
-        return status
+                self.check_point = True
+                return status
+            else:
+                # If message thread somehow finished first (shouldn't normally happen)
+                # Wait for status thread with a timeout
+                try:
+                    status = f2.result(timeout=10)  # 10 second timeout
+                    self.check_point = True
+                    return status
+                except concurrent.futures.TimeoutError:
+                    self.check_point = True
+                    logger.error('Status check timed out')
+                    SrvErrorHandler.customized_handle(
+                        ECustomizedError.DOWNLOAD_STATUS_CHECK_FAILED, if_exit=self.interactive
+                    )
+                    return EFileStatus.FAILED
+
+        except Exception as e:
+            self.check_point = True
+
+            logger.error(f'Error in download status check: {str(e)}')
+            SrvErrorHandler.customized_handle(ECustomizedError.DOWNLOAD_STATUS_CHECK_FAILED, if_exit=self.interactive)
+            return EFileStatus.FAILED
+        finally:
+            if executor:
+                # Cancel any pending futures and shut down the executor
+                for future in not_done:
+                    future.cancel()
+                executor.shutdown(wait=False)
 
     @require_valid_token()
     def download_file(self, url, local_filename, download_mode='single'):
