@@ -244,77 +244,52 @@ class SrvFileDownload(BaseAuthClient, metaclass=MetaService):
                 executor.shutdown(wait=False)
 
     @require_valid_token()
-    def download_file(self, url, local_filename, download_mode='single'):  # noqa: C901
+    def download_file(self, url, local_filename, download_mode='single'):
         logger.info('start downloading...')
         filename = local_filename.split('/')[-1]
-        max_retries = 3
-        retry_count = 0
+        try:
+            with httpx.stream('GET', url) as r:
+                r.raise_for_status()
+                if r.headers.get('Content-Type') == 'application/zip' or download_mode == 'batch':
+                    size = r.headers.get('Content-length')
+                    self.total_size = int(size) if size else self.total_size
+                if self.total_size:
+                    downloaded_size = 0
+                    with open(local_filename, 'wb') as file, tqdm(
+                        desc='Downloading {}'.format(filename),
+                        total=self.total_size,
+                        unit='iB',
+                        unit_scale=True,
+                        unit_divisor=1024,
+                        bar_format='{desc} |{bar:30} {percentage:3.0f}% {remaining}',
+                    ) as bar:
+                        for data in r.iter_bytes(chunk_size=1024):
+                            size = file.write(data)
+                            bar.update(size)
+                            downloaded_size += len(data)
 
-        while retry_count <= max_retries:
-            try:
-                with httpx.stream('GET', url, timeout=httpx.Timeout(30.0, read=300.0)) as r:
-                    r.raise_for_status()
-
-                    if r.headers.get('Content-Type') == 'application/zip' or download_mode == 'batch':
-                        size = r.headers.get('Content-length')
-                        self.total_size = int(size) if size else self.total_size
-
-                    stream_iter = r.iter_bytes(chunk_size=1024)
-                    if self.total_size:
-                        downloaded_size = 0
-                        with open(local_filename, 'wb') as file, tqdm(
-                            desc=f'Downloading {filename}',
-                            total=self.total_size,
-                            unit='iB',
-                            unit_scale=True,
-                            unit_divisor=1024,
-                            bar_format='{desc} |{bar:30} {percentage:3.0f}% {remaining}',
-                        ) as bar:
-                            try:
-                                for data in stream_iter:
-                                    size = file.write(data)
-                                    bar.update(size)
-                                    downloaded_size += len(data)
-                            except httpx.ReadTimeout:
-                                # Re-raise so it's caught by the outer exception handler
-                                raise
-
-                        if downloaded_size != self.total_size:
-                            SrvErrorHandler.customized_handle(
-                                ECustomizedError.DOWNLOAD_SIZE_MISMATCH,
-                                if_exit=self.interactive,
-                                value=(self.total_size, downloaded_size),
-                            )
-                    else:
-                        with open(local_filename, 'wb') as file:
-                            part = 0
-                            for data in r.iter_bytes(chunk_size=1024):
-                                size = file.write(data)
-                                progress = '.' * part
-                                click.echo(f'Downloading{progress}\r', nl=False)
-                                if part > 5:
-                                    part = 0
-                                else:
-                                    part += 1
-                            logger.info('Download complete')
-
-                return local_filename
-
-            except httpx.ReadTimeout:
-                retry_count += 1
-                if retry_count > max_retries:
-                    logger.error(f'Download failed after {max_retries} attempts due to read timeout')
-                    SrvErrorHandler.customized_handle(
-                        ECustomizedError.DOWNLOAD_TIMEOUT, if_exit=self.interactive, value=filename
-                    )
-                    return None
-                wait_time = 2**retry_count
-                logger.warning(f'Read timeout encountered, retrying in {wait_time}s ({retry_count}/{max_retries})')
-                time.sleep(wait_time)
-
-            except Exception as e:
-                logger.error(f'Error downloading: {e}')
-                return None
+                    # integrity check for downloaded file
+                    if downloaded_size != self.total_size:
+                        SrvErrorHandler.customized_handle(
+                            ECustomizedError.DOWNLOAD_SIZE_MISMATCH,
+                            if_exit=self.interactive,
+                            value=(self.total_size, downloaded_size),
+                        )
+                else:
+                    with open(local_filename, 'wb') as file:
+                        part = 0
+                        for data in r.iter_bytes(chunk_size=1024):
+                            size = file.write(data)
+                            progress = '.' * part
+                            click.echo(f'Downloading{progress}\r', nl=False)
+                            if part > 5:
+                                part = 0
+                            else:
+                                part += 1
+                        logger.info('Download complete')
+        except Exception as e:
+            logger.error(f'Error downloading: {e}')
+        return local_filename
 
     @require_valid_token()
     def group_file_geid_by_project(self, file_info):
