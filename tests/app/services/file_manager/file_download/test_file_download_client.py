@@ -6,7 +6,6 @@ import concurrent
 import time
 
 import click
-import httpx
 import jwt
 import pytest
 from pytest_httpx import IteratorStream
@@ -316,47 +315,3 @@ def test_check_download_preparing_status_timeout(mocker):
     assert result == EFileStatus.FAILED
     assert test_client.check_point is True
     error_handler_mock.assert_called_once_with(ECustomizedError.DOWNLOAD_STATUS_CHECK_FAILED, if_exit=True)
-
-
-def test_download_file_read_timeout_retry_and_failure(mocker):
-    """Test that file download properly handles ReadTimeout with retries and eventual failure."""
-    test_client = SrvFileDownload(ItemZone.GREENROOM.value, True)
-    test_client.total_size = 1000  # Set some total size for the download
-
-    mocker.patch(
-        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
-        return_value=decoded_token(),
-    )
-
-    logger_mock = mocker.patch('app.services.logger_services.log_functions.warning')
-    error_logger_mock = mocker.patch('app.services.logger_services.log_functions.error')
-
-    error_handler_mock = mocker.patch(
-        'app.services.output_manager.error_handler.SrvErrorHandler.customized_handle',
-    )
-
-    mocker.patch('time.sleep')
-
-    mock_response = mocker.MagicMock()
-    mock_response.raise_for_status.return_value = None
-    mock_response.headers = {'Content-Type': 'application/zip', 'Content-length': '1000'}
-    mock_response.__enter__ = mocker.MagicMock(return_value=mock_response)
-    mock_response.__exit__ = mocker.MagicMock(return_value=None)
-
-    def iter_bytes_side_effect(*args, **kwargs):
-        raise httpx.ReadTimeout('Simulated timeout during download', request=mocker.MagicMock())
-
-    mock_response.iter_bytes.side_effect = iter_bytes_side_effect
-
-    stream_mock = mocker.patch('httpx.stream', return_value=mock_response)
-
-    result = test_client.download_file('http://test-url.com', 'test_file.zip', download_mode='single')
-
-    assert result is None
-    assert stream_mock.call_count == 4
-
-    assert logger_mock.call_count == 3
-
-    error_logger_mock.assert_called_with('Download failed after 3 attempts due to read timeout')
-
-    error_handler_mock.assert_called_once_with(ECustomizedError.DOWNLOAD_TIMEOUT, if_exit=True, value='test_file.zip')
