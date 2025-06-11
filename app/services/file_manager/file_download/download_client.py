@@ -249,7 +249,7 @@ class SrvFileDownload(BaseAuthClient, metaclass=MetaService):
         filename = local_filename.split('/')[-1]
         max_retries = 3
         retry_count = 0
-
+        # Retry logic for handling read timeouts
         while retry_count <= max_retries:
             try:
                 with httpx.stream('GET', url, timeout=httpx.Timeout(30.0, read=300.0)) as r:
