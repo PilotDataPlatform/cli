@@ -68,9 +68,9 @@ class BaseClient:
                 self.headers.update(headers)
 
             response = self.client.request(method, url, json=json, params=params, headers=self.headers, data=data)
-        except RequestError:
-            message = f'Unable to query data with url "{method} {url}".'
-            logger.exception(message)
+        except RequestError as e:
+            message = f'Unable to query data with url "{method} {url}" Due to {type(e).__name__}'
+            logger.error(message)
             raise Exception(message)
 
         return response

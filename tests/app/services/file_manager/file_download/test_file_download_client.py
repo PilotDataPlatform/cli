@@ -3,9 +3,9 @@
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
 import concurrent
-import time
 
 import click
+import httpx
 import jwt
 import pytest
 from pytest_httpx import IteratorStream
@@ -281,7 +281,7 @@ def test_simple_download_with_folder(mocker, zone):
 
 
 def test_check_download_preparing_status_timeout(mocker):
-    """Test that download status check properly handles timeouts."""
+    """Test that download status check properly handles timeouts and logs appropriate error type."""
     test_client = SrvFileDownload(ItemZone.GREENROOM.value, True)
     test_client.hash_code = 'test_hash_code'
 
@@ -290,28 +290,89 @@ def test_check_download_preparing_status_timeout(mocker):
         return_value=decoded_token(),
     )
 
-    def mock_long_running_task():
-        # This sleep will exceed the timeout in check_download_preparing_status
-        time.sleep(10)
-        return EFileStatus.SUCCEED
-
     mocker.patch(
         'app.services.file_manager.file_download.download_client.SrvFileDownload.print_prepare_msg',
     )
-    mocker.patch(
-        'app.services.file_manager.file_download.download_client.SrvFileDownload.get_download_preparing_status',
-        side_effect=mock_long_running_task,
-    )
+
+    error_logger_spy = mocker.patch('app.services.logger_services.log_functions.error')
     error_handler_mock = mocker.patch(
         'app.services.output_manager.error_handler.SrvErrorHandler.customized_handle',
     )
-
-    mocker.patch('app.services.logger_services.log_functions.error')
-
-    mocker.patch('concurrent.futures.Future.result', side_effect=concurrent.futures.TimeoutError)
+    timeout_error = concurrent.futures.TimeoutError()
+    mocker.patch('concurrent.futures.Future.result', side_effect=timeout_error)
 
     result = test_client.check_download_preparing_status()
 
     assert result == EFileStatus.FAILED
     assert test_client.check_point is True
+
     error_handler_mock.assert_called_once_with(ECustomizedError.DOWNLOAD_STATUS_CHECK_FAILED, if_exit=True)
+
+    error_logger_spy.assert_called_once_with('Status check timed out')
+
+
+def test_download_file_read_timeout_retry_and_failure(mocker):
+    """Test that file download properly handles ReadTimeout with retries and eventual failure."""
+    test_client = SrvFileDownload(ItemZone.GREENROOM.value, True)
+    test_client.total_size = 1000  # Set some total size for the download
+
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+
+    logger_mock = mocker.patch('app.services.logger_services.log_functions.warning')
+    error_logger_mock = mocker.patch('app.services.logger_services.log_functions.error')
+
+    error_handler_mock = mocker.patch(
+        'app.services.output_manager.error_handler.SrvErrorHandler.customized_handle',
+    )
+
+    mocker.patch('time.sleep')
+
+    mock_response = mocker.MagicMock()
+    mock_response.raise_for_status.return_value = None
+    mock_response.headers = {'Content-Type': 'application/zip', 'Content-length': '1000'}
+    mock_response.__enter__ = mocker.MagicMock(return_value=mock_response)
+    mock_response.__exit__ = mocker.MagicMock(return_value=None)
+
+    def iter_bytes_side_effect(*args, **kwargs):
+        raise httpx.ReadTimeout('Simulated timeout during download', request=mocker.MagicMock())
+
+    mock_response.iter_bytes.side_effect = iter_bytes_side_effect
+
+    stream_mock = mocker.patch('httpx.stream', return_value=mock_response)
+
+    result = test_client.download_file('http://test-url.com', 'test_file.zip', download_mode='single')
+
+    assert result is None
+    assert stream_mock.call_count == 4
+
+    assert logger_mock.call_count == 3
+
+    error_logger_mock.assert_called_with('Download failed after 3 attempts due to read timeout')
+
+    error_handler_mock.assert_called_once_with(ECustomizedError.DOWNLOAD_TIMEOUT, if_exit=True, value='test_file.zip')
+
+
+def test_base_client_timeout_logs_error_type(mocker):
+    """Test that BaseClient properly logs timeout error types."""
+    test_client = SrvFileDownload(ItemZone.GREENROOM.value, False)
+    test_client.hash_code = 'test_hash_code'
+
+    mocker.patch(
+        'app.services.user_authentication.token_manager.SrvTokenManager.decode_access_token',
+        return_value=decoded_token(),
+    )
+
+    request_mock = mocker.patch('httpx.Client.request')
+    request_mock.side_effect = httpx.ReadTimeout('Simulated timeout', request=mocker.MagicMock())
+
+    mock_logger = mocker.patch('app.services.clients.base_client.logger.error')
+
+    with pytest.raises(Exception):
+        test_client.download_status()
+
+    mock_logger.assert_called_once()
+    log_message = mock_logger.call_args[0][0]
+    assert 'ReadTimeout' in log_message
