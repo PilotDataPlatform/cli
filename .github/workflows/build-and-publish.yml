@@ -98,7 +98,7 @@ jobs:
 
       - name: Build default binary using manylinux_2_31
         run: |
-          docker run --rm -v ${{ github.workspace }}:/io quay.io/pypa/manylinux_2_31_x86_64 bash -c "
+          docker run --rm -v ${{ github.workspace }}:/io quay.io/pypa/manylinux_2_31 bash -c "
             cd /io
             mkdir -p ./app/bundled_app/linux ./app/build/linux
 
@@ -126,7 +126,7 @@ jobs:
 
       - name: Build cloud binary using manylinux_2_31
         run: |
-          docker run --rm -v ${{ github.workspace }}:/io quay.io/pypa/manylinux_2_31_x86_64 bash -c "
+          docker run --rm -v ${{ github.workspace }}:/io quay.io/pypa/manylinux_2_31 bash -c "
             cd /io
 
             # Poetry should already be installed from previous step
