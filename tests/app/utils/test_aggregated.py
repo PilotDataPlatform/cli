@@ -7,6 +7,7 @@ import pytest
 from app.configs.app_config import AppConfig
 from app.models.item import ItemType
 from app.utils.aggregated import check_item_duplication
+from app.utils.aggregated import get_latest_cli_version
 from app.utils.aggregated import get_version_compatibility
 from app.utils.aggregated import identify_target_folder
 from app.utils.aggregated import normalize_input_paths
@@ -251,3 +252,34 @@ def test_get_version_compatibility_fail_with_version_incompatible(httpx_mock, ca
         f'CLI version is incompatible with server version. Please update the CLI to version {min_cli_version}'
         + f' or later, and minimum server version is {min_server_version}.'
     ) in out.rstrip()
+
+
+@pytest.mark.parametrize('platform_name', ['Linux', 'Windows', 'Darwin'])
+def test_get_download_link_by_platform(mocker, platform_name, httpx_mock):
+    mocker.patch('platform.system', return_value=platform_name)
+    expected_result = {
+        'linux': {
+            'version': '1.0.0',
+            'download_url': 'https://example.com/download/linux',
+        },
+        'windows': {
+            'version': '1.0.1',
+            'download_url': 'https://example.com/download/windows',
+        },
+        'macos': {
+            'version': '1.1.0',
+            'download_url': 'https://example.com/download/macos',
+        },
+    }
+    httpx_mock.add_response(
+        url=AppConfig.Connections.url_fileops_greenroom + '/v1/download/cli/presigned',
+        method='GET',
+        json={'result': expected_result},
+        status_code=200,
+    )
+
+    version, url = get_latest_cli_version()
+    if platform_name.lower() == 'darwin':
+        platform_name = 'macos'
+    assert str(version) == expected_result[platform_name.lower()]['version']
+    assert url == expected_result[platform_name.lower()]['download_url']
