@@ -17,7 +17,7 @@ on:
 
 jobs:
   pre-build-setup:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: github.event.pull_request.merged == true  # Runs only if PR is merged
 
     outputs:
@@ -69,7 +69,7 @@ jobs:
   push-binary-linux:
     needs: [ pre-build-setup ]
     if: ${{ needs.pre-build-setup.outputs.branch == 'main' || needs.pre-build-setup.outputs.branch == 'develop'}}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     outputs:
       upload_url: ${{steps.create_release.outputs.upload_url}}
     steps:
@@ -83,17 +83,12 @@ jobs:
         with:
           name: release-message
 
-      - name: Download Release Message Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: release-message
-
-      - name: Set up Python
+      - name: Set up Python for version extraction
         uses: actions/setup-python@v4
         with:
           python-version: 3.10.12
 
-      - name: Install Poetry
+      - name: Install Poetry for version extraction
         uses: snok/install-poetry@v1
         with:
           version: 1.8.3
@@ -101,22 +96,27 @@ jobs:
           virtualenvs-in-project: true
           installer-parallel: true
 
-      - name: Set up cache
-        id: cached-poetry-dependencies
-        uses: actions/cache@v3
-        with:
-          path: .venv
-          key: venv-linux-${{ hashFiles('**/poetry.lock') }}
-
-      - name: Ensure cache is healthy
-        if: steps.cached-poetry-dependencies.outputs.cache-hit == 'true'
-        run: timeout 10s poetry run pip --version || rm -rf .venv
-
-      - name: Install dependencies
-        run: poetry install --no-interaction
-
-      - name: Build default binary
-        run: poetry run pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --paths=./.venv/lib/python3.10/site-packages ./app/pilotcli.py -n ${{ github.sha }}
+      - name: Build default binary using manylinux_2_31
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/io quay.io/pypa/manylinux_2_31_x86_64 bash -c "
+            cd /io
+            mkdir -p ./app/bundled_app/linux ./app/build/linux
+            
+            # Install Poetry
+            curl -sSL https://install.python-poetry.org | python3 -
+            export PATH=\$PATH:/root/.local/bin
+            
+            # Configure and install dependencies
+            cd /io
+            poetry config virtualenvs.create false
+            poetry install --no-interaction
+            
+            # Install PyInstaller
+            pip install pyinstaller
+            
+            # Build binary
+            pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux ./app/pilotcli.py -n ${{ github.sha }}
+          "
 
       - name: Rename default output file
         run: mv "./app/bundled_app/linux/${{ github.sha }}" "./app/bundled_app/linux/pilotcli_linux"
@@ -124,8 +124,17 @@ jobs:
       - name: Enable cloud mode
         run: touch ./app/ENABLE_CLOUD_MODE
 
-      - name: Build cloud binary
-        run: poetry run pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --paths=./.venv/lib/python3.9/site-packages --add-binary=$(pwd)/app/ENABLE_CLOUD_MODE:. ./app/pilotcli.py -n ${{ github.sha }}
+      - name: Build cloud binary using manylinux_2_31
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/io quay.io/pypa/manylinux_2_31_x86_64 bash -c "
+            cd /io
+            
+            # Poetry should already be installed from previous step
+            export PATH=\$PATH:/root/.local/bin
+            
+            # Build cloud binary
+            pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --add-binary=/io/app/ENABLE_CLOUD_MODE:. ./app/pilotcli.py -n ${{ github.sha }}
+          "
 
       - name: Rename cloud output file
         run: mv "./app/bundled_app/linux/${{ github.sha }}" "./app/bundled_app/linux/pilotcli_cloud"
