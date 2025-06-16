@@ -256,7 +256,7 @@ def test_get_version_compatibility_fail_with_version_incompatible(httpx_mock, ca
 
 @pytest.mark.parametrize('platform_name', ['Linux', 'Windows', 'Darwin'])
 def test_get_download_link_by_platform(mocker, platform_name, httpx_mock):
-    mocker.patch('platform.system', return_value=platform_name)
+    mocker.patch('app.utils.aggregated.platform.system', return_value=platform_name)
     expected_result = {
         'linux': {
             'version': '1.0.0',
