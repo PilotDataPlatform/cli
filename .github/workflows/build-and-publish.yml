@@ -69,7 +69,7 @@ jobs:
   push-binary-linux:
     needs: [ pre-build-setup ]
     if: ${{ needs.pre-build-setup.outputs.branch == 'main' || needs.pre-build-setup.outputs.branch == 'develop'}}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     outputs:
       upload_url: ${{steps.create_release.outputs.upload_url}}
     steps:
