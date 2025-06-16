@@ -23,7 +23,7 @@ on:
 jobs:
   get-version:
     name: Get pilot cli version
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     outputs:
       cli_version: ${{steps.get-version.outputs.cli_version}}
     steps:
@@ -39,7 +39,7 @@ jobs:
   build-and-push-docker-image:
       needs: [get-version]
       name: Build Docker images and push to repositories
-      runs-on: ubuntu-latest
+      runs-on: ubuntu-20.04
       steps:
         - name: Checkout code
           uses: actions/checkout@v3
