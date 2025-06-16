@@ -101,19 +101,19 @@ jobs:
           docker run --rm -v ${{ github.workspace }}:/io quay.io/pypa/manylinux_2_31_x86_64 bash -c "
             cd /io
             mkdir -p ./app/bundled_app/linux ./app/build/linux
-            
+
             # Install Poetry
             curl -sSL https://install.python-poetry.org | python3 -
             export PATH=\$PATH:/root/.local/bin
-            
+
             # Configure and install dependencies
             cd /io
             poetry config virtualenvs.create false
             poetry install --no-interaction
-            
+
             # Install PyInstaller
             pip install pyinstaller
-            
+
             # Build binary
             pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux ./app/pilotcli.py -n ${{ github.sha }}
           "
@@ -128,10 +128,10 @@ jobs:
         run: |
           docker run --rm -v ${{ github.workspace }}:/io quay.io/pypa/manylinux_2_31_x86_64 bash -c "
             cd /io
-            
+
             # Poetry should already be installed from previous step
             export PATH=\$PATH:/root/.local/bin
-            
+
             # Build cloud binary
             pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --add-binary=/io/app/ENABLE_CLOUD_MODE:. ./app/pilotcli.py -n ${{ github.sha }}
           "
