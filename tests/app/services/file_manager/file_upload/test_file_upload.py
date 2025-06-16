@@ -349,6 +349,33 @@ def test_folder_merge_skip_with_all_duplication(mocker, mock_upload_client, capf
         raise AssertionError('SystemExit not raised')
 
 
+def test_upload_folder_as_zip(mocker, mock_upload_client):
+    test_folder = 'test'
+    upload_event = {
+        'file': test_folder,
+        'project_code': 'test_project',
+        'zone': 'greenroom',
+        'create_folder_flag': False,
+        'compress_zip': True,
+    }
+
+    mocker.patch('os.path.isdir', return_value=True)
+    mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
+    compress_mock = mocker.patch(
+        'app.services.file_manager.file_upload.file_upload.compress_folder_to_zip', return_value='test.zip'
+    )
+
+    non_dup_list = [FileObject('object/path', 'local_path', 'resumable_id', 'job_id', 'item_id')]
+    mocker.patch(
+        'app.services.file_manager.file_upload.file_upload.UploadClient.check_upload_duplication',
+        return_value=(non_dup_list, []),
+    )
+    item_ids = simple_upload(upload_event)
+    assert len(item_ids) == 1
+    assert item_ids[0] == non_dup_list[0].item_id
+    assert compress_mock.call_count == 1
+
+
 def test_resume_upload(mocker):
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
     test_obj = FileObject('object/path', 'local_path', 'resumable_id', 'job_id', 'item_id')
