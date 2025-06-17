@@ -251,7 +251,7 @@ def get_latest_cli_version() -> Tuple[Version, str]:
 
         # extract the download URL by platform
         platform_key = 'macos' if platform.system() == 'Darwin' else platform.system().lower()
-        download_details = result.get(platform_key, None)
+        download_details = result.get(platform_key, {})
 
         latest_version = download_details.get('version', '0.0.0')
         download_url = download_details.get('download_url', '')
