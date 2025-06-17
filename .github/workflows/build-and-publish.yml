@@ -69,7 +69,7 @@ jobs:
   push-binary-linux:
     needs: [ pre-build-setup ]
     if: ${{ needs.pre-build-setup.outputs.branch == 'main' || needs.pre-build-setup.outputs.branch == 'develop'}}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     outputs:
       upload_url: ${{steps.create_release.outputs.upload_url}}
     steps:
@@ -83,61 +83,90 @@ jobs:
         with:
           name: release-message
 
-      - name: Download Release Message Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: release-message
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.10.12
+      - name: Create Docker build script
+        run: |
+          cat > build_script.sh << 'EOF'
+          #!/bin/bash
+          set -e
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: 1.8.3
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          installer-parallel: true
+          # Install Poetry
+          export POETRY_HOME=/opt/poetry
+          export PATH=$POETRY_HOME/bin:$PATH
 
-      - name: Set up cache
-        id: cached-poetry-dependencies
-        uses: actions/cache@v3
-        with:
-          path: .venv
-          key: venv-linux-${{ hashFiles('**/poetry.lock') }}
+          # Install dependencies and build binaries
+          cd /github/workspace
+          poetry install --no-interaction
 
-      - name: Ensure cache is healthy
-        if: steps.cached-poetry-dependencies.outputs.cache-hit == 'true'
-        run: timeout 10s poetry run pip --version || rm -rf .venv
+          # Build default binary
+          poetry run pyinstaller -F \
+            --distpath ./app/bundled_app/linux \
+            --specpath ./app/build/linux \
+            --workpath ./app/build/linux \
+            --paths=./.venv/lib/python3.10/site-packages \
+            ./app/pilotcli.py -n $GITHUB_SHA
 
-      - name: Install dependencies
-        run: poetry install --no-interaction
+          # Rename default output file
+          mv "./app/bundled_app/linux/$GITHUB_SHA" "./app/bundled_app/linux/pilotcli_linux"
 
-      - name: Build default binary
-        run: poetry run pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --paths=./.venv/lib/python3.10/site-packages ./app/pilotcli.py -n ${{ github.sha }}
+          # Enable cloud mode
+          touch ./app/ENABLE_CLOUD_MODE
 
-      - name: Rename default output file
-        run: mv "./app/bundled_app/linux/${{ github.sha }}" "./app/bundled_app/linux/pilotcli_linux"
+          # Build cloud binary
+          poetry run pyinstaller -F \
+            --distpath ./app/bundled_app/linux \
+            --specpath ./app/build/linux \
+            --workpath ./app/build/linux \
+            --paths=./.venv/lib/python3.10/site-packages \
+            --add-binary=$(pwd)/app/ENABLE_CLOUD_MODE:. \
+            ./app/pilotcli.py -n $GITHUB_SHA
 
-      - name: Enable cloud mode
-        run: touch ./app/ENABLE_CLOUD_MODE
+          # Rename cloud output file
+          mv "./app/bundled_app/linux/$GITHUB_SHA" "./app/bundled_app/linux/pilotcli_cloud"
 
-      - name: Build cloud binary
-        run: poetry run pyinstaller -F --distpath ./app/bundled_app/linux --specpath ./app/build/linux --workpath ./app/build/linux --paths=./.venv/lib/python3.9/site-packages --add-binary=$(pwd)/app/ENABLE_CLOUD_MODE:. ./app/pilotcli.py -n ${{ github.sha }}
+          # Set version in env
+          echo "TAG_VERSION=$(poetry version --short)" > /github/workspace/version.txt
 
-      - name: Rename cloud output file
-        run: mv "./app/bundled_app/linux/${{ github.sha }}" "./app/bundled_app/linux/pilotcli_cloud"
+          # Ensure permissions are correct
+          chmod -R 777 /github/workspace/app/bundled_app
+          EOF
 
-      - name: Set version in env
-        run: poetry run echo "TAG_VERSION=`poetry version --short`" >> $GITHUB_ENV
+          chmod +x build_script.sh
+
+      - name: Build binaries with Ubuntu 20.04 Docker
+        run: |
+          mkdir -p ./app/bundled_app/linux
+          mkdir -p ./app/build/linux
+
+          docker run --rm \
+            -v ${{ github.workspace }}:/github/workspace \
+            -v ${{ github.workspace }}/build_script.sh:/build_script.sh \
+            -e GITHUB_SHA=${{ github.sha }} \
+            -w /github/workspace \
+            ubuntu:20.04 bash -c "
+              set -e
+              export DEBIAN_FRONTEND=noninteractive
+              apt-get update
+              apt-get install -y software-properties-common curl build-essential
+              add-apt-repository -y ppa:deadsnakes/ppa
+              apt-get update
+              apt-get install -y python3.10 python3.10-venv python3.10-dev
+              curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10
+              curl -sSL https://install.python-poetry.org | python3.10 -
+              export PATH=\"/root/.local/bin:\$PATH\"
+              /build_script.sh
+            "
+
+          # Load version from file created in container
+          echo "TAG_VERSION=$(cat version.txt | cut -d'=' -f2)" >> $GITHUB_ENV
 
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ env.TAG_VERSION }}
           name: Release ${{ needs.pre-build-setup.outputs.branch }} ${{ env.TAG_VERSION }}
@@ -195,7 +224,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ needs.push-binary-linux.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+          upload_url: ${{ needs.push-binary-linux.outputs.upload_url }}
           asset_path: ./app/bundled_app/macos/${{ github.sha }}
           asset_name: pilotcli_macos
           asset_content_type: application/octet-stream
@@ -246,7 +275,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ needs.push-binary-linux.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+          upload_url: ${{ needs.push-binary-linux.outputs.upload_url }}
           asset_path: ./app/bundled_app/windows/${{ github.sha }}.exe
           asset_name: pilotcli_windows.exe
           asset_content_type: application/octet-stream
