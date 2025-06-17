@@ -195,8 +195,8 @@ def simple_upload(  # noqa: C901
     # otherwise read throught the folder to get path underneath
     if os.path.isdir(input_path):
         if compress_zip:
-            input_path = compress_folder_to_zip(input_path)
-            upload_file_path = [input_path]
+            zip_file_path = compress_folder_to_zip(input_path)
+            upload_file_path = [zip_file_path]
             job_type = UploadType.AS_FILE
             # since now this is a file upload, we need to strip the folder name
             current_folder_node = os.path.dirname(current_folder_node)
