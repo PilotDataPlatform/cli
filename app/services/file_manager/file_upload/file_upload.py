@@ -194,19 +194,24 @@ def simple_upload(  # noqa: C901
     # if the input request zip folder then process the path as single file
     # otherwise read throught the folder to get path underneath
     if os.path.isdir(input_path):
-        job_type = UploadType.AS_FILE if compress_zip else UploadType.AS_FOLDER
-        if job_type == UploadType.AS_FILE:
-            upload_file_path = [input_path.rstrip('/').lstrip() + '.zip']
-            compress_folder_to_zip(input_path)
+        if compress_zip:
+            zip_file_path = compress_folder_to_zip(input_path)
+            upload_file_path = [zip_file_path]
+            job_type = UploadType.AS_FILE
+            # since now this is a file upload, we need to strip the folder name
+            current_folder_node = os.path.dirname(current_folder_node)
+        else:
+            job_type = UploadType.AS_FOLDER
+            upload_file_path = get_file_in_folder(input_path)
+
         # currently not support tag and attribute for a folder upload
-        elif tags or attribute:
+        if tags or attribute:
             SrvErrorHandler.customized_handle(ECustomizedError.UNSUPPORT_TAG_MANIFEST, True)
         # currently not support n-to-n relationship in lineage, meaning
         # can ONLY specify one source id for a folder upload
         elif len(source_id) > 1 and job_type == UploadType.AS_FOLDER:
             SrvErrorHandler.customized_handle(ECustomizedError.UNSUPPORT_SOURCE_MANIFEST, True)
-        else:
-            upload_file_path = get_file_in_folder(input_path)
+
     else:
         upload_file_path = [input_path]
         job_type = UploadType.AS_FILE
@@ -255,7 +260,6 @@ def simple_upload(  # noqa: C901
         upload_client.output_manifest(
             pre_upload_infos, non_duplicate_file_objects[len(pre_upload_infos) + 1 :], output_path
         )
-
     # now loop over each file under the folder and start
     # the chunk upload
     pool = ThreadPool(num_of_thread)
