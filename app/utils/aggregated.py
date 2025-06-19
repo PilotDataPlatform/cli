@@ -3,6 +3,7 @@
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
 import os
+import platform
 import re
 import shutil
 import time
@@ -247,8 +248,13 @@ def get_latest_cli_version() -> Tuple[Version, str]:
         headers = {'Authorization': 'Bearer'}
         response = httpx_client._get('v1/download/cli/presigned', headers=headers)
         result = response.json().get('result', {})
-        latest_version = result.get('linux', {}).get('version', '0.0.0')
-        download_url = result.get('linux', {}).get('download_url', '')
+
+        # extract the download URL by platform
+        platform_key = 'macos' if platform.system() == 'Darwin' else platform.system().lower()
+        download_details = result.get(platform_key, {})
+
+        latest_version = download_details.get('version', '0.0.0')
+        download_url = download_details.get('download_url', '')
 
         return Version(latest_version), download_url
     except (SystemExit, Exception):
