@@ -86,7 +86,7 @@ class Settings(BaseSettings):
 
     @computed_field
     def url_dataset_v2download(self) -> str:
-        return f'{self.api_url}/portal/download/core/v2/dataset'
+        return f'{self.api_url}/portal/v2/dataset'
 
     @computed_field
     def url_dataset(self) -> str:

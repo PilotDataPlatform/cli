@@ -27,7 +27,7 @@ from ..user_authentication.decorator import require_valid_token
 
 class SrvDatasetDownloadManager(BaseAuthClient, metaclass=MetaService):
     def __init__(self, output_path, dataset_code, dataset_geid):
-        super().__init__(AppConfig.Connections.url_dataset)
+        super().__init__(AppConfig.Connections.url_dataset_v2download)
 
         self.user = UserConfig()
         self.output = output_path
@@ -134,7 +134,7 @@ class SrvDatasetDownloadManager(BaseAuthClient, metaclass=MetaService):
     def download_dataset(self) -> None:
         pre_result = self.pre_dataset_download()
         self.hash_code = pre_result.get('result').get('payload').get('hash_code')
-        self.download_url = AppConfig.Connections.url_fileops_core + f'v1/download/{self.hash_code}'
+        self.download_url = AppConfig.Connections.url_fileops_core + f'/v1/download/{self.hash_code}'
         # format the naming for the default filename
         self.default_filename = pre_result.get('result').get('target_names')[0]
         self.default_filename = self.default_filename.split('/')[-1]
