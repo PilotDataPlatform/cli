@@ -49,7 +49,7 @@ class AppConfig:
         url_fileops_core = ConfigClass.url_fileops_core
         url_status = ConfigClass.url_status
         url_v2_download_pre = ConfigClass.url_v2_download_pre
-        url_dataset_v2download = ConfigClass.url_dataset_v2download
+        url_dataset_download_v2 = ConfigClass.url_dataset_download_v2
         url_dataset = ConfigClass.url_dataset
         url_validation = ConfigClass.url_validation
         url_keycloak = ConfigClass.url_keycloak

@@ -12,7 +12,7 @@ def test_dateset_pre_download_success(httpx_mock, mocker):
 
     httpx_mock.add_response(
         method='POST',
-        url=AppConfig.Connections.url_dataset_v2download + '/download/pre',
+        url=AppConfig.Connections.url_dataset_download_v2 + '/download/pre',
         json={'result': {'payload': {'hash_code': 'hash_code'}, 'target_names': ['test.txt']}},
         status_code=200,
     )
@@ -104,7 +104,7 @@ def test_download_dataset(httpx_mock, mocker):
 
     httpx_mock.add_response(
         method='POST',
-        url=AppConfig.Connections.url_dataset_v2download + '/download/pre',
+        url=AppConfig.Connections.url_dataset_download_v2 + '/download/pre',
         json={'result': {'payload': {'hash_code': 'hash_code'}, 'target_names': ['test.txt']}},
         status_code=200,
     )
