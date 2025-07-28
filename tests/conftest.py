@@ -25,7 +25,7 @@ def mock_settings(monkeypatch, mocker):
     monkeypatch.setattr(AppConfig.Connections, 'url_authn', 'http://service_auth')
     monkeypatch.setattr(AppConfig.Connections, 'url_bff', 'http://bff_cli')
     monkeypatch.setattr(AppConfig.Connections, 'url_dataset', 'http://url_dataset')
-    monkeypatch.setattr(AppConfig.Connections, 'url_dataset_v2download', 'http://url_dataset_download_v2')
+    monkeypatch.setattr(AppConfig.Connections, 'url_dataset_download_v2', 'http://url_dataset_download_v2')
     monkeypatch.setattr(AppConfig.Connections, 'url_fileops_core', 'http://url_dataset_download_core')
     monkeypatch.setattr(AppConfig.Connections, 'url_fileops_greenroom', 'http://upload_gr')
     monkeypatch.setattr(AppConfig.Connections, 'url_keycloak_realm', 'http://url_keycloak_realm')

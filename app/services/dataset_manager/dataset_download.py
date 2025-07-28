@@ -27,7 +27,7 @@ from ..user_authentication.decorator import require_valid_token
 
 class SrvDatasetDownloadManager(BaseAuthClient, metaclass=MetaService):
     def __init__(self, output_path, dataset_code, dataset_geid):
-        super().__init__(AppConfig.Connections.url_dataset_v2download)
+        super().__init__(AppConfig.Connections.url_dataset_download_v2)
 
         self.user = UserConfig()
         self.output = output_path
@@ -58,7 +58,7 @@ class SrvDatasetDownloadManager(BaseAuthClient, metaclass=MetaService):
 
         payload = {'dataset_code': self.dataset_code, 'session_id': self.session_id, 'operator': self.user.username}
         try:
-            self.endpoint = AppConfig.Connections.url_dataset_v2download
+            self.endpoint = AppConfig.Connections.url_dataset_download_v2
             response = self._post('download/pre', json=payload)
         except HTTPStatusError as e:
             response = e.response
