@@ -5,7 +5,7 @@ description = "This service is designed to support pilot platform"
 authors = ["Indoc Systems"]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.11"
+python = ">=3.10,<3.13"
 questionary = "^1.10.0"
 tqdm = "4.56.0"
 cryptography = "3.4.8"
