@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -11,10 +11,7 @@ import threading
 import time
 from logging import getLogger
 from multiprocessing.pool import ThreadPool
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Tuple
+from typing import Any, Dict, List, Tuple
 from uuid import UUID
 
 import httpx
@@ -25,14 +22,10 @@ from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
 from app.models.upload_form import generate_on_success_form
 from app.services.clients.base_auth_client import BaseAuthClient
-from app.services.file_manager.file_upload.models import FileObject
-from app.services.file_manager.file_upload.models import UploadType
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import SrvErrorHandler
+from app.services.file_manager.file_upload.models import FileObject, UploadType
+from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
-from app.utils.aggregated import ItemStatus
-from app.utils.aggregated import batch_generator
-from app.utils.aggregated import get_file_info_by_geid
+from app.utils.aggregated import ItemStatus, batch_generator, get_file_info_by_geid
 
 from .exception import INVALID_CHUNK_ETAG
 

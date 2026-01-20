@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -7,8 +7,7 @@ import time
 import pytest
 
 from app.configs.app_config import AppConfig
-from app.configs.config import Settings
-from app.configs.config import get_settings
+from app.configs.config import Settings, get_settings
 from app.configs.user_config import UserConfig
 from app.models.singleton import Singleton
 

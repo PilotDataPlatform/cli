@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -8,21 +8,19 @@ import sys
 import time
 from enum import IntEnum
 from pathlib import Path
-from typing import Iterable
-from typing import Union
+from typing import Iterable, Union
 
 from app.configs.config import ConfigClass
-from app.configs.utils import check_owner_linux
-from app.configs.utils import check_owner_windows
-from app.configs.utils import check_user_permission_linux
-from app.configs.utils import check_user_permission_windows
-from app.configs.utils import create_directory_with_permissions_windows
+from app.configs.utils import (
+    check_owner_linux,
+    check_owner_windows,
+    check_user_permission_linux,
+    check_user_permission_windows,
+    create_directory_with_permissions_windows,
+)
 from app.models.singleton import Singleton
-from app.services.crypto.crypto import decryption
-from app.services.crypto.crypto import encryption
-from app.services.crypto.crypto import generate_secret
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import SrvErrorHandler
+from app.services.crypto.crypto import decryption, encryption, generate_secret
+from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler
 
 
 class FilePermissions(IntEnum):

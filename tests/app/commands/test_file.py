@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -11,19 +11,20 @@ import click
 import pytest
 import questionary
 
-from app.commands.file import file_download
-from app.commands.file import file_list
-from app.commands.file import file_metadata_download
-from app.commands.file import file_move
-from app.commands.file import file_put
-from app.commands.file import file_resume
-from app.commands.file import file_trash
+from app.commands.file import (
+    file_download,
+    file_list,
+    file_metadata_download,
+    file_move,
+    file_put,
+    file_resume,
+    file_trash,
+)
 from app.configs.app_config import AppConfig
 from app.models.item import ItemType
 from app.services.file_manager.file_metadata.file_metadata_client import FileMetaClient
 from app.services.file_manager.file_upload.models import FileObject
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import customized_error_msg
+from app.services.output_manager.error_handler import ECustomizedError, customized_error_msg
 from tests.conftest import decoded_token
 
 

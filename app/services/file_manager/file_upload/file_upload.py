@@ -1,16 +1,13 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
 import os
+import sys
 import time
 import zipfile
 from multiprocessing.pool import ThreadPool
-from sys import exit
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Tuple
+from typing import Any, Dict, List, Tuple
 from uuid import uuid4
 
 import click
@@ -20,19 +17,11 @@ import app.services.logger_services.log_functions as logger
 import app.services.output_manager.message_handler as mhandler
 from app.configs.app_config import AppConfig
 from app.models.item import ItemType
-from app.services.file_manager.file_upload.models import FileObject
-from app.services.file_manager.file_upload.models import ItemStatus
-from app.services.file_manager.file_upload.models import UploadType
+from app.services.file_manager.file_upload.models import FileObject, ItemStatus, UploadType
 from app.services.file_manager.file_upload.upload_client import UploadClient
 from app.services.logger_services.debugging_log import debug_logger
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import SrvErrorHandler
-from app.services.output_manager.error_handler import customized_error_msg
-from app.utils.aggregated import batch_generator
-from app.utils.aggregated import get_file_in_folder
-from app.utils.aggregated import get_file_info_by_geid
-from app.utils.aggregated import normalize_join
-from app.utils.aggregated import search_item
+from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler, customized_error_msg
+from app.utils.aggregated import batch_generator, get_file_in_folder, get_file_info_by_geid, normalize_join, search_item
 
 
 def compress_folder_to_zip(path: str) -> str:
@@ -104,7 +93,7 @@ def assemble_path(
                     click.confirm(customized_error_msg(ECustomizedError.CREATE_FOLDER_IF_NOT_EXIST), abort=True)
                 except Abort:
                     mhandler.SrvOutPutHandler.cancel_upload()
-                    exit(1)
+                    sys.exit(1)
 
                 # stop scaning and use the current folder as parent folder
                 current_folder_node = folder_path
@@ -180,7 +169,7 @@ def item_duplication_check(
                 )
             except Abort:
                 mhandler.SrvOutPutHandler.cancel_upload()
-                exit(1)
+                sys.exit(1)
 
     return unregistered_items, registered_items
 
@@ -419,8 +408,9 @@ def resume_upload(
     ]
 
     # [updated] here duplication check api got update will filter out ACTIVE and REGISTERED items separately
-    # the reason is during the normal upload , there is a conner case that preupload got interrupted at specific batch
-    # so the local manifest will mismatch with backend metadata. Thus we need to return the registered file objects as well.
+    # the reason is during the normal upload , there is a conner case that preupload got interrupted at
+    # specific batch so the local manifest will mismatch with backend metadata. Thus we need to return
+    # the registered file objects as well.
     unregistered_items, unmatched_items = item_duplication_check(
         False, unregistered_items, upload_client, on_resume=True
     )

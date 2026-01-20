@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -13,13 +13,13 @@ import app.services.output_manager.help_page as user_help
 import app.services.output_manager.message_handler as mhandler
 from app.models.enums import LoginMethod
 from app.services.user_authentication.decorator import require_login_session
-from app.services.user_authentication.user_login_logout import login_using_api_key
-from app.services.user_authentication.user_login_logout import user_device_id_login
-from app.services.user_authentication.user_login_logout import user_logout
-from app.services.user_authentication.user_login_logout import validate_user_device_login
-from app.utils.aggregated import doc
-from app.utils.aggregated import get_latest_cli_version
-from app.utils.aggregated import get_version_compatibility
+from app.services.user_authentication.user_login_logout import (
+    login_using_api_key,
+    user_device_id_login,
+    user_logout,
+    validate_user_device_login,
+)
+from app.utils.aggregated import doc, get_latest_cli_version, get_version_compatibility
 
 
 @click.command()

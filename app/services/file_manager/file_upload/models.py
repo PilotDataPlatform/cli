@@ -1,15 +1,11 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
 import math
 from enum import Enum
-from os.path import basename
-from os.path import dirname
-from os.path import getsize
-from typing import Any
-from typing import Dict
-from typing import Tuple
+from os.path import basename, dirname, getsize
+from typing import Any, Dict, Tuple
 
 from tqdm import tqdm
 

@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2025 Indoc Systems
+# Copyright (C) 2023-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -8,8 +8,7 @@ import sys
 
 import pytest
 
-from app.configs.user_config import FilePermissions
-from app.configs.user_config import UserConfig
+from app.configs.user_config import FilePermissions, UserConfig
 
 
 @pytest.fixture

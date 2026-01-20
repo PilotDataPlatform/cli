@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -6,14 +6,16 @@ import pytest
 
 from app.configs.app_config import AppConfig
 from app.models.item import ItemType
-from app.utils.aggregated import check_item_duplication
-from app.utils.aggregated import get_latest_cli_version
-from app.utils.aggregated import get_version_compatibility
-from app.utils.aggregated import identify_target_folder
-from app.utils.aggregated import normalize_input_paths
-from app.utils.aggregated import normalize_join
-from app.utils.aggregated import search_item
-from app.utils.aggregated import validate_folder_name
+from app.utils.aggregated import (
+    check_item_duplication,
+    get_latest_cli_version,
+    get_version_compatibility,
+    identify_target_folder,
+    normalize_input_paths,
+    normalize_join,
+    search_item,
+    validate_folder_name,
+)
 from tests.conftest import decoded_token
 
 test_project_code = 'testproject'

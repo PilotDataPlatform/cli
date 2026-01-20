@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -8,14 +8,14 @@ import click
 
 from app.configs.app_config import AppConfig
 from app.models.item import ItemType
-from app.services.file_manager.file_upload.file_upload import assemble_path
-from app.services.file_manager.file_upload.file_upload import compress_folder_to_zip
-from app.services.file_manager.file_upload.file_upload import resume_upload
-from app.services.file_manager.file_upload.file_upload import simple_upload
-from app.services.file_manager.file_upload.models import FileObject
-from app.services.file_manager.file_upload.models import ItemStatus
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import customized_error_msg
+from app.services.file_manager.file_upload.file_upload import (
+    assemble_path,
+    compress_folder_to_zip,
+    resume_upload,
+    simple_upload,
+)
+from app.services.file_manager.file_upload.models import FileObject, ItemStatus
+from app.services.output_manager.error_handler import ECustomizedError, customized_error_msg
 from tests.conftest import decoded_token
 
 

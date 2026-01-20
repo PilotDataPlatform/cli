@@ -1,12 +1,11 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
 import pytest
 
 from app.services.dataset_manager.dataset_detail import SrvDatasetDetailManager
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import customized_error_msg
+from app.services.output_manager.error_handler import ECustomizedError, customized_error_msg
 
 test_dataset_code = 'test_code'
 

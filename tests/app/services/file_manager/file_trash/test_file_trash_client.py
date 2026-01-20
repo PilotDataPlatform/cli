@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -7,8 +7,7 @@ import pytest
 from app.configs.app_config import AppConfig
 from app.models.item import ItemStatus
 from app.services.file_manager.file_trash.file_trash_client import FileTrashClient
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import customized_error_msg
+from app.services.output_manager.error_handler import ECustomizedError, customized_error_msg
 from tests.conftest import decoded_token
 
 

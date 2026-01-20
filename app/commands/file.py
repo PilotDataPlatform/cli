@@ -1,11 +1,11 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
 import ast
 import json
 import os
-from sys import exit
+import sys
 
 import click
 from click.exceptions import Abort
@@ -13,8 +13,7 @@ from click.exceptions import Abort
 import app.services.output_manager.help_page as file_help
 import app.services.output_manager.message_handler as message_handler
 from app.configs.app_config import AppConfig
-from app.models.item import ItemStatus
-from app.models.item import ItemType
+from app.models.item import ItemStatus, ItemType
 from app.services.file_manager.file_download.download_client import SrvFileDownload
 from app.services.file_manager.file_list import SrvFileList
 from app.services.file_manager.file_manifests import SrvFileManifests
@@ -22,24 +21,22 @@ from app.services.file_manager.file_metadata.file_metadata_client import FileMet
 from app.services.file_manager.file_move.file_move_client import FileMoveClient
 from app.services.file_manager.file_trash.file_trash_client import FileTrashClient
 from app.services.file_manager.file_trash.utils import parse_trash_paths
-from app.services.file_manager.file_upload.file_upload import assemble_path
-from app.services.file_manager.file_upload.file_upload import resume_upload
-from app.services.file_manager.file_upload.file_upload import simple_upload
+from app.services.file_manager.file_upload.file_upload import assemble_path, resume_upload, simple_upload
 from app.services.file_manager.file_upload.upload_validator import UploadEventValidator
 from app.services.logger_services.debugging_log import debug_logger
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import SrvErrorHandler
-from app.services.output_manager.error_handler import customized_error_msg
+from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler, customized_error_msg
 from app.services.user_authentication.decorator import require_valid_token
-from app.utils.aggregated import doc
-from app.utils.aggregated import fit_terminal_width
-from app.utils.aggregated import get_file_info_by_geid
-from app.utils.aggregated import get_zone
-from app.utils.aggregated import identify_target_folder
-from app.utils.aggregated import normalize_input_paths
-from app.utils.aggregated import normalize_join
-from app.utils.aggregated import remove_the_output_file
-from app.utils.aggregated import search_item
+from app.utils.aggregated import (
+    doc,
+    fit_terminal_width,
+    get_file_info_by_geid,
+    get_zone,
+    identify_target_folder,
+    normalize_input_paths,
+    normalize_join,
+    remove_the_output_file,
+    search_item,
+)
 
 
 @click.command()
@@ -159,7 +156,7 @@ def file_put(**kwargs):  # noqa: C901
             pass
     except Abort:
         message_handler.SrvOutPutHandler.cancel_upload()
-        exit(1)
+        sys.exit(1)
 
     # check if user input at least one file/folder
     if len(files) == 0:
@@ -173,7 +170,7 @@ def file_put(**kwargs):  # noqa: C901
             )
     except Abort:
         message_handler.SrvOutPutHandler.cancel_upload()
-        exit(1)
+        sys.exit(1)
 
     project_code, folder_type, target_folder = identify_target_folder(project_path)
     upload_val_event = {
@@ -533,12 +530,12 @@ def file_move(**kwargs):
         message_handler.SrvOutPutHandler.move_action_failed(
             src_item_path, dest_item_path, 'Cannot move files between different projects'
         )
-        exit(1)
+        sys.exit(1)
     elif len(src_item.split('/')) <= 2 or len(dest_item.split('/')) <= 1:
         message_handler.SrvOutPutHandler.move_action_failed(
             src_item_path, dest_item_path, 'Cannot move root/name/shared folders'
         )
-        exit(1)
+        sys.exit(1)
 
     # tranlate keyword to correct object path
     src_keyword, src_path = src_item.split('/', 1)

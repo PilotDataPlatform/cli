@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -8,29 +8,24 @@ import click
 
 from app.services.user_authentication.decorator import require_login_session
 
-from .container_registry import create_project
-from .container_registry import get_secret
-from .container_registry import invite_member
-from .container_registry import list_projects
-from .container_registry import list_repositories
-from .dataset import dataset_download
-from .dataset import dataset_list
-from .dataset import dataset_show_detail
-from .file import file_check_manifest
-from .file import file_download
-from .file import file_export_manifest
-from .file import file_list
-from .file import file_metadata_download
-from .file import file_move
-from .file import file_put
-from .file import file_resume
-from .file import file_trash
+from .container_registry import create_project, get_secret, invite_member, list_projects, list_repositories
+from .dataset import dataset_download, dataset_list, dataset_show_detail
+from .file import (
+    file_check_manifest,
+    file_download,
+    file_export_manifest,
+    file_list,
+    file_metadata_download,
+    file_move,
+    file_put,
+    file_resume,
+    file_trash,
+)
 from .folder import folder_create
 
 # Import custom commands
 from .project import project_list_all
-from .user import login
-from .user import logout
+from .user import login, logout
 
 container_registry_enabled = os.environ.get('PILOT_CLI_CONTAINER_REGISTRY_ENABLED', 'false') == 'true'
 

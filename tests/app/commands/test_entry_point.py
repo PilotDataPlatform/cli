@@ -1,24 +1,22 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
-from app.commands.dataset import dataset_download
-from app.commands.dataset import dataset_list
-from app.commands.dataset import dataset_show_detail
-from app.commands.entry_point import command_groups
-from app.commands.entry_point import entry_point
-from app.commands.file import file_check_manifest
-from app.commands.file import file_download
-from app.commands.file import file_export_manifest
-from app.commands.file import file_list
-from app.commands.file import file_metadata_download
-from app.commands.file import file_move
-from app.commands.file import file_put
-from app.commands.file import file_resume
-from app.commands.file import file_trash
+from app.commands.dataset import dataset_download, dataset_list, dataset_show_detail
+from app.commands.entry_point import command_groups, entry_point
+from app.commands.file import (
+    file_check_manifest,
+    file_download,
+    file_export_manifest,
+    file_list,
+    file_metadata_download,
+    file_move,
+    file_put,
+    file_resume,
+    file_trash,
+)
 from app.commands.project import project_list_all
-from app.commands.user import login
-from app.commands.user import logout
+from app.commands.user import login, logout
 
 
 def test_entry_point():
