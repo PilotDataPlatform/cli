@@ -108,7 +108,7 @@ def test_login_command_with_newer_version_available_message(
     result = cli_runner.invoke(login)
 
     assert result.exit_code == 0
-    assert login_using_api_key_mock.called_once_with(api_key)
+    login_using_api_key_mock.assert_called_once_with(api_key)
     if Version(current_version) < Version(new_version):
         except_message = mhandler.SrvOutPutHandler.newer_version_available(
             new_version, download_url, print_message=False

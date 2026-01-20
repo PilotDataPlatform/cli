@@ -276,7 +276,7 @@ def test_folder_merge_succuss_with_no_duplication(mocker, mock_upload_client):
     non_dup_list = [FileObject('object/path', 'local_path', 'resumable_id', 'job_id', 'item_id')]
     mocker.patch(
         'app.services.file_manager.file_upload.file_upload.UploadClient.check_upload_duplication',
-        return_value=(non_dup_list, []),
+        return_value=(non_dup_list, [], []),
     )
 
     item_ids = simple_upload(upload_event)
@@ -301,7 +301,7 @@ def test_folder_merge_succuss_with_duplication(mocker, mock_upload_client):
     dup_list = ['object/dup']
     mocker.patch(
         'app.services.file_manager.file_upload.file_upload.UploadClient.check_upload_duplication',
-        return_value=(non_dup_list, dup_list),
+        return_value=(non_dup_list, dup_list, []),
     )
 
     item_ids = simple_upload(upload_event)
@@ -326,7 +326,7 @@ def test_folder_merge_skip_with_all_duplication(mocker, mock_upload_client, capf
     dup_list = ['object/dup']
     mocker.patch(
         'app.services.file_manager.file_upload.file_upload.UploadClient.check_upload_duplication',
-        return_value=([], dup_list),
+        return_value=([], dup_list, []),
     )
 
     try:
@@ -368,7 +368,7 @@ def test_upload_folder_as_zip(mocker, mock_upload_client):
     non_dup_list = [FileObject('object/path', 'local_path', 'resumable_id', 'job_id', 'item_id')]
     mocker.patch(
         'app.services.file_manager.file_upload.file_upload.UploadClient.check_upload_duplication',
-        return_value=(non_dup_list, []),
+        return_value=(non_dup_list, [], []),
     )
     item_ids = simple_upload(upload_event)
     assert len(item_ids) == 1
@@ -391,6 +391,7 @@ def test_resume_upload(mocker):
         'registered_items': {test_obj.item_id: test_obj.to_dict()},
         'unregistered_items': {},
         'total_size': 1,
+        'resumable_manifest_file': 'resumable_manifest_file',
     }
 
     get_return = test_obj.to_dict()
@@ -407,11 +408,15 @@ def test_resume_upload(mocker):
         'os.path.getsize',
         return_value=1,
     )
+    output_manifest_mock = mocker.patch(
+        'app.services.file_manager.file_upload.file_upload.UploadClient.output_manifest', return_value={}
+    )
 
     resume_upload(manifest_json, 1)
 
     get_mock.assert_called_once()
     resume_upload_mock.assert_called_once()
+    output_manifest_mock.assert_called_once()
 
 
 def test_resume_upload_failed_when_REGISTERED_doesnt_exist(mocker, capfd):
@@ -427,6 +432,7 @@ def test_resume_upload_failed_when_REGISTERED_doesnt_exist(mocker, capfd):
         'tags': 'tags',
         'registered_items': {test_obj.item_id: test_obj.to_dict()},
         'unregistered_items': {},
+        'resumable_manifest_file': 'resumable_manifest_file',
     }
 
     get_return = test_obj.to_dict()
@@ -436,6 +442,9 @@ def test_resume_upload_failed_when_REGISTERED_doesnt_exist(mocker, capfd):
     )
     resume_upload_mock = mocker.patch(
         'app.services.file_manager.file_upload.file_upload.UploadClient.resume_upload', return_value=[]
+    )
+    resumable_manifest_mock = mocker.patch(
+        'app.services.file_manager.file_upload.file_upload.UploadClient.output_manifest', return_value={}
     )
 
     try:
@@ -447,6 +456,7 @@ def test_resume_upload_failed_when_REGISTERED_doesnt_exist(mocker, capfd):
 
     get_mock.assert_called_once()
     assert resume_upload_mock.call_count == 0
+    assert resumable_manifest_mock.call_count == 0
 
 
 def test_resume_upload_integrity_check_failed(mocker, capfd):
@@ -484,6 +494,9 @@ def test_resume_upload_integrity_check_failed(mocker, capfd):
         'os.path.getsize',
         return_value=2,
     )
+    resumable_manifest_mock = mocker.patch(
+        'app.services.file_manager.file_upload.file_upload.UploadClient.output_manifest', return_value={}
+    )
 
     resume_upload(manifest_json, 1)
     out, _ = capfd.readouterr()
@@ -492,3 +505,4 @@ def test_resume_upload_integrity_check_failed(mocker, capfd):
 
     get_mock.assert_called_once()
     resume_upload_mock.assert_called_once()
+    resumable_manifest_mock.assert_called_once()
