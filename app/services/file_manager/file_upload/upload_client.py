@@ -158,7 +158,9 @@ class UploadClient(BaseAuthClient):
         return unfinished_file_objects
 
     @require_valid_token()
-    def check_upload_duplication(self, file_objects: List[FileObject]) -> Tuple[List[FileObject], List[str]]:
+    def check_upload_duplication(
+        self, file_objects: List[FileObject]
+    ) -> Tuple[List[FileObject], List[str], List[Dict[str, Any]]]:
         """
         Summary:
             The function will call the api to check if the file has been uploaded.
@@ -168,6 +170,9 @@ class UploadClient(BaseAuthClient):
         return:
             - non_exist_file_objects(List[FileObject]): the file that need to be uploaded.
             - exist_files(List[str]): the file that has been uploaded. will be skipped
+            - [updated] reigstered_file_objects(List[Dict[str, Any]]): this is to handle the conner case
+                where upload interrupted at specific batch. The local json manifest mismatches with
+                backend metadata. So we need to return the registered file objects as well if possible.
         """
 
         # generate a list of locations for uploaded files to check duplication
@@ -182,8 +187,8 @@ class UploadClient(BaseAuthClient):
             'zone': 0 if self.zone == 'greenroom' else 1,
         }
         try:
-            self.endpoint = AppConfig.Connections.url_base + '/portal/v1'
-            response = self._post('files/exists', json=payload)
+            self.endpoint = AppConfig.Connections.url_bff + '/v2'
+            response = self._post('items/batch/exists', json=payload)
         except HTTPStatusError as e:
             response = e.response
             if response.status_code == 403:
@@ -191,11 +196,16 @@ class UploadClient(BaseAuthClient):
             else:
                 SrvErrorHandler.default_handle('Error when checking file duplication', True)
 
-        # pop the file object if the file has been uploaded
-        # return the file objects that need to be uploaded
-        exist_files = response.json().get('result', [])
-        for exist_file_path in exist_files:
-            object_path_file_object_map.pop(exist_file_path.lower())
+        # filter out the ACTIVE items and REGISTERED items from return
+        exist_items = response.json().get('result', [])
+        active_path, registered_items = [], []
+        for item in exist_items:
+            object_path = item.get('parent_path', '') + '/' + item.get('name', '')
+            object_path_file_object_map.pop(object_path.lower(), None)
+            if item.get('status') == ItemStatus.ACTIVE:
+                active_path.append(object_path)
+            else:
+                registered_items.append(item)
 
         # reconstruct non exist file objects which will be uploaded
         # without lower() function.
@@ -203,7 +213,7 @@ class UploadClient(BaseAuthClient):
         for _, item in object_path_file_object_map.items():
             return_list.update({item.object_path: item})
 
-        return list(object_path_file_object_map.values()), exist_files
+        return list(object_path_file_object_map.values()), active_path, registered_items
 
     @require_valid_token()
     def pre_upload(self, file_objects: List[FileObject]) -> List[FileObject]:
@@ -294,7 +304,9 @@ class UploadClient(BaseAuthClient):
             'current_folder_node': self.current_folder_node,
             'tags': self.tags,
             'registered_items': {file_object.item_id: file_object.to_dict() for file_object in registered_items},
-            'unregistered_items': {file_object.local_path: file_object.to_dict() for file_object in unregistered_items},
+            'unregistered_items': {
+                file_object.object_path: file_object.to_dict() for file_object in unregistered_items
+            },
             'attributes': self.attributes if self.attributes else {},
             'resumable_manifest_file': output_path,
         }
