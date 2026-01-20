@@ -439,11 +439,11 @@ def resume_upload(
     logger.info(f'Unregistered items: {len(unregistered_items)}')
 
     # redo preupload again
-    batch_count = 1
+    processed_count = 0
     for file_batchs in batch_generator(unregistered_items, batch_size=AppConfig.Env.upload_batch_size):
         unfinished_items.extend(upload_client.pre_upload(file_batchs))
-        upload_client.output_manifest(unfinished_items, unregistered_items[batch_count + 1 :], resumable_manifest_file)
-        batch_count += 1
+        processed_count += len(file_batchs)
+        upload_client.output_manifest(unfinished_items, unregistered_items[processed_count:], resumable_manifest_file)
 
     mhandler.SrvOutPutHandler.resume_warning(len(unfinished_items))
     mhandler.SrvOutPutHandler.resume_check_success()
