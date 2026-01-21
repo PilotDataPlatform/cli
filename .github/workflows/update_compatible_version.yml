@@ -39,32 +39,29 @@ jobs:
       - name: Extract Versions from PR
         if: ${{ steps.check_version.outputs.current != steps.check_version.outputs.last }}
         id: extract_versions
+        shell: bash
         run: |
-
-          PR_BODY="${{ github.event.pull_request.body }}"
+          # Dump PR body to a file WITHOUT bash interpreting backticks / $(...)
+          cat > pr_body.md <<'__PR_BODY__'
+          ${{ github.event.pull_request.body }}
+          __PR_BODY__
 
           # Extract the "## Versions" section
-          echo "$PR_BODY" | awk '/## Versions/{flag=1; next} /^## /{flag=0} flag' > PR_VERSIONS.md
+          awk '/## Versions/{flag=1; next} /^## /{flag=0} flag' pr_body.md > PR_VERSIONS.md
 
-          # Read extracted content
           CLI_VERSION=$(grep -oP '(?<=- Pilot Release Version: ).*' PR_VERSIONS.md | tr -d '\r')
           COMPATIBLE_VERSION=$(grep -oP '(?<=- Compatible Version: ).*' PR_VERSIONS.md | tr -d '\r')
 
-          # Handle missing values
           CLI_VERSION=${CLI_VERSION:-"Unknown"}
           COMPATIBLE_VERSION=${COMPATIBLE_VERSION:-"Unknown"}
 
-          # Get the latest Git tag (assuming it's the CLI version)
           LATEST_CLI_VERSION=$(grep '^version =' pyproject.toml | sed -E 's/version = "(.*)"/\1/')
 
-          # Convert to NDJSON format
           NEW_ENTRY="{\"Cli Version\": \"$LATEST_CLI_VERSION\", \"Pilot Release Version\": \"$CLI_VERSION\", \"Compatible Version\": \"$COMPATIBLE_VERSION\"}"
 
-          # Ensure file exists before appending
           touch docs/compatible_version.ndjson
-
-          # Append new entry to NDJSON file
           echo "$NEW_ENTRY" >> docs/compatible_version.ndjson
+
 
       - name: Embed Compatible Versions into README
         if: ${{ steps.check_version.outputs.current != steps.check_version.outputs.last }}
