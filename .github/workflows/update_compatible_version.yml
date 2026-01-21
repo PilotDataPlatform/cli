@@ -49,15 +49,23 @@ jobs:
           # Extract the "## Versions" section
           awk '/## Versions/{flag=1; next} /^## /{flag=0} flag' pr_body.md > PR_VERSIONS.md
 
-          CLI_VERSION=$(grep -oP '(?<=- Pilot Release Version: ).*' PR_VERSIONS.md | tr -d '\r')
-          COMPATIBLE_VERSION=$(grep -oP '(?<=- Compatible Version: ).*' PR_VERSIONS.md | tr -d '\r')
+          CLI_VERSION="$(grep -oP '(?<=- Pilot Release Version: ).*' PR_VERSIONS.md 2>/dev/null || true)"
+          CLI_VERSION="${CLI_VERSION//$'\r'/}"
+
+          COMPATIBLE_VERSION="$(grep -oP '(?<=- Compatible Version: ).*' PR_VERSIONS.md 2>/dev/null || true)"
+          COMPATIBLE_VERSION="${COMPATIBLE_VERSION//$'\r'/}"
 
           CLI_VERSION=${CLI_VERSION:-"Unknown"}
           COMPATIBLE_VERSION=${COMPATIBLE_VERSION:-"Unknown"}
 
-          LATEST_CLI_VERSION=$(grep '^version =' pyproject.toml | sed -E 's/version = "(.*)"/\1/')
+          LAST_VERSION="$(
+            tail -n 1 docs/compatible_version.ndjson 2>/dev/null \
+            | jq -r '."Cli Version"' 2>/dev/null \
+            || true
+          )"
+          LAST_VERSION=${LAST_VERSION:-""}
 
-          NEW_ENTRY="{\"Cli Version\": \"$LATEST_CLI_VERSION\", \"Pilot Release Version\": \"$CLI_VERSION\", \"Compatible Version\": \"$COMPATIBLE_VERSION\"}"
+          NEW_ENTRY="{\"Cli Version\": \"$LAST_VERSION\", \"Pilot Release Version\": \"$CLI_VERSION\", \"Compatible Version\": \"$COMPATIBLE_VERSION\"}"
 
           touch docs/compatible_version.ndjson
           echo "$NEW_ENTRY" >> docs/compatible_version.ndjson
