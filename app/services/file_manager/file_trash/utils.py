@@ -1,15 +1,11 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
-from typing import Dict
-from typing import List
-from typing import Tuple
+from typing import Dict, List, Tuple
 
-from app.models.item import ItemStatus
-from app.models.item import ItemType
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import SrvErrorHandler
+from app.models.item import ItemStatus, ItemType
+from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler
 from app.utils.aggregated import search_item
 
 

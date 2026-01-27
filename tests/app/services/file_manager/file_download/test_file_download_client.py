@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -14,8 +14,7 @@ from app.configs.app_config import AppConfig
 from app.models.item import ItemZone
 from app.services.file_manager.file_download.download_client import SrvFileDownload
 from app.services.file_manager.file_download.model import EFileStatus
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import customized_error_msg
+from app.services.output_manager.error_handler import ECustomizedError, customized_error_msg
 from tests.conftest import decoded_token
 
 
@@ -370,7 +369,7 @@ def test_base_client_timeout_logs_error_type(mocker):
 
     mock_logger = mocker.patch('app.services.clients.base_client.logger.error')
 
-    with pytest.raises(Exception):
+    with pytest.raises(Exception, match=r'Unable to query data.*ReadTimeout'):
         test_client.download_status()
 
     mock_logger.assert_called_once()

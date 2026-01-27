@@ -1,18 +1,12 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
 import json
+import sys
 from os import makedirs
-from os.path import basename
-from os.path import dirname
-from os.path import exists
-from os.path import join
-from sys import exit
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Union
+from os.path import basename, dirname, exists, join
+from typing import Any, Dict, List, Union
 
 import click
 from click.exceptions import Abort
@@ -20,10 +14,8 @@ from click.exceptions import Abort
 import app.services.logger_services.log_functions as logger
 import app.services.output_manager.message_handler as message_handler
 from app.models.item import ItemType
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import customized_error_msg
-from app.utils.aggregated import get_attribute_template_by_id
-from app.utils.aggregated import search_item
+from app.services.output_manager.error_handler import ECustomizedError, customized_error_msg
+from app.utils.aggregated import get_attribute_template_by_id, search_item
 
 
 class FileMetaClient:
@@ -87,7 +79,7 @@ class FileMetaClient:
                 click.confirm(duplicate_error, abort=True)
         except Abort:
             message_handler.SrvOutPutHandler.cancel_metadata_download()
-            exit(1)
+            sys.exit(1)
 
     def save_file_metadata(self, file_loc: str, metadata: Union[dict, list]) -> None:
         """
@@ -116,7 +108,7 @@ class FileMetaClient:
         item_res = search_item(project_code, self.zone, object_path)
         if item_res.get('code') == 404:
             logger.error(f'Cannot find item {self.file_path} at {self.zone}.')
-            exit(1)
+            sys.exit(1)
 
         # filter out item metadata
         item_res = item_res.get('result', {})

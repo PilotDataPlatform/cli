@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -12,8 +12,7 @@ from app.configs.config import ConfigClass
 from app.configs.user_config import UserConfig
 from app.models.service_meta_class import MetaService
 from app.services.clients.base_client import BaseClient
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import SrvErrorHandler
+from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler
 from app.services.user_authentication.user_login_logout import login_using_api_key
 
 

@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -10,8 +10,7 @@ from app.configs.app_config import AppConfig
 from app.services.clients.base_auth_client import BaseAuthClient
 from app.services.output_manager import message_handler
 from app.services.output_manager.error_handler import SrvErrorHandler
-from app.utils.aggregated import check_item_duplication
-from app.utils.aggregated import search_item
+from app.utils.aggregated import check_item_duplication, search_item
 
 
 class FolderClient(BaseAuthClient):

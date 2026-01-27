@@ -1,16 +1,14 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
 import os
+import sys
 import time
 import zipfile
 from multiprocessing.pool import ThreadPool
-from sys import exit
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Tuple
+from typing import Any, Dict, List, Tuple
+from uuid import uuid4
 
 import click
 from click.exceptions import Abort
@@ -19,19 +17,11 @@ import app.services.logger_services.log_functions as logger
 import app.services.output_manager.message_handler as mhandler
 from app.configs.app_config import AppConfig
 from app.models.item import ItemType
-from app.services.file_manager.file_upload.models import FileObject
-from app.services.file_manager.file_upload.models import ItemStatus
-from app.services.file_manager.file_upload.models import UploadType
+from app.services.file_manager.file_upload.models import FileObject, ItemStatus, UploadType
 from app.services.file_manager.file_upload.upload_client import UploadClient
 from app.services.logger_services.debugging_log import debug_logger
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import SrvErrorHandler
-from app.services.output_manager.error_handler import customized_error_msg
-from app.utils.aggregated import batch_generator
-from app.utils.aggregated import get_file_in_folder
-from app.utils.aggregated import get_file_info_by_geid
-from app.utils.aggregated import normalize_join
-from app.utils.aggregated import search_item
+from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler, customized_error_msg
+from app.utils.aggregated import batch_generator, get_file_in_folder, get_file_info_by_geid, normalize_join, search_item
 
 
 def compress_folder_to_zip(path: str) -> str:
@@ -103,7 +93,7 @@ def assemble_path(
                     click.confirm(customized_error_msg(ECustomizedError.CREATE_FOLDER_IF_NOT_EXIST), abort=True)
                 except Abort:
                     mhandler.SrvOutPutHandler.cancel_upload()
-                    exit(1)
+                    sys.exit(1)
 
                 # stop scaning and use the current folder as parent folder
                 current_folder_node = folder_path
@@ -121,8 +111,8 @@ def assemble_path(
 
 
 def item_duplication_check(
-    create_folder_flag: bool, file_objects: List[FileObject], upload_client: UploadClient
-) -> List[FileObject]:
+    create_folder_flag: bool, file_objects: List[FileObject], upload_client: UploadClient, on_resume: bool = False
+) -> Tuple[List[FileObject], List[Dict[str, Any]]]:
     '''
     Summary:
         The function will check if the file is already uploaded on the platform.
@@ -133,28 +123,40 @@ def item_duplication_check(
         - file_objects(List[FileObject]): the list of file object
         - upload_client(UploadClient): the upload client object
     Return:
-        - non_duplicate_file_objects(List[FileObject]): the list of file object that is not duplicated
+        - unregistered_items(List[FileObject]): the list of file object that is not duplicated
+        - [updated] registered_items(List[FileObject]): the list of file object that is already registered.
+            in corner case if preupload interrupted at specific batch, the local manifest
+            will mismatch with backend metadata. So we need to return the registered file objects as well.
     '''
 
     # make the file duplication check to allow folde merging
     logger.info('Start checking file duplication')
-    non_duplicate_file_objects = []
+    unregistered_items, registered_items = [], []
     if create_folder_flag is True:
-        non_duplicate_file_objects = file_objects
+        unregistered_items = file_objects
     else:
         mhandler.SrvOutPutHandler.file_duplication_check()
         duplicated_file = []
         debug_logger.debug(f'upload batch size: {AppConfig.Env.upload_batch_size}')
         for file_batchs in batch_generator(file_objects, batch_size=AppConfig.Env.upload_batch_size):
             start_time = time.time()
-            non_duplicates, duplicate_path = upload_client.check_upload_duplication(file_batchs)
+            non_duplicates, active_paths, registered_batch_items = upload_client.check_upload_duplication(file_batchs)
             debug_logger.debug(f'Check duplication time: {time.time() - start_time:.2f}s')
-            non_duplicate_file_objects.extend(non_duplicates)
-            duplicated_file.extend(duplicate_path)
+            unregistered_items.extend(non_duplicates)
+            duplicated_file.extend(active_paths)
+            registered_items.extend(registered_batch_items)
+
+        # if normal upload we treat REGISTERED file as duplication
+        if not on_resume:
+            object_path = [
+                file_object.get('parent_path', '') + '/' + file_object.get('name', '')
+                for file_object in registered_items
+            ]
+            duplicated_file.extend(object_path)
 
         # if all file objects we check are already existed on the platform
         # then we will exit the upload process
-        if len(non_duplicate_file_objects) == 0 and len(file_objects) != 0:
+        if len(unregistered_items) == 0 and len(file_objects) != 0 and on_resume is False:
             mhandler.SrvOutPutHandler.file_duplication_check_warning_with_all_same()
             SrvErrorHandler.customized_handle(ECustomizedError.UPLOAD_CANCEL, if_exit=True)
         elif len(duplicated_file) > 0:
@@ -167,9 +169,9 @@ def item_duplication_check(
                 )
             except Abort:
                 mhandler.SrvOutPutHandler.cancel_upload()
-                exit(1)
+                sys.exit(1)
 
-    return non_duplicate_file_objects
+    return unregistered_items, registered_items
 
 
 def simple_upload(  # noqa: C901
@@ -246,7 +248,7 @@ def simple_upload(  # noqa: C901
             file_objects.append(file_object)
 
     # make the file duplication check to allow folder merging
-    non_duplicate_file_objects = item_duplication_check(create_folder_flag, file_objects, upload_client)
+    non_duplicate_file_objects, _ = item_duplication_check(create_folder_flag, file_objects, upload_client)
 
     # here is list of pre upload result. We decided to call pre upload api by batch
     pre_upload_infos = []
@@ -258,8 +260,9 @@ def simple_upload(  # noqa: C901
         # then output manifest file to the output path AFTER EACH BATCH
         # which will include unfinished objects
         upload_client.output_manifest(
-            pre_upload_infos, non_duplicate_file_objects[len(pre_upload_infos) + 1 :], output_path
+            pre_upload_infos, non_duplicate_file_objects[len(pre_upload_infos) :], output_path
         )
+
     # now loop over each file under the folder and start
     # the chunk upload
     pool = ThreadPool(num_of_thread)
@@ -393,7 +396,7 @@ def resume_upload(
     logger.info(f'Registered items: {len(unfinished_items)}')
 
     # make the file duplication check to allow folder merging
-    unregistered_items = manifest_json.get('unregistered_items')
+    unregistered_items_map = manifest_json.get('unregistered_items')
     unregistered_items = [
         FileObject(
             object_path=value.get('object_path'),
@@ -402,18 +405,46 @@ def resume_upload(
             job_id=value.get('job_id'),
             item_id=value.get('item_id'),
         )
-        for _, value in unregistered_items.items()
+        for _, value in unregistered_items_map.items()
     ]
-    unregistered_items = item_duplication_check(False, unregistered_items, upload_client)
+
+    # [updated] here duplication check api got update will filter out ACTIVE and REGISTERED items separately
+    # the reason is during the normal upload , there is a corner case that preupload got interrupted at
+    # specific batch so the local manifest will mismatch with backend metadata. Thus we need to return
+    # the registered file objects as well.
+    unregistered_items, unmatched_items = item_duplication_check(
+        False, unregistered_items, upload_client, on_resume=True
+    )
+    # now create FileObject with local path
+    for item in unmatched_items:
+        object_path = item.get('parent_path', '') + '/' + item.get('name', '')
+        local_path = (
+            unregistered_items_map.get(object_path).get('local_path') if unregistered_items_map.get(object_path) else ''
+        )
+        if not local_path:
+            logger.warning(f'Cannot find local path for registered item: {object_path}. Skip it.')
+            continue
+
+        registered_file_object = FileObject(
+            object_path=object_path,
+            local_path=local_path,
+            item_id=item.get('id'),
+            resumable_id=item.get('upload_id'),
+            job_id=str(uuid4()),
+        )
+        unfinished_items.append(registered_file_object)
+
+    # also need to update local manifest to remove the duplicated files
+    resumable_manifest_file = manifest_json.get('resumable_manifest_file')
+    upload_client.output_manifest(unfinished_items, unregistered_items, resumable_manifest_file)
     logger.info(f'Unregistered items: {len(unregistered_items)}')
 
     # redo preupload again
-    batch_count = 1
-    resumable_manifest_file = manifest_json.get('resumable_manifest_file')
+    processed_count = 0
     for file_batchs in batch_generator(unregistered_items, batch_size=AppConfig.Env.upload_batch_size):
         unfinished_items.extend(upload_client.pre_upload(file_batchs))
-        upload_client.output_manifest(unfinished_items, unregistered_items[batch_count + 1 :], resumable_manifest_file)
-        batch_count += 1
+        processed_count += len(file_batchs)
+        upload_client.output_manifest(unfinished_items, unregistered_items[processed_count:], resumable_manifest_file)
 
     mhandler.SrvOutPutHandler.resume_warning(len(unfinished_items))
     mhandler.SrvOutPutHandler.resume_check_success()

@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -313,17 +313,32 @@ def test_check_upload_duplication_success(httpx_mock, mocker, case_insensitive):
     mocker.patch('app.services.file_manager.file_upload.models.FileObject.generate_meta', return_value=(1, 1))
     dup_obj = FileObject('object/duplicate', 'local_path', 'resumable_id', 'job_id', 'item_id')
     not_dup_object = FileObject('object/not_duplicate', 'local_path', 'resumable_id', 'job_id', 'item_id')
+    registered_item = FileObject('object/registered', 'local_path', 'resumable_id', 'job_id', 'item_id')
 
-    url = AppConfig.Connections.url_base + '/portal/v1/files/exists'
+    url = AppConfig.Connections.url_bff + '/v2/items/batch/exists'
     httpx_mock.add_response(
         method='POST',
         url=url,
-        json={'result': [dup_obj.object_path.upper() if case_insensitive else dup_obj.object_path]},
+        json={
+            'result': [
+                {'parent_path': 'object', 'name': 'duplicate', 'status': ItemStatus.ACTIVE},
+                {'parent_path': 'object', 'name': 'registered', 'status': ItemStatus.REGISTERED},
+            ]
+        },
     )
 
-    not_dup_list, dup_list = upload_client.check_upload_duplication([dup_obj, not_dup_object])
-    assert not_dup_list == [not_dup_object]
-    assert dup_list == [dup_obj.object_path.upper() if case_insensitive else dup_obj.object_path]
+    not_dup_list, dup_list, registered_list = upload_client.check_upload_duplication([dup_obj, not_dup_object])
+
+    assert len(not_dup_list) == 1
+    assert not_dup_list[0] == not_dup_object
+
+    assert len(dup_list) == 1
+    assert dup_list[0] == dup_obj.object_path
+
+    assert len(registered_list) == 1
+    assert registered_item.object_path == registered_list[0].get('parent_path', '') + '/' + registered_list[0].get(
+        'name', ''
+    )
 
 
 def test_check_upload_duplication_fail_with_403(httpx_mock, mocker, capfd):
@@ -333,7 +348,7 @@ def test_check_upload_duplication_fail_with_403(httpx_mock, mocker, capfd):
     )
     upload_client = UploadClient('project_code', 'parent_folder_id')
 
-    url = AppConfig.Connections.url_base + '/portal/v1/files/exists'
+    url = AppConfig.Connections.url_bff + '/v2/items/batch/exists'
     httpx_mock.add_response(
         method='POST',
         url=url,
@@ -360,7 +375,7 @@ def test_check_upload_duplication_fail_with_500(httpx_mock, mocker, capfd):
     )
     upload_client = UploadClient('project_code', 'parent_folder_id')
 
-    url = AppConfig.Connections.url_base + '/portal/v1/files/exists'
+    url = AppConfig.Connections.url_bff + '/v2/items/batch/exists'
     httpx_mock.add_response(
         method='POST',
         url=url,
@@ -403,7 +418,7 @@ def test_output_manifest_success_for_resumable_upload(mocker, tmp_path):
     assert file_item.get('item_id') == 'item_id_1'
 
     assert len(res.get('unregistered_items')) == 1
-    file_item = res.get('unregistered_items').get('local_path_2')  # unregistered item dont have id
+    file_item = res.get('unregistered_items').get('object/test_obj_unregistered')  # unregistered item dont have id
     assert file_item.get('resumable_id') == 'resumable_id_2'
     assert file_item.get('local_path') == 'local_path_2'
     assert file_item.get('object_path') == 'object/test_obj_unregistered'

@@ -1,15 +1,12 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
-from typing import Any
-from typing import Dict
-from typing import List
+from typing import Any, Dict, List
 
 from app.services.file_manager.file_manifests import SrvFileManifests
 from app.services.file_manager.file_tag import SrvFileTag
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import SrvErrorHandler
+from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler
 from app.utils.aggregated import search_item
 
 

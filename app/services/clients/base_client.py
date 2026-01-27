@@ -1,16 +1,12 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
 import logging
 import time
-from typing import Any
-from typing import Mapping
-from typing import Optional
+from typing import Any, Mapping, Optional
 
-from httpx import Client
-from httpx import RequestError
-from httpx import Response
+from httpx import Client, RequestError, Response
 
 from app.configs.config import ConfigClass
 

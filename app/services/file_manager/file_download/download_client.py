@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -19,8 +19,7 @@ from app.configs.user_config import UserConfig
 from app.models.item import ItemZone
 from app.models.service_meta_class import MetaService
 from app.services.clients.base_auth_client import BaseAuthClient
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import SrvErrorHandler
+from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler
 from app.services.user_authentication.decorator import require_valid_token
 
 from .model import EFileStatus
@@ -54,12 +53,12 @@ class SrvFileDownload(BaseAuthClient, metaclass=MetaService):
         finished_msg = message.replace('ing', 'ed')
         while True:
             if self.check_point:
-                click.secho(f"{finished_msg}{' '*space_width}\r", fg='white', nl=False)
+                click.secho(f"{finished_msg}{' ' * space_width}\r", fg='white', nl=False)
                 break
-            click.secho(f"{message}{' '*space_width}\r", fg='white', nl=False)
+            click.secho(f"{message}{' ' * space_width}\r", fg='white', nl=False)
             for i in range(5):
                 time.sleep(1)
-                click.secho(f"{message}{'.'*i}\r", fg='white', nl=False)
+                click.secho(f"{message}{'.' * i}\r", fg='white', nl=False)
 
     def get_download_url(self, zone):
         if zone == ItemZone.GREENROOM.value:

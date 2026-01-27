@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -6,9 +6,11 @@ import pytest
 
 from app.configs.app_config import AppConfig
 from app.configs.user_config import UserConfig
-from app.services.user_authentication.user_login_logout import check_is_login
-from app.services.user_authentication.user_login_logout import user_device_id_login
-from app.services.user_authentication.user_login_logout import validate_user_device_login
+from app.services.user_authentication.user_login_logout import (
+    check_is_login,
+    user_device_id_login,
+    validate_user_device_login,
+)
 
 
 def test_check_is_not_login(mocker):

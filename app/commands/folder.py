@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -7,14 +7,9 @@ import click
 import app.services.output_manager.message_handler as message_handler
 from app.configs.app_config import AppConfig
 from app.services.file_manager.file_metadata.folder_client import FolderClient
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import SrvErrorHandler
-from app.services.output_manager.help_page import FileHELP
-from app.services.output_manager.help_page import FolderHelp
-from app.services.output_manager.help_page import file_help_page
-from app.services.output_manager.help_page import folder_help_page
-from app.utils.aggregated import doc
-from app.utils.aggregated import validate_folder_name
+from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler
+from app.services.output_manager.help_page import FileHELP, FolderHelp, file_help_page, folder_help_page
+from app.utils.aggregated import doc, validate_folder_name
 
 
 @click.command()

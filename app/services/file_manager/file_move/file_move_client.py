@@ -1,9 +1,9 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
+import sys
 import uuid
-from sys import exit
 
 import click
 from click import Abort
@@ -13,12 +13,9 @@ import app.services.output_manager.message_handler as message_handler
 from app.configs.app_config import AppConfig
 from app.models.item import ItemType
 from app.services.clients.base_auth_client import BaseAuthClient
-from app.services.output_manager.error_handler import ECustomizedError
-from app.services.output_manager.error_handler import SrvErrorHandler
-from app.services.output_manager.error_handler import customized_error_msg
+from app.services.output_manager.error_handler import ECustomizedError, SrvErrorHandler, customized_error_msg
 from app.services.user_authentication.decorator import require_valid_token
-from app.utils.aggregated import check_item_duplication
-from app.utils.aggregated import search_item
+from app.utils.aggregated import check_item_duplication, search_item
 
 
 class FileMoveClient(BaseAuthClient):
@@ -91,7 +88,7 @@ class FileMoveClient(BaseAuthClient):
                     click.confirm(customized_error_msg(ECustomizedError.CREATE_FOLDER_IF_NOT_EXIST), abort=True)
             except Abort:
                 message_handler.SrvOutPutHandler.move_cancelled()
-                exit(1)
+                sys.exit(1)
         else:
             return
 
@@ -140,7 +137,7 @@ class FileMoveClient(BaseAuthClient):
                 message_handler.SrvOutPutHandler.move_action_failed(
                     self.src_item_path, f'{self.dest_item_path}/{item_name}', f'Item {item_name} already exists'
                 )
-                exit(1)
+                sys.exit(1)
             else:
                 self.dest_item_path = f'{self.dest_item_path}/{self.src_item_path.split("/")[-1]}'
         else:
@@ -151,7 +148,7 @@ class FileMoveClient(BaseAuthClient):
                 message_handler.SrvOutPutHandler.move_action_failed(
                     self.src_item_path, self.dest_item_path, f'Parent folder {parent_path} not exist'
                 )
-                exit(1)
+                sys.exit(1)
 
         try:
             payload = {
@@ -174,4 +171,4 @@ class FileMoveClient(BaseAuthClient):
             else:
                 error_message = response.json().get('error_msg')
             message_handler.SrvOutPutHandler.move_action_failed(self.src_item_path, self.dest_item_path, error_message)
-            exit(1)
+            sys.exit(1)

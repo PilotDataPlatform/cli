@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -11,12 +11,9 @@ from packaging.version import Version
 
 import app.services.output_manager.error_handler as error_handler
 import app.services.output_manager.message_handler as mhandler
-from app.commands.entry_point import command_groups
-from app.commands.entry_point import entry_point
+from app.commands.entry_point import command_groups, entry_point
 from app.services.output_manager.help_page import get_cli_help_message
-from app.utils.aggregated import doc
-from app.utils.aggregated import get_latest_cli_version
-from app.utils.aggregated import get_version_compatibility
+from app.utils.aggregated import doc, get_latest_cli_version, get_version_compatibility
 
 
 class CustomHelpFormatter(HelpFormatter):

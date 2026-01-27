@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Indoc Systems
+# Copyright (C) 2022-2026 Indoc Systems
 #
 # Contact Indoc Systems for any questions regarding the use of this source code.
 
@@ -7,9 +7,7 @@ from unittest.mock import Mock
 import pytest
 import questionary
 
-from app.commands.dataset import dataset_download
-from app.commands.dataset import dataset_list
-from app.commands.dataset import dataset_show_detail
+from app.commands.dataset import dataset_download, dataset_list, dataset_show_detail
 from app.configs.app_config import AppConfig
 
 
