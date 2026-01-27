@@ -60,7 +60,7 @@ jobs:
 
           LATEST_CLI_VERSION=$(grep '^version =' pyproject.toml | sed -E 's/version = "(.*)"/\1/')
 
-          NEW_ENTRY="{\"Cli Version\": \"$LAST_VERSION\", \"Pilot Release Version\": \"$CLI_VERSION\", \"Compatible Version\": \"$COMPATIBLE_VERSION\"}"
+          NEW_ENTRY="{\"Cli Version\": \"$LATEST_CLI_VERSION\", \"Pilot Release Version\": \"$CLI_VERSION\", \"Compatible Version\": \"$COMPATIBLE_VERSION\"}"
 
           touch docs/compatible_version.ndjson
           echo "$NEW_ENTRY" >> docs/compatible_version.ndjson
