@@ -163,7 +163,7 @@ class UploadClient(BaseAuthClient):
         return:
             - non_exist_file_objects(List[FileObject]): the file that need to be uploaded.
             - exist_files(List[str]): the file that has been uploaded. will be skipped
-            - [updated] registered_file_objects(List[Dict[str, Any]]): this is to handle the conner case
+            - [updated] registered_file_objects(List[Dict[str, Any]]): this is to handle the corner case
                 where upload interrupted at specific batch. The local json manifest mismatches with
                 backend metadata. So we need to return the registered file objects as well if possible.
         """
