@@ -125,7 +125,7 @@ def item_duplication_check(
     Return:
         - unregistered_items(List[FileObject]): the list of file object that is not duplicated
         - [updated] registered_items(List[FileObject]): the list of file object that is already registered.
-            in conner case if preupload interrupted at specific batch, the local manifest
+            in corner case if preupload interrupted at specific batch, the local manifest
             will mismatch with backend metadata. So we need to return the registered file objects as well.
     '''
 
@@ -260,8 +260,9 @@ def simple_upload(  # noqa: C901
         # then output manifest file to the output path AFTER EACH BATCH
         # which will include unfinished objects
         upload_client.output_manifest(
-            pre_upload_infos, non_duplicate_file_objects[len(pre_upload_infos) + 1 :], output_path
+            pre_upload_infos, non_duplicate_file_objects[len(pre_upload_infos) :], output_path
         )
+
     # now loop over each file under the folder and start
     # the chunk upload
     pool = ThreadPool(num_of_thread)
@@ -408,7 +409,7 @@ def resume_upload(
     ]
 
     # [updated] here duplication check api got update will filter out ACTIVE and REGISTERED items separately
-    # the reason is during the normal upload , there is a conner case that preupload got interrupted at
+    # the reason is during the normal upload , there is a corner case that preupload got interrupted at
     # specific batch so the local manifest will mismatch with backend metadata. Thus we need to return
     # the registered file objects as well.
     unregistered_items, unmatched_items = item_duplication_check(

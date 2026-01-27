@@ -206,7 +206,7 @@ class UploadClient(BaseAuthClient):
         for _, item in object_path_file_object_map.items():
             return_list.update({item.object_path: item})
 
-        return list(object_path_file_object_map.values()), active_path, registered_items
+        return list(return_list.values()), active_path, registered_items
 
     @require_valid_token()
     def pre_upload(self, file_objects: List[FileObject]) -> List[FileObject]:
