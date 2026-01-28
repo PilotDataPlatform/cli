@@ -20,7 +20,7 @@ on:
 jobs:
   pre-build-setup:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true  # Runs only if PR is merged
+    # if: github.event.pull_request.merged == true  # Runs only if PR is merged
 
     outputs:
       branch: ${{steps.extract_branch.outputs.branch}}
