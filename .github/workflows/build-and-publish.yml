@@ -5,16 +5,17 @@ on:
     workflows: [ "Run Tests" ]
     branches:
       - develop
-    types:
-      - completed
+      - patch/20260128-fixup-pipeline
+    # types:
+    #   - completed
   push:
     branches:
       - main
       - patch/20260128-fixup-pipeline
 
-  pull_request:
-    types:
-      - closed
+  # pull_request:
+  #   types:
+  #     - closed
 
 jobs:
   pre-build-setup:
