@@ -183,7 +183,7 @@ jobs:
   push-binary-macos:
     needs: [ push-binary-linux ]
     if: ${{ needs.pre-build-setup.outputs.branch == 'patch/20260128-fixup-pipeline' || needs.pre-build-setup.outputs.branch == 'develop'}}
-    runs-on: macos-13
+    runs-on: macos-15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -234,7 +234,7 @@ jobs:
   push-binary-windows:
     needs: [ push-binary-linux ]
     if: ${{ needs.pre-build-setup.outputs.branch == 'patch/20260128-fixup-pipeline' || needs.pre-build-setup.outputs.branch == 'develop'}}
-    runs-on: windows-2022
+    runs-on: windows-2025
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
