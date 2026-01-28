@@ -5,22 +5,20 @@ on:
     workflows: [ "Run Tests" ]
     branches:
       - develop
-      - patch/20260128-fixup-pipeline
-    # types:
-    #   - completed
+    types:
+      - completed
   push:
     branches:
       - main
-      - patch/20260128-fixup-pipeline
 
-  # pull_request:
-  #   types:
-  #     - closed
+  pull_request:
+    types:
+      - closed
 
 jobs:
   pre-build-setup:
     runs-on: ubuntu-latest
-    # if: github.event.pull_request.merged == true  # Runs only if PR is merged
+    if: github.event.pull_request.merged == true  # Runs only if PR is merged
 
     outputs:
       branch: ${{steps.extract_branch.outputs.branch}}
@@ -70,7 +68,7 @@ jobs:
 
   push-binary-linux:
     needs: [ pre-build-setup ]
-    if: ${{ needs.pre-build-setup.outputs.branch == 'patch/20260128-fixup-pipeline' || needs.pre-build-setup.outputs.branch == 'develop'}}
+    if: ${{ needs.pre-build-setup.outputs.branch == 'main' || needs.pre-build-setup.outputs.branch == 'develop'}}
     runs-on: ubuntu-latest
     outputs:
       upload_url: ${{steps.create_release.outputs.upload_url}}
@@ -182,7 +180,7 @@ jobs:
 
   push-binary-macos:
     needs: [ push-binary-linux ]
-    if: ${{ needs.pre-build-setup.outputs.branch == 'patch/20260128-fixup-pipeline' || needs.pre-build-setup.outputs.branch == 'develop'}}
+    if: ${{ needs.pre-build-setup.outputs.branch == 'main' || needs.pre-build-setup.outputs.branch == 'develop'}}
     runs-on: macos-15-intel
     steps:
       - name: Checkout repository
@@ -233,7 +231,7 @@ jobs:
 
   push-binary-windows:
     needs: [ push-binary-linux ]
-    if: ${{ needs.pre-build-setup.outputs.branch == 'patch/20260128-fixup-pipeline' || needs.pre-build-setup.outputs.branch == 'develop'}}
+    if: ${{ needs.pre-build-setup.outputs.branch == 'main' || needs.pre-build-setup.outputs.branch == 'develop'}}
     runs-on: windows-2025
     steps:
       - name: Checkout repository

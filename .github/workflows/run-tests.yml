@@ -4,12 +4,10 @@ on:
   push:
     branches:
       - develop
-      - patch/20260128-fixup-pipeline
   pull_request:
     branches:
       - main
       - develop
-      - patch/20260128-fixup-pipeline
 jobs:
   tests:
     runs-on: ubuntu-latest
