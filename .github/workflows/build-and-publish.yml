@@ -147,49 +147,22 @@ jobs:
             -v ${{ github.workspace }}/build_script.sh:/build_script.sh \
             -e GITHUB_SHA=${{ github.sha }} \
             -w /github/workspace \
-            ubuntu:20.04 bash -c "
-              set -euxo pipefail
+            ubuntu:22.04 bash -c "
+              set -e
               export DEBIAN_FRONTEND=noninteractive
-
               apt-get update
-              apt-get install -y --no-install-recommends \
-                software-properties-common \
-                curl \
-                build-essential \
-                ca-certificates \
-                gnupg \
-                dirmngr \
-                lsb-release
-
+              apt-get install -y software-properties-common curl build-essential
               add-apt-repository -y ppa:deadsnakes/ppa
               apt-get update
-
-              apt-get install -y --no-install-recommends \
-                python3.10 \
-                python3.10-venv \
-                python3.10-dev
-
+              apt-get install -y python3.10 python3.10-venv python3.10-dev
               curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10
-              python3.10 -m pip install --no-cache-dir --upgrade pip
-
-              # Install Poetry (uses ~/.local/bin by default)
               curl -sSL https://install.python-poetry.org | python3.10 -
               export PATH=\"/root/.local/bin:\$PATH\"
-
-              # Sanity checks
-              python3.10 --version
-              poetry --version
-
-              # Force Poetry to use Python 3.10 in this repo
-              cd /github/workspace
-              poetry env use /usr/bin/python3.10
-
               /build_script.sh
             "
 
           # Load version from file created in container
-          echo "TAG_VERSION=$(cut -d'=' -f2 version.txt)" >> $GITHUB_ENV
-
+          echo "TAG_VERSION=$(cat version.txt | cut -d'=' -f2)" >> $GITHUB_ENV
 
       - name: Create Release
         id: create_release
