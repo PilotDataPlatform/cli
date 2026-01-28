@@ -119,8 +119,8 @@ jobs:
             --distpath ./app/bundled_app/linux \
             --specpath ./app/build/linux \
             --workpath ./app/build/linux \
-            --paths=./.venv/lib/python3.10/site-packages \
             --add-binary=$(pwd)/app/ENABLE_CLOUD_MODE:. \
+            --paths=./.venv/lib/python3.10/site-packages \
             ./app/pilotcli.py -n $GITHUB_SHA
 
           # Rename cloud output file
@@ -145,7 +145,7 @@ jobs:
             -v ${{ github.workspace }}/build_script.sh:/build_script.sh \
             -e GITHUB_SHA=${{ github.sha }} \
             -w /github/workspace \
-            ubuntu:20.04 bash -c "
+            ubuntu:22.04 bash -c "
               set -e
               export DEBIAN_FRONTEND=noninteractive
               apt-get update
@@ -181,7 +181,7 @@ jobs:
   push-binary-macos:
     needs: [ push-binary-linux ]
     if: ${{ needs.pre-build-setup.outputs.branch == 'main' || needs.pre-build-setup.outputs.branch == 'develop'}}
-    runs-on: macos-13
+    runs-on: macos-15-intel
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -232,7 +232,7 @@ jobs:
   push-binary-windows:
     needs: [ push-binary-linux ]
     if: ${{ needs.pre-build-setup.outputs.branch == 'main' || needs.pre-build-setup.outputs.branch == 'develop'}}
-    runs-on: windows-2022
+    runs-on: windows-2025
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -243,31 +243,45 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
+          architecture: 'x64'
 
-      - name: Create virtual environment
-        run: |
-          python -m venv .venv
-
-      - name: Set up cache
-        id: cached-poetry-dependencies
+      - name: Cache pip
         uses: actions/cache@v3
         with:
-          path: .venv
-          key: venv-windows-${{ hashFiles('**/poetry.lock') }}
+          path: ~\AppData\Local\pip\Cache
+          key: pip-windows-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            pip-windows-${{ runner.os }}-
 
       - name: Install dependencies
-        run: |
-          .\.venv\Scripts\Activate
-          pip install poetry==1.8.3
-          poetry shell
-          poetry install --no-interaction --extras "windows" --only main
         shell: pwsh
+        run: |
+          Remove-Item -Recurse -Force .venv -ErrorAction SilentlyContinue
 
-      - name: Build binary
-        run: |
-          .\.venv\Scripts\Activate
-          poetry run pyinstaller -F --distpath ./app/bundled_app/windows --specpath ./app/build/windows --workpath ./app/build/windows --paths=./.venv/lib/python3.10/site-packages ./app/pilotcli.py -n ${{ github.sha }}
+          python -m venv .venv
+          .\.venv\Scripts\python.exe -m pip install --upgrade pip setuptools wheel
+
+          # Use poetry via module to avoid PATH issues
+          python -m pip install "poetry==1.8.3"
+
+          python -m poetry config virtualenvs.in-project true
+          python -m poetry config installer.max-workers 1
+
+          python -m poetry env use "$PWD\.venv\Scripts\python.exe"
+          python -m poetry install --no-interaction --no-ansi --extras "windows" --only main
+
+      - name: Build binary (Windows)
         shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path .\app\bundled_app\windows | Out-Null
+          New-Item -ItemType Directory -Force -Path .\app\build\windows | Out-Null
+
+          # IMPORTANT: do NOT activate .venv here
+          python -m poetry run pyinstaller -F `
+            --distpath .\app\bundled_app\windows `
+            --specpath .\app\build\windows `
+            --workpath .\app\build\windows `
+            .\app\pilotcli.py -n ${{ github.sha }}
 
       - name: Upload Release Binary
         id: upload-release-binary
