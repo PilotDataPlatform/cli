@@ -258,18 +258,19 @@ jobs:
       - name: Install dependencies
         shell: pwsh
         run: |
-          # Ensure clean venv each run (prevents broken distlib / uninstall issues)
           Remove-Item -Recurse -Force .venv -ErrorAction SilentlyContinue
 
-          # Create venv + activate
           python -m venv .venv
-          .\.venv\Scripts\python -m pip install --upgrade pip setuptools wheel
+          .\.venv\Scripts\python.exe -m pip install --upgrade pip setuptools wheel
 
-          # Force Poetry to use this exact venv python
-          poetry env use (Resolve-Path .\.venv\Scripts\python.exe).Path
+          # Use poetry via module to avoid PATH issues
+          python -m pip install "poetry==1.8.3"
 
-          # Install deps strictly from lock
-          poetry install --no-interaction --no-ansi --extras "windows" --only main
+          python -m poetry config virtualenvs.in-project true
+          python -m poetry config installer.max-workers 1
+
+          python -m poetry env use "$PWD\.venv\Scripts\python.exe"
+          python -m poetry install --no-interaction --no-ansi --extras "windows" --only main
 
       - name: Install Poetry + configure
         shell: pwsh
@@ -278,13 +279,13 @@ jobs:
           python -m pip install "poetry==1.8.3"
 
           # Make Poetry use in-project venv and avoid parallelism (prevents Win file-lock issues)
-          poetry config virtualenvs.in-project true
-          poetry config installer.max-workers 1
+          python -m poetry config virtualenvs.in-project true
+          python -m poetry config installer.max-workers 1
 
       - name: Build binary
         run: |
           .\.venv\Scripts\Activate
-          poetry run pyinstaller -F --distpath ./app/bundled_app/windows --specpath ./app/build/windows --workpath ./app/build/windows --paths=./.venv/lib/python3.10/site-packages ./app/pilotcli.py -n ${{ github.sha }}
+          python -m poetry run pyinstaller -F --distpath ./app/bundled_app/windows --specpath ./app/build/windows --workpath ./app/build/windows --paths=./.venv/lib/python3.10/site-packages ./app/pilotcli.py -n ${{ github.sha }}
         shell: pwsh
 
       - name: Upload Release Binary
