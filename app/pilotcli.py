@@ -23,6 +23,7 @@ class CustomHelpFormatter(HelpFormatter):
         super().__init__(*args, **kwargs)
 
     def write_dl(self, rows, col_max=80, col_spacing=2):
+
         if rows:
             # get max width of command
             widths = max([len(row[0]) for row in rows])
