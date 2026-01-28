@@ -183,7 +183,7 @@ jobs:
   push-binary-macos:
     needs: [ push-binary-linux ]
     if: ${{ needs.pre-build-setup.outputs.branch == 'patch/20260128-fixup-pipeline' || needs.pre-build-setup.outputs.branch == 'develop'}}
-    runs-on: macos-15
+    runs-on: macos-15-intel
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
