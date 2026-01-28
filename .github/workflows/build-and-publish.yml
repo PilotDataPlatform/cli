@@ -272,21 +272,18 @@ jobs:
           python -m poetry env use "$PWD\.venv\Scripts\python.exe"
           python -m poetry install --no-interaction --no-ansi --extras "windows" --only main
 
-      - name: Install Poetry + configure
+      - name: Build binary (Windows)
         shell: pwsh
         run: |
-          python -m pip install --upgrade pip setuptools wheel
-          python -m pip install "poetry==1.8.3"
+          New-Item -ItemType Directory -Force -Path .\app\bundled_app\windows | Out-Null
+          New-Item -ItemType Directory -Force -Path .\app\build\windows | Out-Null
 
-          # Make Poetry use in-project venv and avoid parallelism (prevents Win file-lock issues)
-          python -m poetry config virtualenvs.in-project true
-          python -m poetry config installer.max-workers 1
-
-      - name: Build binary
-        run: |
-          .\.venv\Scripts\Activate
-          python -m poetry run pyinstaller -F --distpath ./app/bundled_app/windows --specpath ./app/build/windows --workpath ./app/build/windows --paths=./.venv/lib/python3.10/site-packages ./app/pilotcli.py -n ${{ github.sha }}
-        shell: pwsh
+          # IMPORTANT: do NOT activate .venv here
+          python -m poetry run pyinstaller -F `
+            --distpath .\app\bundled_app\windows `
+            --specpath .\app\build\windows `
+            --workpath .\app\build\windows `
+            .\app\pilotcli.py -n ${{ github.sha }}
 
       - name: Upload Release Binary
         id: upload-release-binary
