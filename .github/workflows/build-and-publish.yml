@@ -5,22 +5,20 @@ on:
     workflows: [ "Run Tests" ]
     branches:
       - develop
-      - patch20260203
     types:
       - completed
   push:
     branches:
       - main
-      - patch20260203
 
-  # pull_request:
-  #   types:
-  #     - closed
+  pull_request:
+    types:
+      - closed
 
 jobs:
   pre-build-setup:
     runs-on: ubuntu-latest
-    # if: github.event.pull_request.merged == true  # Runs only if PR is merged
+    if: github.event.pull_request.merged == true  # Runs only if PR is merged
 
     outputs:
       branch: ${{steps.extract_branch.outputs.branch}}
@@ -70,7 +68,7 @@ jobs:
 
   push-binary-linux:
     needs: [ pre-build-setup ]
-    if: ${{ needs.pre-build-setup.outputs.branch == 'patch20260203' || needs.pre-build-setup.outputs.branch == 'develop'}}
+    if: ${{ needs.pre-build-setup.outputs.branch == 'main' || needs.pre-build-setup.outputs.branch == 'develop'}}
     runs-on: ubuntu-latest
     outputs:
       upload_url: ${{steps.create_release.outputs.upload_url}}
