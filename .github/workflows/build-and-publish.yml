@@ -5,6 +5,7 @@ on:
     workflows: [ "Run Tests" ]
     branches:
       - develop
+      - patch20260203
     types:
       - completed
   push:
@@ -12,9 +13,9 @@ on:
       - main
       - patch20260203
 
-  pull_request:
-    types:
-      - closed
+  # pull_request:
+  #   types:
+  #     - closed
 
 jobs:
   pre-build-setup:
