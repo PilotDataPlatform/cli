@@ -145,7 +145,7 @@ jobs:
             -v ${{ github.workspace }}/build_script.sh:/build_script.sh \
             -e GITHUB_SHA=${{ github.sha }} \
             -w /github/workspace \
-              ubuntu:22.04 bash -c "
+                ubuntu:22.04 bash -c "
               set -e
               export DEBIAN_FRONTEND=noninteractive
               apt-get update
@@ -155,6 +155,8 @@ jobs:
               apt-get install -y python3.10 python3.10-venv python3.10-dev
               curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10
               curl -sSL https://install.python-poetry.org | python3.10 -
+              export PATH=\"/root/.local/bin:\$PATH\"
+              /build_script.sh
             "
 
           # Load version from file created in container
