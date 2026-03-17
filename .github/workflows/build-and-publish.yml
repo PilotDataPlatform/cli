@@ -145,13 +145,16 @@ jobs:
             -v ${{ github.workspace }}/build_script.sh:/build_script.sh \
             -e GITHUB_SHA=${{ github.sha }} \
             -w /github/workspace \
-            python:3.10-bullseye bash -c "
+              ubuntu:22.04 bash -c "
               set -e
+              export DEBIAN_FRONTEND=noninteractive
               apt-get update
-              apt-get install -y --no-install-recommends build-essential curl
-              curl -sSL https://install.python-poetry.org | python -
-              export PATH=\"/root/.local/bin:\$PATH\"
-              /build_script.sh
+              apt-get install -y software-properties-common curl build-essential
+              add-apt-repository -y ppa:deadsnakes/ppa
+              apt-get update
+              apt-get install -y python3.10 python3.10-venv python3.10-dev
+              curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10
+              curl -sSL https://install.python-poetry.org | python3.10 -
             "
 
           # Load version from file created in container
