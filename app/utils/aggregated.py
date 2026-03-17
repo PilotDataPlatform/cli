@@ -278,6 +278,7 @@ def get_version_compatibility(version: str):
             ECustomizedError.VERSION_INCOMPATIBLE,
             True,
             value=(
+                version,
                 result.get('minimum_cli_version'),
                 result.get('minimum_server_version'),
             ),
