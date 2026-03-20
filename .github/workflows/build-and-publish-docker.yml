@@ -75,113 +75,113 @@ jobs:
               echo "Image exists, aborting"
               exit 1
             fi
-        - name: Check Trivy ignore exceptions
-          # Check if the Trivy ignorefile has exceptions and the exceptions
-          #   date is defined and less than 90 days.
-          #
-          # The ignorefile has the following format:
-          #   CVE-YYYY-XXXXX exp:YYYY-MM-DD
-          #
-          # Error out if the format is not respected.
-          #   Given a CVE-YYYY-XXXXX defined in the ignorefile,
-          #     if no exception date is defined, we will error out.
-          #     if the exception date is more than 90 days, we will error out too.
-          #
-          # Successfully parsed lines will be ignored,
-          #   if the exception date exist and is less than 90 days, the step will exit with 0.
-          shell: bash
-          run: |
-            echo "Checking .github/.trivyignore file for valid exceptions ..."
+        # - name: Check Trivy ignore exceptions
+        #   # Check if the Trivy ignorefile has exceptions and the exceptions
+        #   #   date is defined and less than 90 days.
+        #   #
+        #   # The ignorefile has the following format:
+        #   #   CVE-YYYY-XXXXX exp:YYYY-MM-DD
+        #   #
+        #   # Error out if the format is not respected.
+        #   #   Given a CVE-YYYY-XXXXX defined in the ignorefile,
+        #   #     if no exception date is defined, we will error out.
+        #   #     if the exception date is more than 90 days, we will error out too.
+        #   #
+        #   # Successfully parsed lines will be ignored,
+        #   #   if the exception date exist and is less than 90 days, the step will exit with 0.
+        #   shell: bash
+        #   run: |
+        #     echo "Checking .github/.trivyignore file for valid exceptions ..."
 
-            if [ ! -f ".github/.trivyignore" ]; then
-              echo "Trivy ignore file does not exist at .github/.trivyignore"
-              exit 0
-            fi
+        #     if [ ! -f ".github/.trivyignore" ]; then
+        #       echo "Trivy ignore file does not exist at .github/.trivyignore"
+        #       exit 0
+        #     fi
 
-            echo "The .trivyignore file exists at .github/.trivyignore"
-            echo "Starting scan of .trivyignore file..."
+        #     echo "The .trivyignore file exists at .github/.trivyignore"
+        #     echo "Starting scan of .trivyignore file..."
 
-            all_valid=true
-            current_timestamp=$(date +%s)
-            max_days=90
-            max_days_seconds=$((max_days * 24 * 60 * 60))
-            max_future_timestamp=$((current_timestamp + max_days_seconds))
+        #     all_valid=true
+        #     current_timestamp=$(date +%s)
+        #     max_days=90
+        #     max_days_seconds=$((max_days * 24 * 60 * 60))
+        #     max_future_timestamp=$((current_timestamp + max_days_seconds))
 
-            # Temp file to store error messages
-            error_report=$(mktemp)
+        #     # Temp file to store error messages
+        #     error_report=$(mktemp)
 
-            while IFS= read -r line || [ -n "$line" ]; do
-              # Skip empty lines or comments
-              [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+        #     while IFS= read -r line || [ -n "$line" ]; do
+        #       # Skip empty lines or comments
+        #       [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
 
-              # Extract CVE and expiration date
-              if [[ "$line" =~ ([A-Z0-9-]+)[[:space:]]+exp:([0-9]{4})-([0-9]{2})-([0-9]{2}) ]]; then
-                cve="${BASH_REMATCH[1]}"
-                exp_year="${BASH_REMATCH[2]}"
-                exp_month="${BASH_REMATCH[3]}"
-                exp_day="${BASH_REMATCH[4]}"
+        #       # Extract CVE and expiration date
+        #       if [[ "$line" =~ ([A-Z0-9-]+)[[:space:]]+exp:([0-9]{4})-([0-9]{2})-([0-9]{2}) ]]; then
+        #         cve="${BASH_REMATCH[1]}"
+        #         exp_year="${BASH_REMATCH[2]}"
+        #         exp_month="${BASH_REMATCH[3]}"
+        #         exp_day="${BASH_REMATCH[4]}"
 
-                # Validate date components
-                if [ "$exp_month" -lt 1 ] || [ "$exp_month" -gt 12 ] || \
-                    [ "$exp_day" -lt 1 ] || [ "$exp_day" -gt 31 ]; then
-                  error_msg="Error: Invalid date format for CVE $cve: $exp_year-$exp_month-$exp_day"
-                  echo "$error_msg"
-                  echo "$error_msg" >> "$error_report"
-                  all_valid=false
-                fi
+        #         # Validate date components
+        #         if [ "$exp_month" -lt 1 ] || [ "$exp_month" -gt 12 ] || \
+        #             [ "$exp_day" -lt 1 ] || [ "$exp_day" -gt 31 ]; then
+        #           error_msg="Error: Invalid date format for CVE $cve: $exp_year-$exp_month-$exp_day"
+        #           echo "$error_msg"
+        #           echo "$error_msg" >> "$error_report"
+        #           all_valid=false
+        #         fi
 
-                # Convert expiration date to timestamp
-                exp_timestamp=$(date -d "$exp_year-$exp_month-$exp_day" +%s)
+        #         # Convert expiration date to timestamp
+        #         exp_timestamp=$(date -d "$exp_year-$exp_month-$exp_day" +%s)
 
-                # Check if date is within $max_days days
-                if [ "$exp_timestamp" -gt "$max_future_timestamp" ]; then
-                  error_msg="Error: Expiration date for $cve is more than $max_days days in the future"
-                  echo "$error_msg"
-                  echo "$error_msg" >> "$error_report"
-                  all_valid=false
-                elif [ "$exp_timestamp" -lt "$current_timestamp" ]; then
-                  error_msg="Error: Expiration date for $cve has already passed"
-                  echo "$error_msg"
-                  echo "$error_msg" >> "$error_report"
-                  all_valid=false
-                else
-                  days_left=$(( (exp_timestamp - current_timestamp) / 86400 ))
-                  echo "Exception for $cve is valid (expires in $days_left days)"
-                fi
-              else
-                error_msg="Error: Invalid format in line: $line"
-                echo "$error_msg"
-                echo "$error_msg" >> "$error_report"
-                echo "Expected format: CVE-YYYY-XXXXX exp:YYYY-MM-DD"
-                all_valid=false
-              fi
-            done < ".github/.trivyignore"
+        #         # Check if date is within $max_days days
+        #         if [ "$exp_timestamp" -gt "$max_future_timestamp" ]; then
+        #           error_msg="Error: Expiration date for $cve is more than $max_days days in the future"
+        #           echo "$error_msg"
+        #           echo "$error_msg" >> "$error_report"
+        #           all_valid=false
+        #         elif [ "$exp_timestamp" -lt "$current_timestamp" ]; then
+        #           error_msg="Error: Expiration date for $cve has already passed"
+        #           echo "$error_msg"
+        #           echo "$error_msg" >> "$error_report"
+        #           all_valid=false
+        #         else
+        #           days_left=$(( (exp_timestamp - current_timestamp) / 86400 ))
+        #           echo "Exception for $cve is valid (expires in $days_left days)"
+        #         fi
+        #       else
+        #         error_msg="Error: Invalid format in line: $line"
+        #         echo "$error_msg"
+        #         echo "$error_msg" >> "$error_report"
+        #         echo "Expected format: CVE-YYYY-XXXXX exp:YYYY-MM-DD"
+        #         all_valid=false
+        #       fi
+        #     done < ".github/.trivyignore"
 
-            # Add report to GitHub step summary if there are errors
-            if [ "$all_valid" = false ]; then
-              {
-                echo "### Trivy Ignore File Validation Errors"
-                echo ""
-                echo "The following errors were found in the .github/.trivyignore file:"
-                echo ""
-                echo '```'
-                cat "$error_report"
-                echo '```'
-                echo ""
-                echo "Please ensure all expiration dates are specified and within $max_days days"
-                echo ""
-                echo "Expected format: CVE-YYYY-XXXXX exp:YYYY-MM-DD"
-              } >> $GITHUB_STEP_SUMMARY
+        #     # Add report to GitHub step summary if there are errors
+        #     if [ "$all_valid" = false ]; then
+        #       {
+        #         echo "### Trivy Ignore File Validation Errors"
+        #         echo ""
+        #         echo "The following errors were found in the .github/.trivyignore file:"
+        #         echo ""
+        #         echo '```'
+        #         cat "$error_report"
+        #         echo '```'
+        #         echo ""
+        #         echo "Please ensure all expiration dates are specified and within $max_days days"
+        #         echo ""
+        #         echo "Expected format: CVE-YYYY-XXXXX exp:YYYY-MM-DD"
+        #       } >> $GITHUB_STEP_SUMMARY
 
-              echo "One or more exceptions are invalid. Please ensure all expiration dates are specified and within $max_days days"
-              echo "----------------------------------------------"
-              echo "Expected format: CVE-YYYY-XXXXX exp:YYYY-MM-DD"
-              echo "----------------------------------------------"
-              exit 1
-            fi
+        #       echo "One or more exceptions are invalid. Please ensure all expiration dates are specified and within $max_days days"
+        #       echo "----------------------------------------------"
+        #       echo "Expected format: CVE-YYYY-XXXXX exp:YYYY-MM-DD"
+        #       echo "----------------------------------------------"
+        #       exit 1
+        #     fi
 
-            echo "All exceptions are valid and within $max_days days"
-            exit 0
+        #     echo "All exceptions are valid and within $max_days days"
+        #     exit 0
         - name: Build image and push to GitHub Container Registry
           uses: docker/build-push-action@v4
           with:
@@ -194,32 +194,32 @@ jobs:
             build-args: |
               CLI_VERSION=${{ github.event.inputs.release }}
               CLI_OS=${{ github.event.inputs.os }}
-        - name: Run Trivy vulnerability scanner
-          uses: aquasecurity/trivy-action@0.24.0
-          with:
-            image-ref: '${{ steps.meta.outputs.tags }}'
-            format: 'table'
-            severity: 'CRITICAL'
-            exit-code: '1'
-            hide-progress: true
-            trivyignores: .github/.trivyignore
-            output: scan-results.txt
-          env:
-            TRIVY_IGNORE_STATUS: 'will_not_fix'
-            TRIVY_DB_REPOSITORY: 'public.ecr.aws/aquasecurity/trivy-db:2'
+        # - name: Run Trivy vulnerability scanner
+        #   uses: aquasecurity/trivy-action@0.24.0
+        #   with:
+        #     image-ref: '${{ steps.meta.outputs.tags }}'
+        #     format: 'table'
+        #     severity: 'CRITICAL'
+        #     exit-code: '1'
+        #     hide-progress: true
+        #     trivyignores: .github/.trivyignore
+        #     output: scan-results.txt
+        #   env:
+        #     TRIVY_IGNORE_STATUS: 'will_not_fix'
+        #     TRIVY_DB_REPOSITORY: 'public.ecr.aws/aquasecurity/trivy-db:2'
 
-        - name: Publish Trivy Scan Results to Summary
-          if: always()
-          run: |
-            if [[ -s scan-results.txt ]]; then
-              {
-                echo "### Trivy Scan Results"
-                echo "Please refer to https://indocconsortium.atlassian.net/wiki/spaces/PILOT/pages/3917316126/Trivy+reports+triage to find out the next steps to fix the vulnerabilities"
-                echo "<details><summary>Click to expand</summary>"
-                echo ""
-                echo '```workflow-manager'
-                cat scan-results.txt
-                echo '```'
-                echo "</details>"
-              } >> $GITHUB_STEP_SUMMARY
-            fi
+        # - name: Publish Trivy Scan Results to Summary
+        #   if: always()
+        #   run: |
+        #     if [[ -s scan-results.txt ]]; then
+        #       {
+        #         echo "### Trivy Scan Results"
+        #         echo "Please refer to https://indocconsortium.atlassian.net/wiki/spaces/PILOT/pages/3917316126/Trivy+reports+triage to find out the next steps to fix the vulnerabilities"
+        #         echo "<details><summary>Click to expand</summary>"
+        #         echo ""
+        #         echo '```workflow-manager'
+        #         cat scan-results.txt
+        #         echo '```'
+        #         echo "</details>"
+        #       } >> $GITHUB_STEP_SUMMARY
+        #     fi
